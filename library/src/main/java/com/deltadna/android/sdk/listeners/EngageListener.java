@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2016 deltaDNA Ltd. All rights reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.deltadna.android.sdk.listeners;
+
+import org.json.JSONObject;
+
+/**
+ * Listener to be used for Engage events.
+ */
+public interface EngageListener extends RequestListener<JSONObject> {
+    
+    /**
+     * Invoked during a successful request.
+     * 
+     * @param result    result of the request
+     */
+    @Override
+    void onSuccess(JSONObject result);
+    
+    /**
+     * Invoked when an error happens during the request.
+     * <p>
+     * The error {@code t} could be an {@link java.io.IOException}
+     * if there was a connectivity problem or a timeout, or a
+     * {@link com.deltadna.android.sdk.exceptions.ResponseException}
+     * if a request resulted in a non-OK HTTP result code, amongst
+     * other causes for the failure.
+     * 
+     * @param t cause of the failure
+     */
+    @Override
+    void onFailure(Throwable t);
+}

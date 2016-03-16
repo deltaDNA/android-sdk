@@ -1,0 +1,2 @@
+include ':library', 'example-demo'
+project(':example-demo').projectDir = file('examples/demo')

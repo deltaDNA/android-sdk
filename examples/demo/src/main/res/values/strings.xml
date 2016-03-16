@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2016 deltaDNA Ltd. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+!-->
+
+<resources>
+    <string name="app_name">deltaDNA SDK Example</string>
+    
+    <string name="user_id">User ID: %s</string>
+    <string name="upload_events">Upload events</string>
+    <string name="simple_event">Simple event</string>
+    <string name="basic_event">Basic event</string>
+    <string name="complex_event">Complex event</string>
+    <string name="engage">Engage</string>
+    <string name="image_message">Image Message</string>
+    <string name="notification_opened">Notification opened</string>
+    <string name="start_sdk">Start SDK</string>
+    <string name="stop_sdk">Stop SDK</string>
+    
+    <string name="image_message_action">We are now back with message value %1$s and params %2$s</string>
+    <string name="image_message_cancelled">The message has been dismissed with no action</string>
+    
+    <string name="dismiss">Dismiss</string>
+</resources>
