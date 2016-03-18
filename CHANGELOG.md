@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.0.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.2) (YYYY-MM-DD)
+Fixed bulk events not being sent to correct endpoint.
 
 ## [4.0.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.1) (2016-03-18)
 Fixed events not being sent correctly.

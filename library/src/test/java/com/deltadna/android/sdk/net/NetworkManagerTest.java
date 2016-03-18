@@ -86,6 +86,16 @@ public final class NetworkManagerTest {
     }
     
     @Test
+    public void collectBulk() throws JSONException, InterruptedException {
+        server.enqueue(new MockResponse().setResponseCode(200));
+        
+        uut.collect(new JSONObject().put("eventList", "[]"), null);
+        
+        final RecordedRequest request = server.takeRequest();
+        assertThat(request.getPath()).isEqualTo(COLLECT + "/" + ENV_KEY + "/bulk");
+    }
+    
+    @Test
     public void collectWithHash() throws InterruptedException {
         server.enqueue(new MockResponse().setResponseCode(200));
         
@@ -99,6 +109,22 @@ public final class NetworkManagerTest {
         
         final RecordedRequest request = server.takeRequest();
         assertThat(request.getPath()).startsWith(COLLECT + "/" + ENV_KEY + "/hash");
+    }
+    
+    @Test
+    public void collectBulkWithHash() throws JSONException, InterruptedException {
+        server.enqueue(new MockResponse().setResponseCode(200));
+        
+        uut = new NetworkManager(
+                ENV_KEY,
+                server.url(COLLECT).toString(),
+                server.url(ENGAGE).toString(),
+                mock(Settings.class),
+                "hash");
+        uut.collect(new JSONObject().put("eventList", "[]"), null);
+        
+        final RecordedRequest request = server.takeRequest();
+        assertThat(request.getPath()).startsWith(COLLECT + "/" + ENV_KEY + "/bulk" + "/hash");
     }
     
     @Test
