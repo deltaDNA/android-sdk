@@ -27,11 +27,11 @@ import com.deltadna.android.sdk.net.CancelableRequest;
 import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -198,22 +198,27 @@ final class EventHandler {
         @Override
         public void run() {
             store.swap();
-
-            final Iterator<String> it = store.read().iterator();
-            final JSONArray events = new JSONArray();
-            while (it.hasNext()) {
-                events.put(it.next());
-                it.remove();
-            }
-
-            if (events.length() == 0) {
+            
+            final List<String> events = store.read();
+            if (events.isEmpty()) {
                 Log.d(TAG, "No events to upload");
                 return;
             }
-
-            final JSONObject payload = new JSONObject();
+            
+            final StringBuilder builder = new StringBuilder("{\"eventList\":[");
+            final Iterator<String> it = events.iterator();
+            while (it.hasNext()) {
+                builder.append(it.next());
+                builder.append(',');
+                
+                it.remove();
+            }
+            builder.deleteCharAt(builder.length() - 1);
+            builder.append("]}");
+            
+            final JSONObject payload;
             try {
-                payload.put("eventList", events);
+                payload = new JSONObject(builder.toString());
             } catch (JSONException e) {
                 Log.w(TAG, e);
                 return;

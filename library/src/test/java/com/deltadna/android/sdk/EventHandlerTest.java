@@ -22,7 +22,6 @@ import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -93,10 +92,8 @@ public final class EventHandlerTest {
         uut.start(0, 1);
         Thread.sleep(2200);
         
-        final JSONObject expected1 = new JSONObject().put("eventList", new JSONArray()
-                .put(events1.get(0)).put(events1.get(1)));
-        final JSONObject expected2 = new JSONObject().put("eventList", new JSONArray()
-                .put(events2.get(0)));
+        final String expected1 = "{\"eventList\":[{\"value\":0},{\"value\":1}]}";
+        final String expected2 = "{\"eventList\":[{\"value\":0}]}";
         
         verify(store, times(3)).swap();
         verify(store, times(3)).read();
@@ -109,7 +106,7 @@ public final class EventHandlerTest {
                         if (run != 2) { // no idea why we get a 3 runs and times(2) works
                             assertThat(argument).isInstanceOf(JSONObject.class);
                             assertThat(argument.toString()).isEqualTo(
-                                    (run == 0 ? expected1 : expected2).toString());
+                                    run == 0 ? expected1 : expected2);
                         }
                         run++;
                         return true;
