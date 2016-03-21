@@ -250,6 +250,7 @@ public final class DDNA {
         try {
             jsonEvent.put("eventName", event.name);
             jsonEvent.put("eventTimestamp", getCurrentTimestamp());
+            jsonEvent.put("eventUUID", UUID.randomUUID().toString());
             jsonEvent.put("sessionID", sessionId);
             jsonEvent.put("userID", getUserId());
             
