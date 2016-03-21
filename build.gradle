@@ -31,7 +31,7 @@ allprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.11'
+    gradleVersion = '2.12'
 }
 
 task clean(type: Delete) {
@@ -50,7 +50,7 @@ ext {
     
     supportVersion = '23.2.1'
     
-    kotlinVersion = '1.0.0'
+    kotlinVersion = '1.0.1'
     
     logTagName  = 'LOG_TAG'
     logTagValue = 'deltaDNA'
