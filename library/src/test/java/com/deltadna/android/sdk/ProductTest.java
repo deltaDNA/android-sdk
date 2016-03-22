@@ -66,18 +66,18 @@ public final class ProductTest {
         
         final JSONArray result =
                 uut.toJson().getJSONArray("virtualCurrencies");
-        assertThat(result.getJSONObject(0).get("virtualCurrencyName"))
-                .isEqualTo("nameOne");
-        assertThat(result.getJSONObject(0).get("virtualCurrencyType"))
-                .isEqualTo("typeOne");
-        assertThat(result.getJSONObject(0).get("virtualCurrencyAmount"))
-                .isEqualTo(1);
-        assertThat(result.getJSONObject(1).get("virtualCurrencyName"))
-                .isEqualTo("nameTwo");
-        assertThat(result.getJSONObject(1).get("virtualCurrencyType"))
-                .isEqualTo("typeTwo");
-        assertThat(result.getJSONObject(1).get("virtualCurrencyAmount"))
-                .isEqualTo(2);
+        assertThat(result.getJSONObject(0).getJSONObject("virtualCurrency")
+                .get("virtualCurrencyName")).isEqualTo("nameOne");
+        assertThat(result.getJSONObject(0).getJSONObject("virtualCurrency")
+                .get("virtualCurrencyType")).isEqualTo("typeOne");
+        assertThat(result.getJSONObject(0).getJSONObject("virtualCurrency")
+                .get("virtualCurrencyAmount")).isEqualTo(1);
+        assertThat(result.getJSONObject(1).getJSONObject("virtualCurrency")
+                .get("virtualCurrencyName")).isEqualTo("nameTwo");
+        assertThat(result.getJSONObject(1).getJSONObject("virtualCurrency")
+                .get("virtualCurrencyType")).isEqualTo("typeTwo");
+        assertThat(result.getJSONObject(1).getJSONObject("virtualCurrency")
+                .get("virtualCurrencyAmount")).isEqualTo(2);
     }
     
     @Test
@@ -86,11 +86,17 @@ public final class ProductTest {
         uut.addItem("nameTwo", "typeTwo", 2);
         
         final JSONArray result = uut.toJson().getJSONArray("items");
-        assertThat(result.getJSONObject(0).get("itemName")).isEqualTo("nameOne");
-        assertThat(result.getJSONObject(0).get("itemType")).isEqualTo("typeOne");
-        assertThat(result.getJSONObject(0).get("itemAmount")).isEqualTo(1);
-        assertThat(result.getJSONObject(1).get("itemName")).isEqualTo("nameTwo");
-        assertThat(result.getJSONObject(1).get("itemType")).isEqualTo("typeTwo");
-        assertThat(result.getJSONObject(1).get("itemAmount")).isEqualTo(2);
+        assertThat(result.getJSONObject(0).getJSONObject("item")
+                .get("itemName")).isEqualTo("nameOne");
+        assertThat(result.getJSONObject(0).getJSONObject("item")
+                .get("itemType")).isEqualTo("typeOne");
+        assertThat(result.getJSONObject(0).getJSONObject("item")
+                .get("itemAmount")).isEqualTo(1);
+        assertThat(result.getJSONObject(1).getJSONObject("item")
+                .get("itemName")).isEqualTo("nameTwo");
+        assertThat(result.getJSONObject(1).getJSONObject("item")
+                .get("itemType")).isEqualTo("typeTwo");
+        assertThat(result.getJSONObject(1).getJSONObject("item")
+                .get("itemAmount")).isEqualTo(2);
     }
 }
