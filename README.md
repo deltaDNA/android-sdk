@@ -298,10 +298,13 @@ An Image Messaging request is performed in a similar way to an Engage request
 ```java
 DDNA.instance().requestImageMessage(
         new Engagement("missionDifficulty"),
-        new ImageMessageListener(this, MY_REQUEST_CODE)));
+        new ImageMessageListener(this, MY_REQUEST_CODE));
 ```
-Which will automatically start the `ImageMessageActivity` in order to show the
-popup, however you will need to handle the result action in the
+Which will automatically start the `ImageMessageActivity` in order to
+show the popup.
+
+If you would like to handle the result of the action performed on the
+popup then you will need to override the
 `onActivityResult(int, int, Intent)` method of your `Activity`
 ```java
 @Override
@@ -324,6 +327,10 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
     }
 }
 ```
+
+In the case where the Image Messaging response does not contain an
+image, the `onNoImageToShow(JSONObject)` method will be called with
+the parameters from the response. You may implement this method at will.
 
 ## Push notifications
 The SDK can store the Android Registration Id for the device and send it to

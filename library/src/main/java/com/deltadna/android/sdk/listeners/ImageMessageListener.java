@@ -18,9 +18,12 @@ package com.deltadna.android.sdk.listeners;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.util.Log;
 
+import com.deltadna.android.sdk.BuildConfig;
 import com.deltadna.android.sdk.ImageMessageActivity;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -30,6 +33,10 @@ import org.json.JSONObject;
  * @see ImageMessageActivity
  */
 public abstract class ImageMessageListener implements EngageListener {
+    
+    private static final String TAG = BuildConfig.LOG_TAG
+            + ' '
+            + ImageMessageListener.class.getSimpleName();
     
     protected final Activity activity;
     protected final int requestCode;
@@ -50,8 +57,31 @@ public abstract class ImageMessageListener implements EngageListener {
     
     @Override
     public void onSuccess(JSONObject result) {
-        activity.startActivityForResult(
-                ImageMessageActivity.createIntent(activity, result),
-                requestCode);
+        if (result.has("image")) {
+            activity.startActivityForResult(
+                    ImageMessageActivity.createIntent(activity, result),
+                    requestCode);
+        } else {
+            Log.d(TAG, "Image Message will not be shown");
+            
+            final JSONObject parameters;
+            try {
+                parameters = result.getJSONObject("parameters");
+            } catch (JSONException e) {
+                onFailure(e);
+                return;
+            }
+            
+            onNoImageToShow(parameters);
+        }
     }
+    
+    /**
+     * Invoked when an image will not be shown.
+     *
+     * @param parameters    the parameters from the result
+     */
+    public void onNoImageToShow(
+            @SuppressWarnings("UnusedParameters")
+            JSONObject parameters) {}
 }
