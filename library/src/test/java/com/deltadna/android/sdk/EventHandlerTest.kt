@@ -21,6 +21,7 @@ import com.deltadna.android.sdk.helpers.EngageArchive
 import com.deltadna.android.sdk.listeners.RequestListener
 import com.deltadna.android.sdk.net.NetworkManager
 import com.deltadna.android.sdk.net.Response
+import com.deltadna.android.sdk.util.CloseableIterator
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import org.json.JSONObject
@@ -29,7 +30,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.runners.MockitoJUnitRunner
-import java.util.*
 
 @RunWith(MockitoJUnitRunner::class)
 class EventHandlerTest {
@@ -57,27 +57,24 @@ class EventHandlerTest {
     
     @Test
     fun startPeriodicUploads() {
-        val events1 = listOf("{\"value\":0}", "{\"value\":1}")
-        val events2 = listOf("{\"value\":0}")
-        withStoreEvents(events1, events2)
-        invokeOnListeners() { it.onSuccess(null) }
+        withStoreEvents(
+                listOf("{\"value\":0}", "{\"value\":1}"),
+                listOf("{\"value\":0}"))
+        withListeners() { onSuccess(null) }
         
         uut!!.start(0, 1)
         Thread.sleep(2200)
         
-        val expected1 = "{\"eventList\":[{\"value\":0},{\"value\":1}]}"
-        val expected2 = "{\"eventList\":[{\"value\":0}]}"
-        
-        verify(store, times(3)).swap()
-        verify(store, times(3)).read()
+        verify(store, times(3)).items()
         var run: Int = 0
         verify(network, times(2)).collect(
                 argThat {
-                    if (run != 2) {
-                        // no idea why we get a 3 runs and times(2) works
-                        assertThat(toString()).isEqualTo(
-                                if (run == 0) expected1 else expected2)
-                    }
+                    assertThat(toString()).isEqualTo(
+                            when (run) {
+                                0 -> "{\"eventList\":[{\"value\":0},{\"value\":1}]}"
+                                1 -> "{\"eventList\":[{\"value\":0}]}"
+                                else -> toString()
+                            })
                     run++
                     true
                 },
@@ -90,34 +87,24 @@ class EventHandlerTest {
         uut!!.stop(false)
         Thread.sleep(2200)
         
-        verify(store, never()).read()
+        verify(store, never()).items()
         verify(network, never()).collect(any(), any())
     }
     
     @Test
     fun stopAndDispatch() {
-        withStoreEvents(listOf("0"))
-        invokeOnListeners() { it.onSuccess(null) }
-        
-        uut!!.start(1, 1)
-        uut!!.stop(true)
-        Thread.sleep(2200)
-        
-        verify(store).read()
-        verify(network).collect(any(), any())
-    }
-    
-    @Test
-    fun storeClearedOnCorruption() {
-        withStoreEvents(listOf("0"))
-        invokeOnListeners() {
-            it.onFailure(BadRequestException(Response<String>(400, null, null)))
+        withStoreEvents(listOf("0")) {
+            withListeners() { onSuccess(null) }
+            
+            uut!!.start(1, 1)
+            uut!!.stop(true)
+            Thread.sleep(2200)
+            
+            verify(store).items()
+            verify(network).collect(
+                    com.nhaarman.mockito_kotlin.any(),
+                    com.nhaarman.mockito_kotlin.any())
         }
-        
-        uut!!.start(0, 1)
-        Thread.sleep(1100)
-        
-        verify(store).clearOutfile()
     }
     
     @Test
@@ -125,7 +112,7 @@ class EventHandlerTest {
         with(JSONObject()) {
             uut!!.handleEvent(this)
             
-            verify(store).push(eq(toString()))
+            verify(store).add(eq(toString()))
         }
     }
     
@@ -186,17 +173,131 @@ class EventHandlerTest {
         verify(listener).onFailure(same(cause))
     }
     
-    private fun withStoreEvents(vararg items: List<String>) {
-        var stubbing = whenever(store.read())
-        for (item in items) {
-            stubbing = stubbing.thenReturn(Vector(item))
+    @Test
+    fun itemsClearedOnSuccess() {
+        withStoreEvents(listOf("0")) {
+            withListeners { onSuccess(null) }
+            
+            uut!!.start(0, 1)
+            Thread.sleep(500)
+            
+            verify(this[0]).close(eq(true))
         }
     }
     
-    private fun invokeOnListeners(action: (RequestListener<*>) -> Unit) {
+    @Test
+    fun itemsClearedOnCorruption() {
+        withStoreEvents(listOf("0")) {
+            withListeners() {
+                onFailure(BadRequestException(Response<String>(400, null, null)))
+            }
+            
+            uut!!.start(0, 1)
+            Thread.sleep(500)
+            
+            verify(this[0]).close(eq(true))
+        }
+    }
+    
+    @Test
+    fun itemsNotClearedOnFailure() {
+        withStoreEvents(listOf("0")) {
+            withListeners { onFailure(Exception()) }
+            
+            uut!!.start(0, 1)
+            Thread.sleep(500)
+            
+            verify(this[0]).close(eq(false))
+        }
+    }
+    
+    @Test
+    fun pausesOnUnavailableItems() {
+        withStoreEventsAndAvailability(
+                listOf("0", "1", "2"),
+                listOf(true, false, true)) {
+            withListeners { onSuccess(null) }
+            
+            uut!!.start(0, 1)
+            Thread.sleep(500)
+            
+            verify(this, times(2)).next()
+            verify(this).close(eq(true))
+        }
+    }
+    
+    @Test
+    fun skipsMissingItems() {
+        withStoreEventsAndAvailability(listOf("0", null, "2")) {
+            withListeners { onSuccess(null) }
+            
+            uut!!.start(0, 1)
+            Thread.sleep(500)
+            
+            verify(network).collect(
+                    argThat { toString().equals("{\"eventList\":[0,2]}") },
+                    any())
+            verify(this, times(3)).next()
+            verify(this).close(eq(true))
+        }
+    }
+    
+    private fun withStoreEvents(
+            vararg items: List<String>,
+            block: List<CloseableIterator<EventStoreItem>>.() -> Unit = {}) {
+        var stubbing = whenever(store.items())
+        block.invoke(items.map {
+            with(spy(StoredEventsIterator(it))) {
+                stubbing = stubbing.thenReturn(this)
+                this
+            }
+        })
+    }
+    
+    private fun withStoreEventsAndAvailability(
+            values: List<String?>,
+            availabilities: List<Boolean> = listOf(),
+            block: CloseableIterator<EventStoreItem>.() -> Unit = {}) {
+        with(spy(StoredEventsIterator(values, availabilities))) {
+            whenever(store.items()).thenReturn(this)
+            block.invoke(this)
+            this
+        }
+    }
+    
+    private fun withListeners(action: RequestListener<*>.() -> Unit) {
         whenever(network.collect(any(), any())).thenAnswer {
             action.invoke(it.arguments[1] as RequestListener<*>)
             null
         }
+    }
+    
+    open inner class StoredEventsIterator(
+            backingValues: List<String?>,
+            backingAvailabilities: List<Boolean> = listOf()) :
+            CloseableIterator<EventStoreItem> {
+        
+        private val backing: List<EventStoreItemImpl>
+        private var index = -1
+        
+        init {
+            backing = (0..backingValues.size - 1).map {
+                EventStoreItemImpl(
+                        backingValues[it],
+                        backingAvailabilities.getOrElse(it, { true }))
+            }
+        }
+        
+        override fun hasNext() = index < backing.size - 1
+        override fun next() = backing[++index]
+        override fun close(clear: Boolean) {}
+        override fun remove() {}
+    }
+    
+    open inner class EventStoreItemImpl(
+            private val value: String?,
+            private val availability: Boolean) : EventStoreItem {
+        override fun available() = availability
+        override fun get() = value
     }
 }

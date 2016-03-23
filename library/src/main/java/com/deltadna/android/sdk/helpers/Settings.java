@@ -60,7 +60,9 @@ public class Settings{
 	 * Controls how fequently events are uploaded automatically.
 	 */
 	private int mBackgroundEventUploadRepeatRateSeconds = 60;
-
+    
+    private boolean useInternalStorageForEvents;
+    
 	/**
 	 * TRUE to send new player event on first run of application.
 	 *
@@ -213,4 +215,12 @@ public class Settings{
 	public void setBackgroundEventUploadRepeatRateSeconds(int i){
 		mBackgroundEventUploadRepeatRateSeconds = i;
 	}
+    
+    public boolean isUseInternalStorageForEvents() {
+        return useInternalStorageForEvents;
+    }
+    
+    public void setUseInternalStorageForEvents(boolean useInternal) {
+        useInternalStorageForEvents = useInternal;
+    }
 }

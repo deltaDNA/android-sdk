@@ -61,7 +61,6 @@ public final class DDNA {
             "Android SDK v" + BuildConfig.VERSION_NAME;
     private static final int ENGAGE_API_VERSION = 4;
     
-    private static final String EVENT_STORAGE_PATH = "%s/ddsdk/events/";
     private static final String ENGAGE_STORAGE_PATH = "%s/ddsdk/engage/";
     
     private static final SimpleDateFormat TIMESTAMP_FORMAT;
@@ -623,7 +622,7 @@ public final class DDNA {
         preferences.clear();
         store.clear();
         archive.clear();
-
+        
         return this;
     }
     
@@ -704,17 +703,14 @@ public final class DDNA {
         
         this.clientVersion = clientVersion;
         
-        // FIXME event store and event archive
+        // FIXME event archive
         final File dir = application.getExternalFilesDir(null);
         final String path = (dir != null)
                 ? dir.getAbsolutePath()
                 : "/";
         
         preferences = new Preferences(application);
-        store = new EventStore(
-                String.format(Locale.US, EVENT_STORAGE_PATH, path),
-                preferences,
-                settings.debugMode());
+        store = new EventStore(application, settings, preferences);
         archive = new EngageArchive(engageStoragePath =
                 String.format(Locale.US, ENGAGE_STORAGE_PATH, path));
         handler = new EventHandler(

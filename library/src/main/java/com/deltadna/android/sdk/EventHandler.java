@@ -26,12 +26,11 @@ import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.CancelableRequest;
 import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
+import com.deltadna.android.sdk.util.CloseableIterator;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -126,15 +125,13 @@ final class EventHandler {
             upload = executor.submit(new Upload());
         }
     }
-
+    
     /**
      * Handles a collect {@code event} by placing into the queue,
      * to be sent at a later time.
      */
     void handleEvent(JSONObject event) {
-        if (!store.push(event.toString())) {
-            Log.w(TAG, "Unable to handle event due to full event store");
-        }
+        store.add(event.toString());
     }
     
     /**
@@ -196,27 +193,38 @@ final class EventHandler {
     }
     
     private final class Upload implements Runnable {
-
+        
         @Override
         public void run() {
-            store.swap();
-            
-            final List<String> events = store.read();
-            if (events.isEmpty()) {
-                Log.d(TAG, "No events to upload");
+            final CloseableIterator<EventStoreItem> events = store.items();
+            if (!events.hasNext()) {
+                Log.d(TAG, "No stored events to upload");
                 return;
             }
             
-            final int count = events.size();
             final StringBuilder builder = new StringBuilder("{\"eventList\":[");
-            final Iterator<String> it = events.iterator();
-            while (it.hasNext()) {
-                builder.append(it.next());
-                builder.append(',');
+            int count = 0;
+            while (events.hasNext()) {
+                final EventStoreItem event = events.next();
                 
-                it.remove();
+                if (event.available()) {
+                    final String content = event.get();
+                    if (content != null) {
+                        builder.append(content);
+                        builder.append(',');
+                        
+                        count++;
+                    } else {
+                        Log.w(TAG, "Failed retrieving event, skipping");
+                    }
+                } else {
+                    Log.w(TAG, "Stored event not available, pausing");
+                    break;
+                }
             }
-            builder.deleteCharAt(builder.length() - 1);
+            if (builder.charAt(builder.length()- 1) == ',') {
+                builder.deleteCharAt(builder.length() - 1);
+            }
             builder.append("]}");
             
             final JSONObject payload;
@@ -229,7 +237,6 @@ final class EventHandler {
             
             Log.d(TAG, "Uploading " + count + " events");
             final CountDownLatch latch = new CountDownLatch(1);
-            
             final CancelableRequest request = network.collect(
                     payload,
                     new RequestListener<Response<Void>>() {
@@ -237,7 +244,7 @@ final class EventHandler {
                         public void onSuccess(Response<Void> result) {
                             Log.d(TAG, "Successfully uploaded events");
                             
-                            store.clearOutfile();
+                            events.close(true);
                             latch.countDown();
                         }
                         
@@ -247,9 +254,10 @@ final class EventHandler {
                             
                             if (t instanceof BadRequestException) {
                                 Log.w(TAG, "Wiping event store due to unrecoverable data");
-                                store.clearOutfile();
+                                events.close(true);
                             } else {
                                 Log.d(TAG, "Will retry uploading events later");
+                                events.close(false);
                             }
                             
                             latch.countDown();
