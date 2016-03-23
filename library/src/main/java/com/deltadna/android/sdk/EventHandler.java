@@ -144,8 +144,6 @@ final class EventHandler {
         network.engage(event, new RequestListener<Response<JSONObject>>() {
             @Override
             public void onSuccess(Response<JSONObject> result) {
-                Log.d(TAG, "Received engage " + result);
-                
                 archive.put(decisionPoint, flavour, result.body.toString());
                 listener.onSuccess(result.body);
             }
@@ -174,7 +172,6 @@ final class EventHandler {
                         listener.onFailure(e1);
                     }
                 } else {
-                    Log.e(TAG, "Engage request failed", t);
                     listener.onFailure(t);
                 }
             }
