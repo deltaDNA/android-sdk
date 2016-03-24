@@ -72,16 +72,15 @@ public final class ImageMessage implements Serializable {
     private CancelableRequest request;
     
     /**
-     * Creates an instance from a JSON string.
+     * Creates an instance from a JSON response.
      *
      * @throws JSONException if the JSON is invalid
      */
-    public ImageMessage(String json) throws JSONException {
-        final JSONObject data = new JSONObject(json);
-        transactionId = data.getString("transactionID");
-        parameters =  data.getJSONObject("parameters").toString();
+    public ImageMessage(JSONObject json) throws JSONException {
+        transactionId = json.getString("transactionID");
+        parameters =  json.getJSONObject("parameters").toString();
         
-        final JSONObject image = data.getJSONObject("image");
+        final JSONObject image = json.getJSONObject("image");
         imageUrl = image.getString("url");
         imageFormat = image.getString("format");
         

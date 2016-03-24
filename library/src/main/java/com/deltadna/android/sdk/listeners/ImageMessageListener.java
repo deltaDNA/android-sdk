@@ -57,7 +57,7 @@ public abstract class ImageMessageListener implements EngageListener {
         if (result.has("image")) {
             final ImageMessage message;
             try {
-                message = new ImageMessage(result.toString());
+                message = new ImageMessage(result);
             } catch (JSONException e) {
                 onFailure(e);
                 return;
