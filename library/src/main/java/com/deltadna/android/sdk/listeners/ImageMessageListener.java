@@ -18,25 +18,22 @@ package com.deltadna.android.sdk.listeners;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.util.Log;
 
-import com.deltadna.android.sdk.BuildConfig;
+import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.ImageMessageActivity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * An {@link EngageListener} to be used for Image Message requests,
- * which will start the {@link ImageMessageActivity} to show the message.
- * 
+ * An {@link EngageListener} to be used for Image Message requests, which will
+ * prepare an {@link ImageMessage} for use to be shown by the
+ * {@link ImageMessageActivity}.
+ *
  * @see ImageMessageActivity
  */
 public abstract class ImageMessageListener implements EngageListener {
-    
-    private static final String TAG = BuildConfig.LOG_TAG
-            + ' '
-            + ImageMessageListener.class.getSimpleName();
     
     protected final Activity activity;
     protected final int requestCode;
@@ -58,30 +55,55 @@ public abstract class ImageMessageListener implements EngageListener {
     @Override
     public void onSuccess(JSONObject result) {
         if (result.has("image")) {
-            activity.startActivityForResult(
-                    ImageMessageActivity.createIntent(activity, result),
-                    requestCode);
-        } else {
-            Log.d(TAG, "Image Message will not be shown");
-            
-            final JSONObject parameters;
+            final ImageMessage message;
             try {
-                parameters = result.getJSONObject("parameters");
+                message = new ImageMessage(result.toString());
             } catch (JSONException e) {
                 onFailure(e);
                 return;
             }
             
-            onNoImageToShow(parameters);
+            message.prepare(
+                    DDNA.instance().getNetworkManager(),
+                    new ImageMessage.PrepareListener() {
+                        @Override
+                        public void onReady(ImageMessage src) {
+                            onPrepared(src);
+                        }
+                        
+                        @Override
+                        public void onError(Throwable cause) {
+                            onFailure(cause);
+                        }
+                    });
+        } else {
+            onFailure(new Exception("Image not found in response"));
         }
     }
     
     /**
-     * Invoked when an image will not be shown.
+     * Opens the {@link ImageMessageActivity} for showing {@code imageMessage}.
      *
-     * @param parameters    the parameters from the result
+     * @param imageMessage the image message to show
      */
-    public void onNoImageToShow(
-            @SuppressWarnings("UnusedParameters")
-            JSONObject parameters) {}
+    protected void show(ImageMessage imageMessage) {
+        if (!imageMessage.prepared()) {
+            onFailure(new Exception(imageMessage + " is not prepared"));
+            return;
+        }
+        
+        activity.startActivityForResult(
+                ImageMessageActivity.createIntent(activity, imageMessage),
+                requestCode);
+    }
+    
+    /**
+     * Invoked when the {@code imageMessage} has been prepared.
+     * <p>
+     * In most implementations {@link #show(ImageMessage)} should be called,
+     * if the application is still in an appropriate state to do so.
+     *
+     * @param imageMessage the prepared image message
+     */
+    protected abstract void onPrepared(ImageMessage imageMessage);
 }

@@ -636,7 +636,8 @@ public final class DDNA {
         return engageStoragePath;
     }
     
-    NetworkManager getNetworkManager() {
+    // FIXME should not be exposed
+    public NetworkManager getNetworkManager() {
         return network;
     }
     
