@@ -19,14 +19,18 @@ package com.deltadna.android.sdk.listeners;
 import android.app.Activity;
 import android.content.Intent;
 
+import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.ImageMessageActivity;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * An {@link EngageListener} to be used for Image Message requests,
- * which will start the {@link ImageMessageActivity} to show the message.
- * 
+ * An {@link EngageListener} to be used for Image Message requests, which will
+ * prepare an {@link ImageMessage} for use to be shown by the
+ * {@link ImageMessageActivity}.
+ *
  * @see ImageMessageActivity
  */
 public abstract class ImageMessageListener implements EngageListener {
@@ -50,8 +54,56 @@ public abstract class ImageMessageListener implements EngageListener {
     
     @Override
     public void onSuccess(JSONObject result) {
+        if (result.has("image")) {
+            final ImageMessage message;
+            try {
+                message = new ImageMessage(result);
+            } catch (JSONException e) {
+                onFailure(e);
+                return;
+            }
+            
+            message.prepare(
+                    DDNA.instance().getNetworkManager(),
+                    new ImageMessage.PrepareListener() {
+                        @Override
+                        public void onReady(ImageMessage src) {
+                            onPrepared(src);
+                        }
+                        
+                        @Override
+                        public void onError(Throwable cause) {
+                            onFailure(cause);
+                        }
+                    });
+        } else {
+            onFailure(new Exception("Image not found in response"));
+        }
+    }
+    
+    /**
+     * Opens the {@link ImageMessageActivity} for showing {@code imageMessage}.
+     *
+     * @param imageMessage the image message to show
+     */
+    protected void show(ImageMessage imageMessage) {
+        if (!imageMessage.prepared()) {
+            onFailure(new Exception(imageMessage + " is not prepared"));
+            return;
+        }
+        
         activity.startActivityForResult(
-                ImageMessageActivity.createIntent(activity, result),
+                ImageMessageActivity.createIntent(activity, imageMessage),
                 requestCode);
     }
+    
+    /**
+     * Invoked when the {@code imageMessage} has been prepared.
+     * <p>
+     * In most implementations {@link #show(ImageMessage)} should be called,
+     * if the application is still in an appropriate state to do so.
+     *
+     * @param imageMessage the prepared image message
+     */
+    protected abstract void onPrepared(ImageMessage imageMessage);
 }

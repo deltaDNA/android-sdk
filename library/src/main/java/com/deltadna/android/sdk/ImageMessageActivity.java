@@ -16,10 +16,6 @@
 
 package com.deltadna.android.sdk;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -28,264 +24,104 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 
-import com.deltadna.android.sdk.listeners.EngageListener;
+import com.deltadna.android.sdk.listeners.ImageMessageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
 
+import java.util.Iterator;
+
 /**
- * This {@link Activity} is intended as the default method to display
- * an Image Messaging request.
- * <p>
- * You can start the request using
- * {@link DDNA#requestEngagement(String, EngageListener)} or
- * {@link DDNA#requestEngagement(String, JSONObject, EngageListener)}
- * and use an instance of the
- * {@link com.deltadna.android.sdk.listeners.ImageMessageListener}
- * class for the listener which by default will open this activity,
- * for example:
- * <pre><code>
- * DDNA.inst().requestEngagement(
- *     "imageMessage",
- *     new ImageMessageListener(MyActivity.this, MY_REQUEST_CODE)) {
- *         {@literal@}Override
- *         public void onFailure(ResponseException e) {
- *             // error handling code
- *         }
- *     }
- * }
- * </code></pre>
- * <p>
- * Following this request you will need to override
- * {@link #onActivityResult(int, int, Intent)} in your {@link Activity}
- * class to handle the result, for example:
- * <pre><code>
- * {@literal@}Override
- * public void onActivityResult(int requestCode, int resultCode, Intent data) {
- *     super.onActivityResult(requestCode, resultCode, data);
- *     
- *     if (requestCode == MY_REQUEST_CODE) {
- *         ImageMessageActivity.handleResult(
- *             resultCode, data, new ImageMessageResultListener() {
- *                 {@literal@}Override
- *                 public void onAction(String value, String params) {
- *                     // do something with value and params
- *                 }
- *                 
- *                 {@literal@}Override
- *                 public void onCancelled() {
- *                     // perform an alternative action
- *                 }
- *             });
- *     }
- * }
- * </code></pre>
- * 
- * @see DDNA#requestEngagement(String, EngageListener)
- * @see DDNA#requestEngagement(String, JSONObject, EngageListener)
+ * {@link Activity} which displays in Image Message request and handles the
+ * user interaction with the Image Message.
+ *
+ * @see DDNA#requestImageMessage(String, ImageMessageListener)
+ * @see DDNA#requestImageMessage(Engagement, ImageMessageListener)
  * @see com.deltadna.android.sdk.listeners.ImageMessageListener
  */
-public class ImageMessageActivity extends Activity {
-    
-    private static final String TAG = BuildConfig.LOG_TAG
-            + ' '
-            + ImageMessageActivity.class.getSimpleName();
+public final class ImageMessageActivity extends Activity {
     
     private static final String EXTRA_IMG_MSG = "img_msg";
     private static final String EXTRA_VALUE = "value";
     private static final String EXTRA_PARAMS = "params";
     
-	private ImgMessage mImgMessageData = null;
-
-	private ProgressBar mSpinner = null;
-	private ImgMessageView mImgMessageView = null;
-
-	private Bitmap mImgBitmap = null;
-	private ImgMessage.Background mMsgBg = null;
-	private ImgMessage.Shim mMsgShim = null;
-
-	int mScreenWidth = 0;
-	int mScreenHeight = 0;
-	/**
-	 * Custom view that overrides onDraw() to display the bitmap fragments according to the ImgMessage
-	 * requirements.
-	 */
-	private class ImgMessageView extends View implements View.OnTouchListener{
-		/**
-		 * Constructor override to set the touch listener.
-		 * 
-		 * @param context The widget context.
-		 */
-		public ImgMessageView(Context context){
-			super(context);
-			this.setOnTouchListener(this);
-		}
-		/**
-		 * Constructor override to set the touch listener.
-		 * 
-		 * @param context The widget context.
-		 * @param attrs The widget attributes.
-		 */
-		public ImgMessageView(Context context, AttributeSet attrs){
-			super(context, attrs);
-			this.setOnTouchListener(this);
-		}
-		@Override
-		public boolean performClick(){
-			return super.performClick();
-		}
-		@Override
-		protected void onLayout(boolean changed, int left, int top, int right, int bottom){
-			mScreenWidth = right;
-			mScreenHeight = bottom;
-
-			if(mImgBitmap == null){
-				BitmapFactory.Options options = new BitmapFactory.Options();
-				options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-				mImgBitmap = BitmapFactory.decodeFile(mImgMessageData.imgFilename(), options);
-			}
-
-			mImgMessageData.init(getResources().getConfiguration().orientation, mScreenWidth, mScreenHeight);
-
-			mMsgBg = mImgMessageData.background();
-			mMsgShim = mImgMessageData.shim();
-			
-			super.onLayout(changed, left, top, right, bottom);
-		}
-		@Override
-		protected void onDraw(Canvas canvas){
-			if(mImgBitmap != null){
-				if(ImgMessage.MASK_DIMMED.equalsIgnoreCase(mMsgShim.mask())){
-					canvas.drawARGB(0x66, 0x0, 0x0, 0x0);
-				}else{
-					canvas.drawARGB(0x0, 0x0, 0x0, 0x0);
-				}
-				int orientation = getContext().getResources().getConfiguration().orientation;
-
-				// draw background
-				canvas.drawBitmap(mImgBitmap, mMsgBg.imgRect() , mMsgBg.layout(orientation).frame(), null);
-
-				// draw buttons
-				int cnt = 0;
-				ImgMessage.Button btn = null;
-				while(cnt < mImgMessageData.buttonCount()){
-					btn = mImgMessageData.button(cnt);
-					canvas.drawBitmap(mImgBitmap, btn.imgRect(), btn.layout(orientation).frame(), null);
-					++cnt;
-				}
-
-			}else{
-				canvas.drawARGB(0x0, 0x0, 0x0, 0x0);
-			}
-		}
-		@SuppressLint("ClickableViewAccessibility")
-		@Override		
-		public boolean onTouch(View v, MotionEvent event) {
-			switch (event.getAction()){
-			case MotionEvent.ACTION_UP:{
-				if(mImgMessageData != null){
-					ImgMessage.Action action = null;
-					int orientation = getContext().getResources().getConfiguration().orientation;
-
-					// if the touch is on the popup then test buttons
-					if(mMsgBg.layout(orientation).frame().contains((int)event.getX(), (int)event.getY())){
-						int cnt = 0;
-						ImgMessage.Button btn = null;
-						while((action == null) && (cnt < mImgMessageData.buttonCount())){
-							btn = mImgMessageData.button(cnt);
-							if(btn.layout(orientation).frame().contains((int)event.getX(), (int)event.getY())){
-								action = btn.action(orientation);
-							}
-							++cnt;
-						}
-						
-					}else{
-						// touch is outside the popup so use shim action
-						action = mMsgShim.action();
-					}
-
-					performAction(action);
-				}
-				break;
-			}
-			default:
-				break;
-			}
-			return true;
-		}
-	}
-	/**
-	 * Handles an action defined by the Delta DNA message.
-	 * 
-	 * @param action The action to handle.
-	 */
-	protected void performAction(ImgMessage.Action action){
-		if(action != null){
-			if(action.type().equalsIgnoreCase(ImgMessage.ACTION_ACTION)){
-				Intent resultIntent = new Intent();
-				resultIntent.putExtra(EXTRA_VALUE, action.value());
-				if(mImgMessageData.parameters() != null){
-					resultIntent.putExtra(EXTRA_PARAMS, mImgMessageData.parameters().toString());
-				}
-
-				setResult(Activity.RESULT_OK, resultIntent);
-				finish();
-
-			}else if(action.type().equalsIgnoreCase(ImgMessage.ACTION_DISMISS)){
-				mImgMessageData.cleanUp();
-				Intent resultIntent = new Intent();
-
-				setResult(Activity.RESULT_CANCELED, resultIntent);
-				finish();
-			}
-		}
-	}
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-
-		RelativeLayout contentLayout = new RelativeLayout(this);
-		
-		FrameLayout holder = new FrameLayout(this);
-		contentLayout.addView(holder, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-
-		mImgMessageView = new ImgMessageView(this);
-		holder.addView(mImgMessageView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-
-		mSpinner = new ProgressBar(this, null, android.R.attr.progressBarStyleLarge);
-		mSpinner.setIndeterminate(true);
-		mSpinner.setVisibility(View.VISIBLE);
-		RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-		params.addRule(RelativeLayout.CENTER_IN_PARENT);
-		contentLayout.addView(mSpinner, params);
-		
-		setContentView(contentLayout);
-		
-		String json = getIntent().getStringExtra(EXTRA_IMG_MSG);
-		if(json != null){
-			try {
-				mImgMessageData = new ImgMessage(DDNA.instance().getNetworkManager(), json);
-				mImgMessageData.prepare(new PrepareCallback());
-			} catch (JSONException e) {
-                Log.w(TAG, "Image message JSON is invalid: " + json, e);
-			}
-		}
-	}
+    private ImageMessage imageMessage;
     
-	@Override
-	public void onBackPressed(){
-		moveTaskToBack(true);
-	}
+    private Bitmap bitmap;
     
-    public static Intent createIntent(Context context, JSONObject response) {
+    int screenWidth = 0;
+    int screenHeight = 0;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        imageMessage = (ImageMessage) getIntent().getSerializableExtra(
+                EXTRA_IMG_MSG);
+        if (!imageMessage.prepared()) {
+            throw new RuntimeException("Image Message must be prepared first");
+        }
+        
+        final RelativeLayout layout = new RelativeLayout(this);
+        
+        final FrameLayout holder = new FrameLayout(this);
+        layout.addView(holder, new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.MATCH_PARENT,
+                RelativeLayout.LayoutParams.MATCH_PARENT));
+        
+        final ImageMessageView viewImageMessage = new ImageMessageView(this);
+        holder.addView(viewImageMessage, new LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT));
+        
+        final RelativeLayout.LayoutParams params =
+                new RelativeLayout.LayoutParams(
+                        RelativeLayout.LayoutParams.WRAP_CONTENT,
+                        RelativeLayout.LayoutParams.WRAP_CONTENT);
+        params.addRule(RelativeLayout.CENTER_IN_PARENT);
+        
+        setContentView(layout);
+    }
+    
+    /**
+     * Handles an action defined by the Delta DNA message.
+     *
+     * @param action The action to handle.
+     */
+    private void performAction(ImageMessage.Action action){
+        if (action != null) {
+            if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
+                final Intent intent = new Intent();
+                intent.putExtra(EXTRA_VALUE, action.value);
+                if (imageMessage.parameters() != null) {
+                    intent.putExtra(
+                            EXTRA_PARAMS,
+                            imageMessage.parameters().toString());
+                }
+                
+                setResult(Activity.RESULT_OK, intent);
+                finish();
+            } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_DISMISS)) {
+                imageMessage.cleanUp();
+                
+                setResult(Activity.RESULT_CANCELED);
+                finish();
+            }
+        }
+    }
+    
+    @Override
+    public void onBackPressed(){
+        moveTaskToBack(true);
+    }
+    
+    public static Intent createIntent(Context context, ImageMessage msg) {
         return new Intent(context, ImageMessageActivity.class)
-                .putExtra(EXTRA_IMG_MSG, response.toString());
+                .putExtra(EXTRA_IMG_MSG, msg);
     }
     
     public static void handleResult(
@@ -304,20 +140,111 @@ public class ImageMessageActivity extends Activity {
         }
     }
     
-    private final class PrepareCallback implements ImgMessage.PrepareCb {
+    private class ImageMessageView extends View implements
+            View.OnTouchListener {
         
-        @Override
-        public void ready(ImgMessage src) {
-            mSpinner.setVisibility(View.INVISIBLE);
-            mImgMessageView.requestLayout();
+        public ImageMessageView(Context context) {
+            super(context);
+            setOnTouchListener(this);
+        }
+        
+        public ImageMessageView(Context context, AttributeSet attrs) {
+            super(context, attrs);
+            setOnTouchListener(this);
         }
         
         @Override
-        public void error(ImgMessage src) {
-            mImgMessageData.cleanUp();
+        protected void onLayout(
+                boolean changed,
+                int left,
+                int top,
+                int right,
+                int bottom) {
             
-            setResult(Activity.RESULT_CANCELED);
-            finish();
+            screenWidth = right;
+            screenHeight = bottom;
+            
+            if (bitmap == null) {
+                final BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                bitmap = BitmapFactory.decodeFile(imageMessage.getImageFilepath(), options);
+            }
+            
+            imageMessage.init(
+                    getResources().getConfiguration().orientation,
+                    screenWidth,
+                    screenHeight);
+            
+            super.onLayout(changed, left, top, right, bottom);
+        }
+        @Override
+        protected void onDraw(Canvas canvas){
+            if (bitmap != null) {
+                if (ImageMessage.MASK_DIMMED.equalsIgnoreCase(imageMessage.shim.mask)) {
+                    canvas.drawARGB(0x66, 0x0, 0x0, 0x0);
+                } else {
+                    canvas.drawARGB(0x0, 0x0, 0x0, 0x0);
+                }
+                
+                final int orientation = getContext().getResources()
+                        .getConfiguration().orientation;
+                
+                // draw background
+                canvas.drawBitmap(
+                        bitmap,
+                        imageMessage.background.imageRect.asRect(),
+                        imageMessage.background.layout(orientation).frame().asRect(),
+                        null);
+                
+                // draw buttons
+                final Iterator<ImageMessage.Button> buttons =
+                        imageMessage.buttons();
+                while (buttons.hasNext()) {
+                    final ImageMessage.Button button = buttons.next();
+                    canvas.drawBitmap(
+                            bitmap,
+                            button.imageRect.asRect(),
+                            button.layout(orientation).frame().asRect(),
+                            null);
+                }
+            } else {
+                canvas.drawARGB(0x0, 0x0, 0x0, 0x0);
+            }
+        }
+        
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            switch (event.getAction()){
+                case MotionEvent.ACTION_UP:{
+                    final int orientation = getContext().getResources()
+                            .getConfiguration().orientation;
+                    
+                    ImageMessage.Action action = null;
+                    // if the touch is on the popup then test buttons
+                    if (imageMessage.background.layout(orientation).frame()
+                            .contains((int) event.getX(), (int) event.getY())) {
+                        final Iterator<ImageMessage.Button> buttons =
+                                imageMessage.buttons();
+                        
+                        while (buttons.hasNext()) {
+                            final ImageMessage.Button button = buttons.next();
+                            if (button.layout(orientation).frame().contains(
+                                    (int) event.getX(),
+                                    (int )event.getY())) {
+                                action = button.action(orientation);
+                                break;
+                            }
+                        }
+                    } else {
+                        // touch is outside the popup so use shim action
+                        action = imageMessage.shim.action;
+                    }
+                    
+                    performAction(action);
+                }
+            }
+            
+            return true;
         }
     }
 }
