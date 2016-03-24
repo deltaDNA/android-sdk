@@ -6,6 +6,7 @@ Fixed product currencies and items not being added correctly.
 Fixed manual event upload requests being stacked.
 Fixed missing fields from engagement requests.
 Fixed Image Messaging crashing on an absent image.
+Fixed Image Message obscuring activity underneath it.
 Updated Image Messaging API to match other platforms.
 
 ## [4.0.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.1) (2016-03-18)
