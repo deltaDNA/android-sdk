@@ -27,12 +27,12 @@ class ObjectsTest {
     
     @Test
     fun equals() {
-        assertThat(Objects.equals(null, null))
+        assertThat(Objects.equals(null, null)).isTrue()
         val obj = Object()
-        assertThat(Objects.equals(obj, obj))
+        assertThat(Objects.equals(obj, obj)).isTrue()
         
-        assertThat(!Objects.equals(null, Object()))
-        assertThat(!Objects.equals(Object(), null))
-        assertThat(!Objects.equals(Object(), Object()))
+        assertThat(Objects.equals(null, Object())).isFalse()
+        assertThat(Objects.equals(Object(), null)).isFalse()
+        assertThat(Objects.equals(Object(), Object())).isFalse()
     }
 }
