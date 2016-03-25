@@ -29,7 +29,7 @@ class ResponseBodyConverterTest {
     @Test
     fun voidInstance() {
         assertThat(NULL.convert(byteArrayOf(0)))
-                .isEqualTo(null)
+                .isNull()
     }
     
     @Test
