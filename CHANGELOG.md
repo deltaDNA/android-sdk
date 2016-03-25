@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.0.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.2) (YYYY-MM-DD)
+## [4.0.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.2) (2016-03-25)
 Fixed bulk events not being sent to correct endpoint.
 Fixed product currencies and items not being added correctly.
 Fixed manual event upload requests being stacked.
