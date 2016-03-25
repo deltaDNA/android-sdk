@@ -173,7 +173,7 @@ final class EventHandler {
                         // TODO should we clear the archive?
                         Log.e(  TAG,
                                 "Failed converting cached engage to JSON",
-                                t);
+                                e1);
                         listener.onFailure(e1);
                     }
                 } else {
