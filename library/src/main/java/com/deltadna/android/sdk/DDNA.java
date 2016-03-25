@@ -382,6 +382,8 @@ public final class DDNA {
                     .put("version", ENGAGE_API_VERSION)
                     .put("sdkVersion", SDK_VERSION)
                     .put("platform", ClientInfo.platform())
+                    .put("manufacturer", ClientInfo.manufacturer())
+                    .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
                     .put("timezoneOffset", ClientInfo.timezoneOffset())
                     .put("locale", ClientInfo.locale());
             
@@ -636,7 +638,8 @@ public final class DDNA {
         return engageStoragePath;
     }
     
-    NetworkManager getNetworkManager() {
+    // FIXME should not be exposed
+    public NetworkManager getNetworkManager() {
         return network;
     }
     

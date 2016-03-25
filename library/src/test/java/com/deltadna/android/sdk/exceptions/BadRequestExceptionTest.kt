@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.exceptions;
+package com.deltadna.android.sdk.exceptions
 
-import com.deltadna.android.sdk.net.Response;
+import com.deltadna.android.sdk.net.Response
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
-@RunWith(JUnit4.class)
-public final class ResponseExceptionTest {
+@RunWith(JUnit4::class)
+class BadRequestExceptionTest {
     
-    @Test(expected = IllegalArgumentException.class)
-    public void failsOnSuccessfulResponse() {
-        new ResponseException(new Response<String>(200, null, null));
+    @Test(expected = IllegalArgumentException::class)
+    fun failsOnNonBadRequestResponse() {
+        BadRequestException(Response<String>(404, null, null))
     }
 }

@@ -54,7 +54,7 @@ allprojects {
 ```
 In your app's build script
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.0.1'
+compile 'com.deltadna.android:deltadna-sdk:4.0.2-SNAPSHOT'
 ```
 
 ## Initialising
@@ -280,29 +280,21 @@ parameters that haven't been added to your Game Parameter list.
 * 404, incorrect URL or unknown environment key.
 
 ## Image Messaging
-Engage Targeting can also deliver image based messages to your game at run-time
-and display popup messages. Each message is designed as part a Targeting and is
-sent to a selection of users. The SDK has a class that draws the image message
-over your game. The popup is event driven so you are able to control when the
-image is downloaded from our servers, and when it is presented to the player.
-
-Each message consists of two parts, a sprite map contains images for the
-background and a number of buttons, and a layout describing how to display
-these parts. The layout uses constraints to workout how to scale and where to
-place the popup. This means we don’t have to worry about screen sizes, but we
-can also protect parts of the screen from being covered up. The image is drawn
-as large as possible within those constraints whilst still maintaining the
-original aspect ratio.
-
-An Image Messaging request is performed in a similar way to an Engage request
+An Image Messaging request is performed in a similar way to an Engage
+request
 ```java
 DDNA.instance().requestImageMessage(
         new Engagement("missionDifficulty"),
-        new ImageMessageListener(this, MY_REQUEST_CODE)));
+        new ImageMessageListener(MyActivity.this, MY_REQUEST_CODE));
 ```
-Which will automatically start the `ImageMessageActivity` in order to show the
-popup, however you will need to handle the result action in the
-`onActivityResult(int, int, Intent)` method of your `Activity`
+When the `onPrepared(ImageMessage)` of your listener gets invoked you
+may show the `ImageMessage` by calling `show(ImageMessage)`, or not do
+anything if the application is no longer in a state for showing the
+Image Message.
+
+To handle the result of the action performed on the Image Message you
+will need to override the `onActivityResult(int, int, Intent)` method
+of your `Activity`
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {

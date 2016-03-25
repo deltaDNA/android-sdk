@@ -88,7 +88,9 @@ public class NetworkManager {
         return dispatcher.enqueue(
                 new Request.Builder<Void>()
                         .post(RequestBody.json(payload))
-                        .url(buildHashedEndpoint(collectUrl, payload.toString()))
+                        .url(payload.has("eventList")
+                                ? buildHashedEndpoint(collectUrl + "/bulk", payload.toString())
+                                : buildHashedEndpoint(collectUrl, payload.toString()))
                         .header("Accept", "application/json")
                         .maxRetries(settings.httpRequestMaxRetries())
                         .retryDelay(Math.round(settings.httpRequestRetryDelaySeconds() * 1000))

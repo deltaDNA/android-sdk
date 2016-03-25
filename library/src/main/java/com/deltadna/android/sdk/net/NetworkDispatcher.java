@@ -22,6 +22,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.deltadna.android.sdk.BuildConfig;
+import com.deltadna.android.sdk.exceptions.ResponseException;
 import com.deltadna.android.sdk.listeners.RequestListener;
 
 import java.util.Locale;
@@ -158,10 +159,14 @@ final class NetworkDispatcher {
                     // TODO is this appropriate?
                     Thread.currentThread().interrupt();
                 } catch (final ExecutionException e) {
-                    Log.w(TAG, "Failed performing " + future.request, e);
+                    if (e.getCause() instanceof ResponseException) {
+                        Log.w(TAG, "Failed performing " + future.request);
+                    } else {
+                        Log.w(TAG, "Failed performing " + future.request, e);
+                    }
                     
                     if (future.request.shouldRetry()) {
-                        Log.w(TAG, "Retrying " + future.request, e);
+                        Log.w(TAG, "Retrying " + future.request);
                         
                         final Future newFuture = schedule(
                                 future.request,

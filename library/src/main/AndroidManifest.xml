@@ -26,7 +26,7 @@ limitations under the License.
     <application>
         <activity
             android:name=".ImageMessageActivity"
-            android:theme="@android:style/Theme.Light.NoTitleBar"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:windowIsTranslucent="true"
             android:windowBackground="@android:color/transparent">
             
