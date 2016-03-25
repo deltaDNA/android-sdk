@@ -198,7 +198,7 @@ class NetworkManagerTest {
         // FIXME flaky on Travis CI, most likely due to slow file writing
         assertThat(dst.readLines(Charset.forName("UTF-8")))
                 .isEqualTo(listOf("response", "line", "line"))
-        assertThat(dst.delete())
+        assertThat(dst.delete()).isTrue()
     }
     
     companion object {
