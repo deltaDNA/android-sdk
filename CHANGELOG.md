@@ -1,5 +1,7 @@
 # Change Log
 
+## [4.0.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.4) (YYYY-MM-DD)
+
 ## [4.0.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.3) (2016-03-29)
 Added support for event de-duplication.
 
