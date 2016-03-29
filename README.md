@@ -56,7 +56,7 @@ allprojects {
 ```
 In your app's build script
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.0.2'
+compile 'com.deltadna.android:deltadna-sdk:4.0.3-SNAPSHOT'
 ```
 
 ## Initialising
