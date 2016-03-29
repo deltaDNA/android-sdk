@@ -44,15 +44,15 @@ class ResponseTest {
     
     @Test
     fun isSuccessful() {
-        assertThat(!Response(Integer.MIN_VALUE, null, null).isSuccessful)
+        assertThat(Response(Integer.MIN_VALUE, null, null).isSuccessful).isFalse()
         
-        assertThat(!Response(199, null, null).isSuccessful)
-        assertThat(Response(200, null, null).isSuccessful)
+        assertThat(Response(199, null, null).isSuccessful).isFalse()
+        assertThat(Response(200, null, null).isSuccessful).isTrue()
         
-        assertThat(Response(299, null, null).isSuccessful)
-        assertThat(!Response(300, null, null).isSuccessful)
+        assertThat(Response(299, null, null).isSuccessful).isTrue()
+        assertThat(Response(300, null, null).isSuccessful).isFalse()
         
-        assertThat(!Response(Integer.MAX_VALUE, null, null).isSuccessful)
+        assertThat(Response(Integer.MAX_VALUE, null, null).isSuccessful).isFalse()
     }
     
     @Test

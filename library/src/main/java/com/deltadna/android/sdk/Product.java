@@ -88,10 +88,12 @@ public class Product<T extends Product<T>> implements JsonParams {
      * @throws IllegalArgumentException if the {@code type} is null or empty
      */
     public T addVirtualCurrency(String name, String type, int amount) {
-        virtualCurrencies.put(new Params()
-                .put("virtualCurrencyName", name)
-                .put("virtualCurrencyType", type)
-                .put("virtualCurrencyAmount", amount).json);
+        virtualCurrencies.put(new Params().put(
+                "virtualCurrency",
+                new Params()
+                        .put("virtualCurrencyName", name)
+                        .put("virtualCurrencyType", type)
+                        .put("virtualCurrencyAmount", amount)).json);
         
         return (T) this;
     }
@@ -109,10 +111,12 @@ public class Product<T extends Product<T>> implements JsonParams {
      * @throws IllegalArgumentException if the {@code type} is null or empty
      */
     public T addItem(String name, String type, int amount) {
-        items.put(new Params()
-                .put("itemName", name)
-                .put("itemType", type)
-                .put("itemAmount", amount).json);
+        items.put(new Params().put(
+                "item",
+                new Params()
+                        .put("itemName", name)
+                        .put("itemType", type)
+                        .put("itemAmount", amount)).json);
         
         return (T) this;
     }

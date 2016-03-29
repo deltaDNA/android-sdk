@@ -28,6 +28,7 @@ import android.widget.TextView;
 import com.deltadna.android.sdk.DDNA;
 import com.deltadna.android.sdk.Event;
 import com.deltadna.android.sdk.ImageMessageActivity;
+import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.Product;
 import com.deltadna.android.sdk.Transaction;
 import com.deltadna.android.sdk.listeners.EngageListener;
@@ -187,6 +188,11 @@ public class ExampleActivity extends AppCompatActivity {
         
         public ImageMessageListenerExample(Activity activity, int requestCode) {
             super(activity, requestCode);
+        }
+        
+        @Override
+        protected void onPrepared(ImageMessage imageMessage) {
+            show(imageMessage);
         }
         
         @Override

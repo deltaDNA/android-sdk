@@ -17,7 +17,6 @@
 package com.deltadna.android.sdk.net
 
 import com.deltadna.android.sdk.helpers.Settings
-import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
@@ -26,15 +25,47 @@ import com.squareup.okhttp.mockwebserver.MockWebServer
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestRule
+import org.junit.runner.Description
 import org.junit.runner.RunWith
+import org.junit.runners.model.Statement
 import org.mockito.runners.MockitoJUnitRunner
 import java.io.File
 import java.nio.charset.Charset
-import java.util.*
 
 @RunWith(MockitoJUnitRunner::class)
 class NetworkManagerTest {
+    
+    @Suppress("unused") // accessed by test framework
+    @get:Rule
+    val flaky = object : TestRule {
+        val tries = 5
+        
+        override fun apply(
+                base: Statement?,
+                description: Description?): Statement? {
+            
+            return object : Statement() {
+                override fun evaluate() {
+                    var caught: Throwable? = null
+                    
+                    (1..tries).forEach {
+                        try {
+                            base!!.evaluate()
+                            return
+                        } catch (t: Throwable) {
+                            caught = t
+                            System.err.println(t)
+                        }
+                    }
+                    
+                    throw caught!!
+                }
+            }
+        }
+    }
     
     private var uut: NetworkManager? = null
     private var server: MockWebServer? = null
@@ -164,9 +195,11 @@ class NetworkManagerTest {
             assertThat(method).isEqualTo("GET")
         }
         
-        assertThat(Files.readLines(dst, Charset.forName("UTF-8")))
-                .isEqualTo(Arrays.asList("response", "line", "line"))
-        assertThat(dst.delete())
+        // FIXME flaky on Travis CI, most likely due to slow file writing
+        Thread.sleep(1000)
+        assertThat(dst.readLines(Charset.forName("UTF-8")))
+                .isEqualTo(listOf("response", "line", "line"))
+        assertThat(dst.delete()).isTrue()
     }
     
     companion object {

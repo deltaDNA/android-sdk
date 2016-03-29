@@ -33,6 +33,7 @@ import org.json.JSONObject;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -66,6 +67,8 @@ final class EventHandler {
     
     @Nullable
     private ScheduledFuture<?> uploadTask;
+    @Nullable
+    private Future<?> upload;
     
     EventHandler(
             EventStore store,
@@ -118,8 +121,10 @@ final class EventHandler {
             Log.w(TAG, "Event uploads are currently scheduled");
         }
         
-        Log.d(TAG, "Dispatching events immediately");
-        executor.execute(new Upload());
+        if (upload == null || upload.isDone()) {
+            Log.d(TAG, "Submitting immediate events upload");
+            upload = executor.submit(new Upload());
+        }
     }
 
     /**
@@ -144,8 +149,6 @@ final class EventHandler {
         network.engage(event, new RequestListener<Response<JSONObject>>() {
             @Override
             public void onSuccess(Response<JSONObject> result) {
-                Log.d(TAG, "Received engage " + result);
-                
                 archive.put(decisionPoint, flavour, result.body.toString());
                 listener.onSuccess(result.body);
             }
@@ -170,11 +173,10 @@ final class EventHandler {
                         // TODO should we clear the archive?
                         Log.e(  TAG,
                                 "Failed converting cached engage to JSON",
-                                t);
+                                e1);
                         listener.onFailure(e1);
                     }
                 } else {
-                    Log.e(TAG, "Engage request failed", t);
                     listener.onFailure(t);
                 }
             }
@@ -205,6 +207,7 @@ final class EventHandler {
                 return;
             }
             
+            final int count = events.size();
             final StringBuilder builder = new StringBuilder("{\"eventList\":[");
             final Iterator<String> it = events.iterator();
             while (it.hasNext()) {
@@ -224,7 +227,7 @@ final class EventHandler {
                 return;
             }
             
-            Log.d(TAG, "Uploading events " + events);
+            Log.d(TAG, "Uploading " + count + " events");
             final CountDownLatch latch = new CountDownLatch(1);
             
             final CancelableRequest request = network.collect(
@@ -252,6 +255,7 @@ final class EventHandler {
                             latch.countDown();
                         }
                     });
+            
             try {
                 latch.await();
             } catch (InterruptedException e) {

@@ -74,7 +74,7 @@ class ParamsTest {
     fun isEmpty() {
         whenever(json!!.length()).thenReturn(0, 1)
         
-        assertThat(uut!!.isEmpty)
-        assertThat(!uut!!.isEmpty)
+        assertThat(uut!!.isEmpty).isTrue()
+        assertThat(uut!!.isEmpty).isFalse()
     }
 }
