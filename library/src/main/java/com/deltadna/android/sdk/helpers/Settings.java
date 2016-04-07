@@ -61,6 +61,7 @@ public class Settings{
 	 */
 	private int mBackgroundEventUploadRepeatRateSeconds = 60;
     
+    private boolean automaticSessionRefresh = true;
     private boolean useInternalStorageForEvents;
     
 	/**
@@ -215,6 +216,14 @@ public class Settings{
 	public void setBackgroundEventUploadRepeatRateSeconds(int i){
 		mBackgroundEventUploadRepeatRateSeconds = i;
 	}
+    
+    public boolean isAutomaticSessionRefresh() {
+        return automaticSessionRefresh;
+    }
+    
+    public void setAutomaticSessionRefresh(boolean enabled) {
+        automaticSessionRefresh = enabled;
+    }
     
     public boolean isUseInternalStorageForEvents() {
         return useInternalStorageForEvents;

@@ -358,7 +358,8 @@ tools during the build process.
 Can be found [here](CHANGELOG.md).
 
 ## Migrations
-* [version 4](docs/migrations/4.md)
+* [version 4.0](docs/migrations/4.0.md)
+* [version 4.1](docs/migrations/4.1.md)
 
 ## License
 

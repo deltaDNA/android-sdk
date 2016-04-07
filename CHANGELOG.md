@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.1.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.0) (YYYY-MM-DD)
+Added automatic session refreshing.
 
 ## [4.0.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.4) (YYYY-MM-DD)
 Fixed JavaDoc links to Android/Java classes.

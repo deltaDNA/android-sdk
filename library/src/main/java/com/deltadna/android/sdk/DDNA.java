@@ -72,10 +72,11 @@ public final class DDNA {
         TIMESTAMP_FORMAT = format;
     }
     
+    private static final int TIME_FIVE_MINUTES = 5 * 60 * 1000;
+    
     private static DDNA instance;
     
     private final Settings settings;
-    
     @Nullable
     private final String clientVersion;
     
@@ -83,7 +84,9 @@ public final class DDNA {
     private final EventStore store;
     private final EngageArchive archive;
     private final NetworkManager network;
-    private final EventHandler handler;
+    
+    private final SessionRefreshHandler sessionHandler;
+    private final EventHandler eventHandler;
     
     private final String engageStoragePath;
     
@@ -150,18 +153,21 @@ public final class DDNA {
             Log.w(BuildConfig.LOG_TAG, "SDK already started");
         } else {
             setUserId(userId);
-            newSession();
+            newSession(true);
             
             started = true;
             
-            triggerDefaultEvents();
+            if (settings.isAutomaticSessionRefresh()) {
+                sessionHandler.register();
+            }
             
-            // setup automated event uploads
             if (settings.backgroundEventUpload()) {
-                handler.start(
+                eventHandler.start(
                         settings.backgroundEventUploadStartDelaySeconds(),
                         settings.backgroundEventUploadRepeatRateSeconds());
             }
+            
+            triggerDefaultEvents();
             
             Log.d(BuildConfig.LOG_TAG, "SDK started");
         }
@@ -172,8 +178,8 @@ public final class DDNA {
     /**
      * Stops the SDK.
      * <p>
-     * Calling this method sends a 'gameEnded' event to Collect and
-     * disables background uploads.
+     * Calling this method sends a 'gameEnded' event to Collect, disables
+     * background uploads and automatic session refreshing.
      *
      * @return this {@link DDNA} instance
      */
@@ -185,7 +191,8 @@ public final class DDNA {
         } else {
             recordEvent("gameEnded");
             
-            handler.stop(true);
+            sessionHandler.unregister();
+            eventHandler.stop(true);
             if (archive != null) {
                 archive.save();
             }
@@ -212,6 +219,14 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA newSession() {
+        return newSession(false);
+    }
+    
+    DDNA newSession(boolean suppressWarning) {
+        if (!suppressWarning && settings.isAutomaticSessionRefresh()) {
+            Log.w(BuildConfig.LOG_TAG, "Automatic session refresh is enabled");
+        }
+        
         sessionId = UUID.randomUUID().toString();
         return this;
     }
@@ -264,7 +279,7 @@ public final class DDNA {
             throw new RuntimeException(e);
         }
         
-        handler.handleEvent(jsonEvent);
+        eventHandler.handleEvent(jsonEvent);
         
         return this;
     }
@@ -399,7 +414,7 @@ public final class DDNA {
             throw new RuntimeException(e);
         }
         
-        handler.handleEngagement(
+        eventHandler.handleEngagement(
                 engagement.name, engagement.flavour, event, listener);
         
         return this;
@@ -514,7 +529,7 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA upload() {
-        handler.dispatch();
+        eventHandler.dispatch();
         return this;
     }
     
@@ -700,7 +715,6 @@ public final class DDNA {
             @Nullable String userId) {
         
         this.settings = settings;
-        
         this.clientVersion = clientVersion;
         
         // FIXME event archive
@@ -713,7 +727,19 @@ public final class DDNA {
         store = new EventStore(application, settings, preferences);
         archive = new EngageArchive(engageStoragePath =
                 String.format(Locale.US, ENGAGE_STORAGE_PATH, path));
-        handler = new EventHandler(
+        
+        sessionHandler = SessionRefreshHandler.create(
+                new SessionRefreshHandler.Listener() {
+                    @Override
+                    public void onExpired() {
+                        Log.d(  BuildConfig.LOG_TAG,
+                                "Session expired, updating id");
+                        newSession(true);
+                    }
+                },
+                application,
+                TIME_FIVE_MINUTES);
+        eventHandler = new EventHandler(
                 store,
                 archive,
                 network = new NetworkManager(
