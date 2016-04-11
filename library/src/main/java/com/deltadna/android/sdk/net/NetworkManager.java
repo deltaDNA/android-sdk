@@ -144,7 +144,7 @@ public class NetworkManager {
             try {
                 messageBytes = (payload + hash).getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
             
             final byte[] digest = md5.digest(messageBytes);

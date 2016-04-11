@@ -49,7 +49,7 @@ public class Product<T extends Product<T>> implements JsonParams {
                 contents.put("items", items);
             }
         } catch (JSONException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         
         return contents;

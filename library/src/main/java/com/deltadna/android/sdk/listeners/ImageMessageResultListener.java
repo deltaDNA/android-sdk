@@ -16,11 +16,9 @@
 
 package com.deltadna.android.sdk.listeners;
 
-import android.content.Intent;
-
 /**
  * Listener which can be used with
- * {@link com.deltadna.android.sdk.ImageMessageActivity#handleResult(int, Intent, ImageMessageResultListener)}
+ * {@link com.deltadna.android.sdk.ImageMessageActivity#handleResult(int, android.content.Intent, ImageMessageResultListener)}
  * to handle the result of an Image Messaging request.
  */
 public interface ImageMessageResultListener {

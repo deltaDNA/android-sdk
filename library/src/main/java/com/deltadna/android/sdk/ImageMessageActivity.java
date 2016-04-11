@@ -63,7 +63,8 @@ public final class ImageMessageActivity extends Activity {
         imageMessage = (ImageMessage) getIntent().getSerializableExtra(
                 EXTRA_IMG_MSG);
         if (!imageMessage.prepared()) {
-            throw new RuntimeException("Image Message must be prepared first");
+            throw new IllegalStateException(
+                    "Image Message must be prepared first");
         }
         
         final RelativeLayout layout = new RelativeLayout(this);

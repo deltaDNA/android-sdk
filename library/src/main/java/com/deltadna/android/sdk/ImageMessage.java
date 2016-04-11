@@ -45,13 +45,10 @@ public final class ImageMessage implements Serializable {
     static final String ACTION_ACTION = "action";
     
     private static final String ALIGN_CENTER = "center";
-    private static final String ALIGN_LEFT = "left";
     private static final String ALIGN_RIGHT = "right";
-    private static final String ALIGN_TOP = "top";
     private static final String ALIGN_BOTTOM = "bottom";
-    
+
     static final String MASK_DIMMED = "dimmed";
-    static final String MASK_CLEAR = "clear";
     
     private static final int METRICTYPE_PIXELS = 0;
     private static final int METRICTYPE_PERCENTAGE = 1;
@@ -213,7 +210,7 @@ public final class ImageMessage implements Serializable {
             return new JSONObject(parameters);
         } catch (JSONException e) {
             // cannot happen as parameters came from JSON
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
     

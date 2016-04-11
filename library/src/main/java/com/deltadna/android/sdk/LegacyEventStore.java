@@ -40,7 +40,6 @@ class LegacyEventStore {
 
     private final Preferences prefs;
 
-    private String mInFilePath = null;
     private String mOutFilePath = null;
 
     private File mInFile = null;
@@ -64,7 +63,7 @@ class LegacyEventStore {
             initialiseFileStreams(path, false);
             mInitialised = true;
         }catch (Exception e){
-            Log("Problem initialising Event Store: " + e.getMessage());
+            log("Problem initialising Event Store: " + e.getMessage());
         }
     }
     /**
@@ -93,7 +92,7 @@ class LegacyEventStore {
                 result = true;
 
             }catch (Exception e){
-                Log("Problem pushing event to Event Store: " + e.getMessage());
+                log("Problem pushing event to Event Store: " + e.getMessage());
             }
         }
 
@@ -119,7 +118,6 @@ class LegacyEventStore {
             mInFile = tempFile;
             try {
                 mInFile.createNewFile();
-                mInFilePath = mInFile.getAbsolutePath();
                 mOutFilePath = outFile.getAbsolutePath();
 
                 final SharedPreferences.Editor editor = prefs.getPrefs().edit();
@@ -161,7 +159,7 @@ class LegacyEventStore {
             outStrm.close();
 
         }catch(Exception e){
-            Log("Problem reading events from Event Store: " + e.getMessage());
+            log("Problem reading events from Event Store: " + e.getMessage());
         }
 
         mLock.unlock();
@@ -223,13 +221,12 @@ class LegacyEventStore {
             tempFile.delete();
         }
 
-        mInFilePath = tempFile.getAbsolutePath();
         mOutFilePath = tempFile.getAbsolutePath();
 
         if(mInFile.exists() && tempFile.exists() && !reset){
-            Log("Loaded existing Event Store in @ " + mInFile.getAbsolutePath() + " out @ " + tempFile.getAbsolutePath());
+            log("Loaded existing Event Store in @ " + mInFile.getAbsolutePath() + " out @ " + tempFile.getAbsolutePath());
         }else{
-            Log("Creating new Event Store in @ " + path);
+            log("Creating new Event Store in @ " + path);
             try {
                 mInFile.delete();
                 mInFile.createNewFile();
@@ -253,7 +250,7 @@ class LegacyEventStore {
      *
      * @param message The message to log.
      */
-    private void Log(String message){
+    private void log(String message){
         if (mDebug){
             android.util.Log.d(BuildConfig.LOG_TAG, "[DDSDK EventStore] " + message);
         }

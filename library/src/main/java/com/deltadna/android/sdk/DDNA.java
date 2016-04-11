@@ -276,7 +276,7 @@ public final class DDNA {
             jsonEvent.put("eventParams", params);
         } catch (JSONException e) {
             // should never happen due to params enforcement
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
         
         eventHandler.handleEvent(jsonEvent);
@@ -756,7 +756,7 @@ public final class DDNA {
         if (    !url.toLowerCase(Locale.US).startsWith("http://")
                 && !url.toLowerCase(Locale.US).startsWith("https://")) {
             
-            url = "http://" + url;
+            return "http://" + url;
         }
         
         return url;
