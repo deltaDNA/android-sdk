@@ -20,7 +20,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.5.0'
+        classpath 'com.android.tools.build:gradle:2.0.0'
     }
 }
 
@@ -40,15 +40,15 @@ task clean(type: Delete) {
 
 ext {
     compileSdkVersion = 23
-    buildToolsVersion = '23.0.2'
+    buildToolsVersion = '23.0.3'
     
     minSdkVersion    = 9
     targetSdkVersion = 23
     
-    sourceCompatibilityVersion = JavaVersion.VERSION_1_6
-    targetCompatibilityVersion = JavaVersion.VERSION_1_6
+    sourceCompatibilityVersion = JavaVersion.VERSION_1_7
+    targetCompatibilityVersion = JavaVersion.VERSION_1_7
     
-    supportVersion = '23.2.1'
+    supportVersion = '23.3.0'
     
     kotlinVersion = '1.0.1'
     
