@@ -728,7 +728,8 @@ public final class DDNA {
         archive = new EngageArchive(engageStoragePath =
                 String.format(Locale.US, ENGAGE_STORAGE_PATH, path));
         
-        sessionHandler = SessionRefreshHandler.create(
+        sessionHandler = new SessionRefreshHandler(
+                application,
                 new SessionRefreshHandler.Listener() {
                     @Override
                     public void onExpired() {
@@ -737,7 +738,6 @@ public final class DDNA {
                         newSession(true);
                     }
                 },
-                application,
                 TIME_FIVE_MINUTES);
         eventHandler = new EventHandler(
                 store,

@@ -40,17 +40,17 @@ class SessionRefreshHandlerTest {
     private val listener = mock<SessionRefreshHandler.Listener>()
     private val activity = Robolectric.buildActivity(Activity::class.java)
     
-    private var uut = SessionRefreshHandler.create(
-            listener,
+    private var uut = SessionRefreshHandler(
             RuntimeEnvironment.application,
+            listener,
             expiry)
     
     @Before
     fun before() {
         activity.create()
-        uut = SessionRefreshHandler.create(
-                listener,
+        uut = SessionRefreshHandler(
                 RuntimeEnvironment.application,
+                listener,
                 expiry)
     }
     

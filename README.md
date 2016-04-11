@@ -41,8 +41,7 @@ This document and the accompanying example application provide examples of
 increasingly complex events.
 
 ## Adding to a project
-The deltaDNA SDK can be used in Android projects using minimum SDK version 9
-and newer (Android 2.3+).
+The deltaDNA SDK can be used in Android projects using minimum SDK version 15 and newer (Android 4.0.3+).
 
 ### Gradle
 In your top-level build script
