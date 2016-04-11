@@ -275,7 +275,7 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
-然而你可能还会使用[deltadna-notifications](https://github.com/deltaDNA/android-notifications-sdk)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
+然而你可能还会使用[deltadna-sdk-notifications](library-notifications)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
 
 如果你想要在接收推送通知时注销客户端，你需要调用
 ```Java

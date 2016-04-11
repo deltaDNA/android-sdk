@@ -327,10 +327,7 @@ the SDK by calling
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
-You may however also make use of the
-[deltadna-notifications](https://github.com/deltaDNA/android-notifications-sdk)
-addon which requires less work on your side for refreshing the GCM
-id/token.
+You may however also make use of the [deltadna-sdk-notifications](library-notifications) addon which requires less work on your side for refreshing the GCM id/token.
 
 If you would like to unregister the client from receiving push notifications
 then you should call
