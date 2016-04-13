@@ -16,17 +16,15 @@
 
 package com.deltadna.android.sdk.net
 
-import com.deltadna.android.sdk.exceptions.ResponseException
 import com.google.common.truth.Truth.assertThat
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import org.junit.After
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import java.io.IOException
+import java.net.ConnectException
 
 @RunWith(JUnit4::class)
 class RequestTest {
@@ -66,7 +64,11 @@ class RequestTest {
             assertThat(bodySize).isEqualTo(0)
         }
         
-        assertThat(response).isEqualTo(Response(200, byteArrayOf(), null))
+        assertThat(response).isEqualTo(Response(
+                200,
+                byteArrayOf(),
+                null,
+                null))
     }
 
     @Test
@@ -93,8 +95,11 @@ class RequestTest {
             assertThat(getHeader("Accept")).isEqualTo("text/plain")
         }
         
-        assertThat(response).isEqualTo(
-                Response(200, responseBody.toByteArray(), responseBody))
+        assertThat(response).isEqualTo(Response(
+                200,
+                responseBody.toByteArray(),
+                responseBody,
+                null))
     }
     
     @Test
@@ -104,23 +109,22 @@ class RequestTest {
                 .setResponseCode(404)
                 .setBody(responseBody))
         
-        try {
-            Request.Builder<Void>()
-                    .get()
-                    .url(server!!.url("/fail").toString())
-                    .build()
-                    .call()
+        val response = Request.Builder<Void>()
+                .get()
+                .url(server!!.url("/fail").toString())
+                .build()
+                .call()
             
-            fail("Exception not thrown")
-        } catch (e: Exception) {
-            with(e as ResponseException) {
-                assertThat(response).isEqualTo(
-                        Response(404, responseBody.toByteArray(), responseBody))
-            }
-        }
+        server!!.takeRequest()
+        
+        assertThat(response).isEqualTo(Response<Void>(
+                404,
+                responseBody.toByteArray(),
+                null,
+                responseBody))
     }
     
-    @Test(expected = IOException::class)
+    @Test(expected = ConnectException::class)
     fun failure() {
         server!!.shutdown()
         

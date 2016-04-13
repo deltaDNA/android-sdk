@@ -22,31 +22,48 @@ import com.deltadna.android.sdk.helpers.Objects;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.util.Arrays;
 
 /**
- * HTTP response, including the code and the body. The body is in
- * byte form and {@link V} if a {@link ResponseBodyConverter} has
- * been provided.
- * 
- * @param <V> type of the converted response body
+ * HTTP response, including the code, body, and error if applicable.
+ * <p>
+ * The body is in byte form and {@link T} if a {@link ResponseBodyConverter}
+ * has been provided.
+ *
+ * @param <T> type of the converted response body
  */
-public final class Response<V> {
+public final class Response<T> {
     
+    /**
+     * HTTP status code of the response.
+     */
     public final int code;
+    /**
+     * Response in plain bytes, may be the error message if the request was a
+     * failure.
+     */
     public final byte[] bytes;
-    public final V body;
+    /**
+     * Converted body of the response if the request was a success.
+     */
+    public final T body;
+    /**
+     * Error message of the response if the request was a failure.
+     */
+    public final String error;
     
-    public Response(int code, byte[] bytes, V body) {
+    public Response(int code, byte[] bytes, T body, String error) {
         this.code = code;
         this.bytes = bytes;
         this.body = body;
+        this.error = error;
     }
     
     public boolean isSuccessful() {
         return isSuccess(code);
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Response)) {
@@ -59,7 +76,8 @@ public final class Response<V> {
         
         return (code == other.code
                 && Arrays.equals(bytes, other.bytes)
-                && Objects.equals(body, other.body));
+                && Objects.equals(body, other.body)
+                && Objects.equals(error, other.error));
     }
     
     @Override
@@ -67,7 +85,8 @@ public final class Response<V> {
         return Arrays.hashCode(new Object[] {
                 code,
                 Arrays.hashCode(bytes),
-                body});
+                body,
+                error});
     }
     
     @Override
@@ -75,16 +94,32 @@ public final class Response<V> {
         return new Objects.ToStringHelper(this)
                 .add("code", code)
                 .add("body", body)
+                .add("error", error)
                 .toString();
     }
     
-    static <V> Response<V> create(
+    static <T> Response<T> create(
+            HttpURLConnection connection,
+            @Nullable ResponseBodyConverter<T> converter) throws Exception {
+        
+        final int code = connection.getResponseCode();
+        return create(
+                code,
+                connection.getContentLength(),
+                isSuccess(code)
+                        ? connection.getInputStream()
+                        : connection.getErrorStream(),
+                converter);
+    }
+    
+    private static <T> Response<T> create(
             int code,
             int contentLength,
             InputStream stream,
-            @Nullable ResponseBodyConverter<V> converter) throws Exception {
+            @Nullable ResponseBodyConverter<T> converter) throws Exception {
         
         final ByteArrayOutputStream buffer;
+        //noinspection TryFinallyCanBeTryWithResources
         try {
             buffer = (contentLength != -1)
                     ? new ByteArrayOutputStream(contentLength)
@@ -98,11 +133,14 @@ public final class Response<V> {
         }
         
         final byte[] bytes = buffer.toByteArray();
-        return new Response<V>(
+        return new Response<>(
                 code,
                 bytes,
-                (converter != null)
+                (isSuccess(code) && converter != null)
                         ? converter.convert(bytes)
+                        : null,
+                !isSuccess(code)
+                        ? ResponseBodyConverter.STRING.convert(bytes)
                         : null);
     }
     

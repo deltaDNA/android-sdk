@@ -18,7 +18,6 @@ package com.deltadna.android.sdk.net;
 
 import android.support.annotation.Nullable;
 
-import com.deltadna.android.sdk.exceptions.ResponseExceptionFactory;
 import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.listeners.RequestListener;
@@ -34,9 +33,9 @@ import java.util.concurrent.Callable;
  * Encapsulates the required details and logic for performing an
  * HTTP request.
  * 
- * @param <V> type of the result
+ * @param <T> type of the result
  */
-final class Request<V> implements Callable<Response<V>> {
+final class Request<T> implements Callable<Response<T>> {
     
     private static final int CONNECTION_TIMEOUT = 15000;
     private static final int READ_TIMEOUT = 10000;
@@ -52,12 +51,12 @@ final class Request<V> implements Callable<Response<V>> {
     private final int maxRetries;
     
     @Nullable
-    private ResponseBodyConverter<V> converter;
+    private ResponseBodyConverter<T> converter;
     
     // TODO following members should perhaps be moved out
     final int retryDelay;
     @Nullable
-    RequestListener<Response<V>> listener;
+    RequestListener<T> listener;
     int runs;
     
     private Request(
@@ -81,16 +80,12 @@ final class Request<V> implements Callable<Response<V>> {
         this.retryDelay = retryDelay;
     }
     
-    Request<V> setConverter(
-            @Nullable ResponseBodyConverter<V> converter) {
-        
+    Request<T> setConverter(@Nullable ResponseBodyConverter<T> converter) {
         this.converter = converter;
         return this;
     }
     
-    Request<V> setRequestListener(
-            @Nullable RequestListener<Response<V>> listener) {
-        
+    Request<T> setRequestListener(@Nullable RequestListener<T> listener) {
         this.listener = listener;
         return this;
     }
@@ -100,7 +95,7 @@ final class Request<V> implements Callable<Response<V>> {
     }
     
     @Override
-    public Response<V> call() throws Exception {
+    public Response<T> call() throws Exception {
         runs++;
         
         HttpURLConnection connection = null;
@@ -109,33 +104,20 @@ final class Request<V> implements Callable<Response<V>> {
             
             connection.setConnectTimeout(connectionTimeout);
             connection.setReadTimeout(readTimeout);
-
+            
             method.set(connection);
-
+            
             for (final String header : headers.keySet()) {
                 connection.setRequestProperty(header, headers.get(header));
             }
-
+            
             if (body != null) {
                 body.fill(connection);
             }
             
             connection.connect();
             
-            final int code = connection.getResponseCode();
-            if (Response.isSuccess(code)) {
-                return Response.create(
-                        code,
-                        connection.getContentLength(),
-                        connection.getInputStream(),
-                        converter);
-            } else {
-                throw ResponseExceptionFactory.create(Response.create(
-                        code,
-                        connection.getContentLength(),
-                        connection.getErrorStream(),
-                        ResponseBodyConverter.STRING));
-            }
+            return Response.create(connection, converter);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -156,9 +138,9 @@ final class Request<V> implements Callable<Response<V>> {
     /**
      * Builder providing a fluid API for creating a {@link Request}.
      * 
-     * @param <V> type of the result
+     * @param <T> type of the result
      */
-    static final class Builder<V> {
+    static final class Builder<T> {
         
         private RequestMethod method;
         private URL url;
@@ -172,19 +154,19 @@ final class Request<V> implements Callable<Response<V>> {
         
         Builder() {
             method = RequestMethod.GET;
-            headers = new HashMap<String, String>();
+            headers = new HashMap<>();
         }
         
-        Builder<V> get() {
+        Builder<T> get() {
             return method(RequestMethod.GET, null);
         }
         
-        Builder<V> post(RequestBody body) {
+        Builder<T> post(RequestBody body) {
             Preconditions.checkArg(body != null, "body cannot be empty");
             return method(RequestMethod.POST, body);
         }
         
-        Builder<V> url(String url) {
+        Builder<T> url(String url) {
             try {
                 this.url = new URL(url);
             } catch (MalformedURLException e) {
@@ -193,38 +175,38 @@ final class Request<V> implements Callable<Response<V>> {
             return this;
         }
         
-        Builder<V> header(String name, String value) {
+        Builder<T> header(String name, String value) {
             headers.put(name, value);
             return this;
         }
         
-        Builder<V> connectionTimeout(int milliseconds) {
+        Builder<T> connectionTimeout(int milliseconds) {
             Preconditions.checkArg(milliseconds >= 0, "timeout cannot be < 0");
             connectionTimeout = milliseconds;
             return this;
         }
         
-        Builder<V> readTimeout(int milliseconds) {
+        Builder<T> readTimeout(int milliseconds) {
             Preconditions.checkArg(milliseconds >= 0, "timeout cannot be < 0");
             readTimeout = milliseconds;
             return this;
         }
         
-        Builder<V> maxRetries(int retries) {
+        Builder<T> maxRetries(int retries) {
             Preconditions.checkArg(retries >= 0, "retries cannot be < 0");
             maxRetries = retries;
             return this;
         }
         
-        Builder<V> retryDelay(int milliseconds) {
+        Builder<T> retryDelay(int milliseconds) {
             Preconditions.checkArg(milliseconds >= 0, "delay cannot be < 0");
             retryDelay = milliseconds;
             return this;
         }
         
-        Request<V> build() {
+        Request<T> build() {
             Preconditions.checkArg(url != null, "url has not been specified");
-            return new Request<V>(
+            return new Request<>(
                     url,
                     method,
                     headers,
@@ -235,7 +217,7 @@ final class Request<V> implements Callable<Response<V>> {
                     retryDelay);
         }
         
-        private Builder<V> method(
+        private Builder<T> method(
                 RequestMethod method,
                 @Nullable RequestBody body) {
             

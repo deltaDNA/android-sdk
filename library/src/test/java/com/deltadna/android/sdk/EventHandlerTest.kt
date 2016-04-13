@@ -16,8 +16,8 @@
 
 package com.deltadna.android.sdk
 
-import com.deltadna.android.sdk.exceptions.BadRequestException
 import com.deltadna.android.sdk.helpers.EngageArchive
+import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.RequestListener
 import com.deltadna.android.sdk.net.NetworkManager
 import com.deltadna.android.sdk.net.Response
@@ -60,7 +60,7 @@ class EventHandlerTest {
         withStoreEvents(
                 listOf("{\"value\":0}", "{\"value\":1}"),
                 listOf("{\"value\":0}"))
-        withListeners() { onSuccess(null) }
+        withListeners() { onCompleted(Response(200, null, null, null)) }
         
         uut!!.start(0, 1)
         Thread.sleep(2200)
@@ -94,7 +94,7 @@ class EventHandlerTest {
     @Test
     fun stopAndDispatch() {
         withStoreEvents(listOf("0")) {
-            withListeners() { onSuccess(null) }
+            withListeners() { onCompleted(Response(200, null, null, null)) }
             
             uut!!.start(1, 1)
             uut!!.stop(true)
@@ -118,65 +118,96 @@ class EventHandlerTest {
     
     @Test
     fun handleEngagementWithLiveSuccess() {
-        val event = JSONObject().put("event", 1)
+        val engagement = KEngagement("point", "flavour")
+        val listener = mock<EngageListener<KEngagement>>()
         val result = JSONObject().put("result", 1)
-        val listener = mock<RequestListener<JSONObject>>()
-        whenever(network.engage(same(event), any())).thenAnswer {
-            (it.arguments[1] as RequestListener<Response<JSONObject>>)
-                    .onSuccess(Response(200, null, result))
+        whenever(network.engage(any(), any())).thenAnswer {
+            (it.arguments[1] as RequestListener<JSONObject>)
+                    .onCompleted(Response(200, null, result, null))
             null
         }
         
-        uut!!.handleEngagement("point", "flavour", event, listener)
+        uut!!.handleEngagement(
+                engagement,
+                listener,
+                "userId",
+                "sessionId",
+                0,
+                "sdkVersion")
         
-        verify(archive).put(eq("point"), eq("flavour"), eq(result.toString()))
-        verify(listener).onSuccess(same(result))
+        verify(archive).put(
+                eq(engagement.name),
+                eq(engagement.flavour!!),
+                eq(result.toString()))
+        verify(listener).onCompleted( argThat {
+            assertThat(this).isSameAs(engagement)
+            assertThat(response).isEqualTo(Response(200, null, result, null))
+            true
+        })
     }
     
     @Test
     fun handleEngagementWithArchiveHit() {
-        val event = JSONObject().put("event", 1)
+        val engagement = KEngagement("point", "flavour")
+        val listener = mock<EngageListener<KEngagement>>()
         val archived = JSONObject().put("archived", 1)
-        val listener = mock<RequestListener<JSONObject>>()
-        whenever(network.engage(same(event), any())).thenAnswer {
-            (it.arguments[1] as RequestListener<*>).onFailure(Exception())
+        whenever(network.engage(any(), any())).thenAnswer {
+            (it.arguments[1] as RequestListener<*>).onError(Exception())
             null
         }
-        whenever(archive.contains("point", "flavour")).thenReturn(true)
-        whenever(archive.get("point", "flavour")).thenReturn(archived.toString())
+        whenever(archive.contains(engagement.name, engagement.flavour!!))
+                .thenReturn(true)
+        whenever(archive.get(engagement.name, engagement.flavour))
+                .thenReturn(archived.toString())
         
-        uut!!.handleEngagement("point", "flavour", event, listener)
+        uut!!.handleEngagement(
+                engagement,
+                listener,
+                "userId",
+                "sessionId",
+                0,
+                "sdkVersion")
         
-        val cached = JSONObject(archived.toString()).put("isCachedResponse", true)
+        val cached = JsonObjectEquals(archived.toString())
+                .put("isCachedResponse", true)
         verify(archive, never()).put(
-                eq("point"), eq("flavour"), eq(cached.toString()))
-        verify(listener).onSuccess(argThat {
-            assertThat(this).isInstanceOf(JSONObject::class.java)
-            assertThat(this.toString()).isEqualTo(cached.toString())
+                eq(engagement.name),
+                eq(engagement.flavour),
+                eq(cached.toString()))
+        verify(listener).onCompleted(argThat {
+            assertThat(this).isSameAs(engagement)
+            assertThat(Response(-1, null, cached, null)).isEqualTo(response)
             true
         })
     }
     
     @Test
     fun handleEngagementWithArchiveMiss() {
-        val event = JSONObject().put("event", 1)
+        val engagement = KEngagement("point", "flavour")
+        val listener = mock<EngageListener<KEngagement>>()
         val cause = Exception()
-        val listener = mock<RequestListener<JSONObject>>()
-        whenever(network.engage(same(event), any())).thenAnswer {
-            (it.arguments[1] as RequestListener<*>).onFailure(cause)
+        whenever(network.engage(any(), any())).thenAnswer {
+            (it.arguments[1] as RequestListener<*>).onError(cause)
             null
         }
-        whenever(archive.contains("point", "flavour")).thenReturn(false)
+        whenever(archive.contains(engagement.name, engagement.flavour!!))
+                .thenReturn(false)
         
-        uut!!.handleEngagement("point", "flavour", event, listener)
+        uut!!.handleEngagement(
+                engagement,
+                listener,
+                "userId",
+                "sessionId",
+                0,
+                "sdkVersion")
         
-        verify(listener).onFailure(same(cause))
+        verify(listener).onError(same(cause))
     }
     
     @Test
     fun itemsClearedOnSuccess() {
         withStoreEvents(listOf("0")) {
-            withListeners { onSuccess(null) }
+            withListeners { onCompleted(Response(200, null, null, null)) }
             
             uut!!.start(0, 1)
             Thread.sleep(500)
@@ -188,9 +219,7 @@ class EventHandlerTest {
     @Test
     fun itemsClearedOnCorruption() {
         withStoreEvents(listOf("0")) {
-            withListeners() {
-                onFailure(BadRequestException(Response<String>(400, null, null)))
-            }
+            withListeners() { onCompleted(Response(400, null, null, null)) }
             
             uut!!.start(0, 1)
             Thread.sleep(500)
@@ -202,7 +231,7 @@ class EventHandlerTest {
     @Test
     fun itemsNotClearedOnFailure() {
         withStoreEvents(listOf("0")) {
-            withListeners { onFailure(Exception()) }
+            withListeners { onError(Exception()) }
             
             uut!!.start(0, 1)
             Thread.sleep(500)
@@ -216,7 +245,7 @@ class EventHandlerTest {
         withStoreEventsAndAvailability(
                 listOf("0", "1", "2"),
                 listOf(true, false, true)) {
-            withListeners { onSuccess(null) }
+            withListeners { onCompleted(Response(200, null, null, null)) }
             
             uut!!.start(0, 1)
             Thread.sleep(500)
@@ -229,7 +258,7 @@ class EventHandlerTest {
     @Test
     fun skipsMissingItems() {
         withStoreEventsAndAvailability(listOf("0", null, "2")) {
-            withListeners { onSuccess(null) }
+            withListeners { onCompleted(Response(200, null, null, null)) }
             
             uut!!.start(0, 1)
             Thread.sleep(500)
@@ -265,9 +294,9 @@ class EventHandlerTest {
         }
     }
     
-    private fun withListeners(action: RequestListener<*>.() -> Unit) {
+    private fun withListeners(action: RequestListener<Any>.() -> Unit) {
         whenever(network.collect(any(), any())).thenAnswer {
-            action.invoke(it.arguments[1] as RequestListener<*>)
+            action.invoke(it.arguments[1] as RequestListener<Any>)
             null
         }
     }
@@ -299,5 +328,18 @@ class EventHandlerTest {
             private val availability: Boolean) : EventStoreItem {
         override fun available() = availability
         override fun get() = value
+    }
+    
+    open class KEngagement : Engagement<KEngagement> {
+        constructor(point: String, flavour: String?) : super(point, flavour)
+    }
+
+    /**
+     * Ugly workaround to insert an equals() implementation for our purpose.
+     */
+    private class JsonObjectEquals(json: String) : JSONObject(json) {
+        override fun equals(other: Any?) =
+            if (other is JSONObject) other.toString().equals(toString())
+            else super.equals(other)
     }
 }

@@ -357,7 +357,7 @@ public final class DDNA {
      */
     public DDNA requestEngagement(
             String decisionPoint,
-            EngageListener listener) {
+            EngageListener<Engagement> listener) {
         
         return requestEngagement(new Engagement(decisionPoint), listener);
     }
@@ -376,9 +376,9 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code engagement} is null
      */
-    public DDNA requestEngagement(
-            Engagement engagement,
-            EngageListener listener) {
+    public <E extends Engagement> DDNA requestEngagement(
+            E engagement,
+            EngageListener<E> listener) {
         
         Preconditions.checkArg(engagement != null, "engagement cannot be null");
         
@@ -388,34 +388,12 @@ public final class DDNA {
             return this;
         }
         
-        final JSONObject event;
-        try {
-            event = new JSONObject()
-                    .put("userID", getUserId())
-                    .put("decisionPoint", engagement.name)
-                    .put("sessionID", sessionId)
-                    .put("version", ENGAGE_API_VERSION)
-                    .put("sdkVersion", SDK_VERSION)
-                    .put("platform", ClientInfo.platform())
-                    .put("manufacturer", ClientInfo.manufacturer())
-                    .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
-                    .put("timezoneOffset", ClientInfo.timezoneOffset())
-                    .put("locale", ClientInfo.locale());
-            
-            if (!TextUtils.isEmpty(engagement.flavour)) {
-                event.put("flavour", engagement.flavour);
-            }
-            
-            if (!engagement.params.isEmpty()) {
-                event.put("parameters", engagement.params.json);
-            }
-        } catch (JSONException e) {
-            // should never happen due to params enforcement
-            throw new RuntimeException(e);
-        }
-        
         eventHandler.handleEngagement(
-                engagement.name, engagement.flavour, event, listener);
+                engagement,
+                listener,
+                getUserId(),
+                sessionId,
+                ENGAGE_API_VERSION, SDK_VERSION);
         
         return this;
     }
@@ -441,10 +419,11 @@ public final class DDNA {
      * @deprecated  as of version 4, replaced by
      *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestEngagement(
             String decisionPoint,
             @Nullable JSONObject params,
-            EngageListener listener) {
+            EngageListener<Engagement> listener) {
         
         return requestEngagement(decisionPoint, null, params, listener);
     }
@@ -465,11 +444,12 @@ public final class DDNA {
      * @deprecated  as of version 4, replaced by
      *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestEngagement(
             String decisionPoint,
             @Nullable String flavour,
             @Nullable JSONObject params,
-            EngageListener listener) {
+            EngageListener<Engagement> listener) {
         
         return requestEngagement(
                 (params != null)
@@ -492,7 +472,11 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code decisionPoint} is null
      *                                  or empty
+     *
+     * @deprecated  as of version 4.1, replaced by
+     *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestImageMessage(
             String decisionPoint,
             ImageMessageListener listener) {
@@ -511,7 +495,11 @@ public final class DDNA {
      * @param listener      listener for the result
      *
      * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1, replaced by
+     *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestImageMessage(
             Engagement engagement,
             ImageMessageListener listener) {

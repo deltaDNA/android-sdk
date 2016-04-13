@@ -17,7 +17,7 @@
  * [Complex event](#complex-event)
  * [Transactions](#transactions)
 * [Engage](#engage)
-* [Image Messaging](#image-messaging)
+ * [Image Messaging](#image-messaging)
 * [Push notifications](#push-notifications)
 * [Settings](#settings)
 * [ProGuard](#proguard)
@@ -231,11 +231,7 @@ provides a mechanism for players spending or receiving any combination of
 currencies and items.
 
 ## Engage
-Games can retrieve time-sensitive information from Engage to determine if a
-particular action should be taken for the user at a specific time, based on
-A/B Test results or Targeting. Essentially your game should make engage
-requests at predetermined decision points in your game and the response will
-allow you to personalise the gameplay for that user instantly.
+An Engage request can be performed by calling `requestEngagement(Engagement, EngageListener)`, providing your `Engagement` and a an `EngageListener` for listening to the completion or error.
 ```java
 requestEngagement(
         new Engagement("outOfCredits")
@@ -244,60 +240,61 @@ requestEngagement(
                 .putParam("missionName", "Diso Volante"),
         new OutOfCreditsListener());
 ```
-And the response handler for the above example
+The `Engagement` object which was sent will be returned in the listener's `onCompleted(Engagement)` callback method, at which point it has been populated with data from the platform ready to be retrieved by calling `getResponse()` on the `Engagement`.
 ```java
-private class OutOfCreditsListener implements EngageListener {
-
-    public void onSuccess(JSONObject result) {
-        // do something with result
+class OutOfCreditsListener implements EngageListener<Engagement> {
+    
+    public void onCompleted(Engagement engagement) {
+        // do something with the result
+        if (engagement.getResponse().isSuccessful()) {
+            // for example with parameters
+            JSONObject parameters = engagement.getResponse().body.get("parameters");
+        }
     }
-
-    public void onFailure(Throwable t) {
-        // act on failure
-    }
-}
-```
-You will receive a JSON response
-```json
-{
-    "transactionID": 1898710706656641000,
-    "parameters": {
-        "creditPackPrice": 99,
-        "creditPackSize": 1
+    
+    public void onError(Throwable t) {
+        // act on error
     }
 }
 ```
-With a a `transactionID` and `parameters` object containing any parameters
-relevant to this player at this point in time.
+If there was an error processing your Engage request at the server then the details will be available in the `Engagement` by reading the `Response`'s `error` field. Any non-server errors, such as due to an Internet connection not being available, will be propagated into the `onError(Throwable)` callback method. In this case `onCompleted(Engagement)` will never be called.
 
-You may receive a response containing a `transactionID` but no parameters with
-personalisation values. This indicates that the player has failed to meet any
-qualification criteria or has not been allocated to a control group.
-
-If there was an error processing your Engage request at the server then the
-`onFailure(Throwable)` method will be invoked with a `RequestException`
-containing a `Response` with a status code, which may be one of the following:
-* 400, if the inputs were malformed, incorrect, or you are sending real-time
-parameters that haven't been added to your Game Parameter list.
-* 403, if the secret hash is incorrect or Engage is not enabled on your account.
-* 404, incorrect URL or unknown environment key.
-
-## Image Messaging
-An Image Messaging request is performed in a similar way to an Engage
-request
+### Image Messaging
+An Image Messaging request is performed in a similar way to an Engage request with an `ImageMessage` instance being built up from the returned `Engagement` in the `onCompleted(Engagement)` callback method. Since the decision point may not have been set-up to show an Image Message, the return value of `ImageMessage.create(Engagement)` needs to be null checked.
 ```java
 DDNA.instance().requestImageMessage(
         new Engagement("missionDifficulty"),
-        new ImageMessageListener(MyActivity.this, MY_REQUEST_CODE));
+        new EngageListener<Engagement>() {
+            @Override
+            public void onComplete(Engagement engagement) {
+                ImageMessage imageMessage = ImageMessage.create(engagement);
+                if (imageMessage != null) {
+                    imageMessage.prepare(MyPrepareListener());
+                }
+            }
+            
+            @Override
+            public void onError(Throwable t) {
+                // act on error
+            }
+        });
 ```
-When the `onPrepared(ImageMessage)` of your listener gets invoked you
-may show the `ImageMessage` by calling `show(ImageMessage)`, or not do
-anything if the application is no longer in a state for showing the
-Image Message.
-
-To handle the result of the action performed on the Image Message you
-will need to override the `onActivityResult(int, int, Intent)` method
-of your `Activity`
+When the `onPrepared(ImageMessage)` of your `ImageMessage.PrepareListener` listener gets invoked you may show the Image Message by calling `show(Activity, int)` on the `ImageMessage` instance, or not do anything if the application is no longer in a state for showing the Image Message.
+```java
+class MyPrepareListener implements ImageMessage.PrepareListener {
+    
+    @Override
+    public void onPrepared(ImageMessage src) {
+        src.show(MyActivity.this, MY_REQUEST_CODE);
+    }
+    
+    @Override
+    public void onError(Throwable cause) {
+        // act on error
+    }
+}
+```
+To handle the result of the action performed on the Image Message you will need to override the `onActivityResult(int, int, Intent)` method of your `Activity`
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {

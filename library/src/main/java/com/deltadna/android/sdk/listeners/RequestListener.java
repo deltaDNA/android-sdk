@@ -16,9 +16,11 @@
 
 package com.deltadna.android.sdk.listeners;
 
-public interface RequestListener<V> {
+import com.deltadna.android.sdk.net.Response;
+
+public interface RequestListener<T> {
     
-    void onSuccess(V result);
+    void onCompleted(Response<T> response);
     
-    void onFailure(Throwable t);
+    void onError(Throwable t);
 }

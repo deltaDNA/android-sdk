@@ -18,10 +18,12 @@ package com.deltadna.android.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 
-import com.deltadna.android.sdk.exceptions.BadRequestException;
+import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.EngageArchive;
+import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.CancelableRequest;
 import com.deltadna.android.sdk.net.NetworkManager;
@@ -137,29 +139,64 @@ final class EventHandler {
     /**
      * Handles an engage {@code event}.
      */
-    void handleEngagement(
-            final String decisionPoint,
-            @Nullable final String flavour,
-            final JSONObject event,
-            final RequestListener<JSONObject> listener) {
+    <E extends Engagement> void handleEngagement(
+            final E engagement,
+            final EngageListener<E> listener,
+            String userId,
+            String sessionId,
+            int engageApiVersion,
+            String sdkVersion) {
         
-        network.engage(event, new RequestListener<Response<JSONObject>>() {
+        final JSONObject event;
+        try {
+            event = new JSONObject()
+                    .put("userID", userId)
+                    .put("decisionPoint", engagement.name)
+                    .put("sessionID", sessionId)
+                    .put("version", engageApiVersion)
+                    .put("sdkVersion", sdkVersion)
+                    .put("platform", ClientInfo.platform())
+                    .put("manufacturer", ClientInfo.manufacturer())
+                    .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
+                    .put("timezoneOffset", ClientInfo.timezoneOffset())
+                    .put("locale", ClientInfo.locale());
+            
+            if (!TextUtils.isEmpty(engagement.flavour)) {
+                event.put("flavour", engagement.flavour);
+            }
+            
+            if (!engagement.params.isEmpty()) {
+                event.put("parameters", engagement.params.json);
+            }
+        } catch (JSONException e) {
+            // should never happen due to params enforcement
+            throw new IllegalArgumentException(e);
+        }
+        
+        network.engage(event, new RequestListener<JSONObject>() {
             @Override
-            public void onSuccess(Response<JSONObject> result) {
-                archive.put(decisionPoint, flavour, result.body.toString());
-                listener.onSuccess(result.body);
+            public void onCompleted(Response<JSONObject> result) {
+                engagement.response = result;
+                archive.put(
+                        engagement.name,
+                        engagement.flavour,
+                        engagement.response.body.toString());
+                
+                listener.onCompleted(engagement);
             }
             
             @Override
-            public void onFailure(Throwable t) {
-                if (archive.contains(decisionPoint, flavour)) {
+            public void onError(Throwable t) {
+                if (archive.contains(engagement.name, engagement.flavour)) {
                     try {
                         final JSONObject json = new JSONObject(
-                                archive.get(decisionPoint, flavour))
+                                archive.get(engagement.name, engagement.flavour))
                                 .put("isCachedResponse", true);
+                        engagement.response = new Response<>(-1, null, json, null);
                         
                         Log.d(TAG, "Using cached engage " + json);
-                        listener.onSuccess(json);
+                        
+                        listener.onCompleted(engagement);
                     } catch (JSONException e1) {
                         /*
                          * This can only happen if the archive has become
@@ -171,10 +208,10 @@ final class EventHandler {
                         Log.e(  TAG,
                                 "Failed converting cached engage to JSON",
                                 e1);
-                        listener.onFailure(e1);
+                        listener.onError(e1);
                     }
                 } else {
-                    listener.onFailure(t);
+                    listener.onError(t);
                 }
             }
         });
@@ -239,27 +276,32 @@ final class EventHandler {
             final CountDownLatch latch = new CountDownLatch(1);
             final CancelableRequest request = network.collect(
                     payload,
-                    new RequestListener<Response<Void>>() {
+                    new RequestListener<Void>() {
                         @Override
-                        public void onSuccess(Response<Void> result) {
-                            Log.d(TAG, "Successfully uploaded events");
+                        public void onCompleted(Response<Void> result) {
+                            if (result.isSuccessful()) {
+                                Log.d(TAG, "Successfully uploaded events");
+                                events.close(true);
+                            } else {
+                                Log.w(TAG, "Failed to upload events due to " + result);
+                                if (result.code == 400) {
+                                    Log.w(TAG, "Wiping event store due to unrecoverable data");
+                                    events.close(true);
+                                } else {
+                                    events.close(false);
+                                }
+                            }
                             
-                            events.close(true);
                             latch.countDown();
                         }
                         
                         @Override
-                        public void onFailure(Throwable t) {
-                            Log.e(TAG, "Failed to upload events", t);
+                        public void onError(Throwable t) {
+                            Log.w(  TAG,
+                                    "Failed to upload events, will retry later",
+                                    t);
                             
-                            if (t instanceof BadRequestException) {
-                                Log.w(TAG, "Wiping event store due to unrecoverable data");
-                                events.close(true);
-                            } else {
-                                Log.d(TAG, "Will retry uploading events later");
-                                events.close(false);
-                            }
-                            
+                            events.close(false);
                             latch.countDown();
                         }
                     });

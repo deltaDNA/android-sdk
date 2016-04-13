@@ -22,7 +22,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.deltadna.android.sdk.BuildConfig;
-import com.deltadna.android.sdk.exceptions.ResponseException;
 import com.deltadna.android.sdk.listeners.RequestListener;
 
 import java.util.Locale;
@@ -55,7 +54,7 @@ final class NetworkDispatcher {
     private static final int MAX_REQUESTS = 10;
     
     private final Map<Request, Cancelable> requests =
-            new ConcurrentHashMap<Request, Cancelable>(MAX_REQUESTS);
+            new ConcurrentHashMap<>(MAX_REQUESTS);
     
     private final Handler handler;
     private final ScheduledExecutorService executor;
@@ -67,7 +66,7 @@ final class NetworkDispatcher {
     
     CancelableRequest enqueue(
             Request<Void> request,
-            @Nullable RequestListener<Response<Void>> listener) {
+            @Nullable RequestListener<Void> listener) {
         
         return enqueue(request, ResponseBodyConverter.NULL, listener);
     }
@@ -75,7 +74,7 @@ final class NetworkDispatcher {
     <T> CancelableRequest enqueue(
             final Request<T> request,
             @Nullable ResponseBodyConverter<T> converter,
-            @Nullable RequestListener<Response<T>> listener) {
+            @Nullable RequestListener<T> listener) {
         
         Log.d(TAG, "Enqueuing " + request);
         
@@ -108,7 +107,7 @@ final class NetworkDispatcher {
             
             setMaximumPoolSize(maxRequests);
         }
-
+        
         @Override
         protected <V> RunnableScheduledFuture<V> decorateTask(
                 Callable<V> callable,
@@ -117,7 +116,7 @@ final class NetworkDispatcher {
             if (callable instanceof Request) {
                 final Request<V> request = (Request<V>) callable;
                 
-                return new RequestFuture<V>(
+                return new RequestFuture<>(
                         super.decorateTask(callable, task),
                         request,
                         request.listener);
@@ -149,7 +148,7 @@ final class NetworkDispatcher {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                future.listener.onSuccess(response);
+                                future.listener.onCompleted(response);
                             }
                         });
                     }
@@ -159,11 +158,7 @@ final class NetworkDispatcher {
                     // TODO is this appropriate?
                     Thread.currentThread().interrupt();
                 } catch (final ExecutionException e) {
-                    if (e.getCause() instanceof ResponseException) {
-                        Log.w(TAG, "Failed performing " + future.request);
-                    } else {
-                        Log.w(TAG, "Failed performing " + future.request, e);
-                    }
+                    Log.w(TAG, "Failed performing " + future.request, e);
                     
                     if (future.request.shouldRetry()) {
                         Log.w(TAG, "Retrying " + future.request);
@@ -177,7 +172,7 @@ final class NetworkDispatcher {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                future.listener.onFailure(e.getCause());
+                                future.listener.onError(e.getCause());
                             }
                         });
 
@@ -204,12 +199,12 @@ final class NetworkDispatcher {
         private final RunnableScheduledFuture<V> delegate;
         private final Request<V> request;
         @Nullable
-        private final RequestListener<Response<V>> listener;
+        private final RequestListener<V> listener;
 
         private RequestFuture(
                 RunnableScheduledFuture<V> delegate,
                 Request<V> request,
-                @Nullable RequestListener<Response<V>> listener) {
+                @Nullable RequestListener<V> listener) {
 
             this.delegate = delegate;
             this.request = request;

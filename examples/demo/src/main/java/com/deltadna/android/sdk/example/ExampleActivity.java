@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk.example;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -26,16 +25,14 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.Event;
 import com.deltadna.android.sdk.ImageMessageActivity;
 import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.Product;
 import com.deltadna.android.sdk.Transaction;
 import com.deltadna.android.sdk.listeners.EngageListener;
-import com.deltadna.android.sdk.listeners.ImageMessageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
-
-import org.json.JSONObject;
 
 public class ExampleActivity extends AppCompatActivity {
     
@@ -132,11 +129,9 @@ public class ExampleActivity extends AppCompatActivity {
     }
     
     public void onImageMessage(View view) {
-        DDNA.instance().requestImageMessage(
-                "testImageMessage",
-                new ImageMessageListenerExample(
-                        ExampleActivity.this,
-                        REQUEST_CODE_IMAGE_MSG));
+        DDNA.instance().requestEngagement(
+                new Engagement("testImageMessage"),
+                new ImageMessageListener());
     }
     
     public void onNotificationOpened(View view) {
@@ -164,40 +159,51 @@ public class ExampleActivity extends AppCompatActivity {
      * Example implementation of the {@link EngageListener} which just
      * prints the result, or failure, to the log.
      */
-    private class EngageListenerExample implements EngageListener {
+    private class EngageListenerExample implements EngageListener<Engagement> {
         
         @Override
-        public void onSuccess(JSONObject result) {
-            Log.d(BuildConfig.LOG_TAG, "Engagement success: " + result);
+        public void onCompleted(Engagement engagement) {
+            Log.d(BuildConfig.LOG_TAG, "Engagement success: " + engagement);
         }
         
         @Override
-        public void onFailure(Throwable t) {
-            Log.w(BuildConfig.LOG_TAG, "Engagement failure", t);
+        public void onError(Throwable t) {
+            Log.w(BuildConfig.LOG_TAG, "Engagement error", t);
         }
     }
     
     /**
-     * Example implementation of the {@link ImageMessageListener} which
-     * performs the default action on success, or prints to the log during
-     * a failure.
+     * Example implementation of the {@link EngageListener} for an Image
+     * Messaging request, which prepares the {@link ImageMessage}, and finally
+     * shows it to the user.
      *
      * @see #onActivityResult(int, int, Intent)
      */
-    private class ImageMessageListenerExample extends ImageMessageListener {
+    private class ImageMessageListener implements EngageListener<Engagement> {
         
-        public ImageMessageListenerExample(Activity activity, int requestCode) {
-            super(activity, requestCode);
+        @Override
+        public void onCompleted(Engagement engagement) {
+            ImageMessage imageMessage = ImageMessage.create(engagement);
+            if (imageMessage != null) {
+                imageMessage.prepare(new ImageMessage.PrepareListener() {
+                    @Override
+                    public void onPrepared(ImageMessage src) {
+                        src.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
+                    }
+                    
+                    @Override
+                    public void onError(Throwable cause) {
+                        Log.w(  BuildConfig.LOG_TAG,
+                                "Image Message preparation error",
+                                cause);
+                    }
+                });
+            }
         }
         
         @Override
-        protected void onPrepared(ImageMessage imageMessage) {
-            show(imageMessage);
-        }
-        
-        @Override
-        public void onFailure(Throwable t) {
-            Log.w(BuildConfig.LOG_TAG, "Image Message failure", t);
+        public void onError(Throwable t) {
+            Log.w(BuildConfig.LOG_TAG, "Image Message error", t);
         }
     }
 }

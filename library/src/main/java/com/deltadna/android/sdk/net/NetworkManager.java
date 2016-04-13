@@ -83,7 +83,7 @@ public class NetworkManager {
     
     public CancelableRequest collect(
             JSONObject payload,
-            @Nullable RequestListener<Response<Void>> listener) {
+            @Nullable RequestListener<Void> listener) {
         
         return dispatcher.enqueue(
                 new Request.Builder<Void>()
@@ -100,7 +100,7 @@ public class NetworkManager {
     
     public CancelableRequest engage(
             JSONObject payload,
-            RequestListener<Response<JSONObject>> listener) {
+            RequestListener<JSONObject> listener) {
         
         // TODO tweak timeouts to make engage come back within the magic 5s
         return dispatcher.enqueue(
@@ -116,7 +116,7 @@ public class NetworkManager {
     public CancelableRequest fetch(
             String url,
             final File dest,
-            RequestListener<Response<File>> listener) {
+            RequestListener<File> listener) {
         
         // TODO tweak timeouts as this should come back quickly as well
         return dispatcher.enqueue(

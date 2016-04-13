@@ -16,32 +16,31 @@
 
 package com.deltadna.android.sdk.listeners;
 
-import org.json.JSONObject;
+import com.deltadna.android.sdk.Engagement;
 
 /**
- * Listener to be used for Engage events.
+ * Listener to be used for Engage requests.
  */
-public interface EngageListener extends RequestListener<JSONObject> {
+public interface EngageListener<E extends Engagement> {
     
     /**
-     * Invoked during a successful request.
-     * 
-     * @param result    result of the request
+     * Notifies the listener that the request has completed.
+     *
+     * @param engagement the engagement with response attributes
      */
-    @Override
-    void onSuccess(JSONObject result);
+    void onCompleted(E engagement);
     
     /**
-     * Invoked when an error happens during the request.
+     * Notifies the listener that an error has happened during the request.
      * <p>
-     * The error {@code t} could be an {@link java.io.IOException}
-     * if there was a connectivity problem or a timeout, or a
-     * {@link com.deltadna.android.sdk.exceptions.ResponseException}
-     * if a request resulted in a non-OK HTTP result code, amongst
-     * other causes for the failure.
-     * 
-     * @param t cause of the failure
+     * The error {@code t} could be an {@link java.io.IOException} if there was
+     * a connectivity problem or a timeout, or an {@link InterruptedException}
+     * if the request thread was interrupted during execution.
+     * <p>
+     * If this method is called {@link #onCompleted(Engagement)} will not be
+     * called.
+     *
+     * @param t the cause of the error
      */
-    @Override
-    void onFailure(Throwable t);
+    void onError(Throwable t);
 }

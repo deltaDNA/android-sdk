@@ -24,9 +24,9 @@ import java.nio.charset.Charset;
  * For converting a {@link Response} body in bytes to a more representative
  * form.
  * 
- * @param <V> type to convert the {@link Response} bytes to
+ * @param <T> type to convert the {@link Response} bytes to
  */
-interface ResponseBodyConverter<V> {
+interface ResponseBodyConverter<T> {
     
     ResponseBodyConverter<Void> NULL = new ResponseBodyConverter<Void>() {
         @Override
@@ -47,5 +47,5 @@ interface ResponseBodyConverter<V> {
         }
     };
     
-    V convert(byte[] input) throws Exception;
+    T convert(byte[] input) throws Exception;
 }

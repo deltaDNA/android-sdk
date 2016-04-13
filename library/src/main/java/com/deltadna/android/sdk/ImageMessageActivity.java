@@ -30,7 +30,7 @@ import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.RelativeLayout;
 
-import com.deltadna.android.sdk.listeners.ImageMessageListener;
+import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
 
 import java.util.Iterator;
@@ -39,9 +39,7 @@ import java.util.Iterator;
  * {@link Activity} which displays in Image Message request and handles the
  * user interaction with the Image Message.
  *
- * @see DDNA#requestImageMessage(String, ImageMessageListener)
- * @see DDNA#requestImageMessage(Engagement, ImageMessageListener)
- * @see com.deltadna.android.sdk.listeners.ImageMessageListener
+ * @see DDNA#requestEngagement(Engagement, EngageListener)
  */
 public final class ImageMessageActivity extends Activity {
     

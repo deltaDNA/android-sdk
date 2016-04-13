@@ -18,6 +18,11 @@ package com.deltadna.android.sdk;
 
 import android.support.annotation.Nullable;
 
+import com.deltadna.android.sdk.helpers.Objects;
+import com.deltadna.android.sdk.net.Response;
+
+import org.json.JSONObject;
+
 /**
  * Constructs an engagement {@link Event}.
  */
@@ -25,6 +30,8 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     
     @Nullable
     final String flavour;
+    
+    Response<JSONObject> response;
     
     /**
      * Creates a new instance.
@@ -63,5 +70,24 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     @Override
     public T putParam(String key, Object value) {
         return super.putParam(key, value);
+    }
+    
+    @Override
+    public String toString() {
+        return new Objects.ToStringHelper(this)
+                .add("decisionPoint", name)
+                .add("flavour", flavour)
+                .add("params", params)
+                .add("response", response)
+                .toString();
+    }
+    
+    /**
+     * Gets the response for the Engagement request after it has completed.
+     *
+     * @return the response for the Engagement
+     */
+    public Response<JSONObject> getResponse() {
+        return response;
     }
 }
