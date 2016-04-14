@@ -178,7 +178,7 @@ class EventHandlerTest {
                 eq(cached.toString()))
         verify(listener).onCompleted(argThat {
             assertThat(this).isSameAs(engagement)
-            assertThat(this.statusCode).isEqualTo(-1)
+            assertThat(this.statusCode).isEqualTo(200)
             assertThat(this.json.toString()).isEqualTo(cached.toString())
             assertThat(this.error).isNull()
             true
