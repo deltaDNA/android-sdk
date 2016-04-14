@@ -98,13 +98,17 @@ public final class ImageMessage implements Serializable {
                         : layoutPortrait.getJSONObject("background"));
         
         buttons = new Vector<>();
-        final JSONArray buttons = spritemap.getJSONArray("buttons");
-        final JSONArray buttonLayoutLandscape = (layoutLandscape == null)
-                ? null
-                : layoutLandscape.getJSONArray("buttons");
-        final JSONArray buttonLayoutPortrait = (layoutPortrait == null)
-                ? null
-                : layoutPortrait.getJSONArray("buttons");
+        final JSONArray buttons = spritemap.has("buttons")
+                ? spritemap.getJSONArray("buttons")
+                : new JSONArray();
+        final JSONArray buttonLayoutLandscape =
+                (layoutLandscape == null || buttons.length() == 0)
+                        ? null
+                        : layoutLandscape.getJSONArray("buttons");
+        final JSONArray buttonLayoutPortrait =
+                (layoutPortrait == null || buttons.length() == 0)
+                        ? null
+                        : layoutPortrait.getJSONArray("buttons");
         for (int i = 0; i < buttons.length(); i++) {
             this.buttons.add(new Button(
                     buttons.getJSONObject(i),
