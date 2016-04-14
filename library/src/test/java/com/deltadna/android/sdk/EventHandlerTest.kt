@@ -141,7 +141,9 @@ class EventHandlerTest {
                 eq(result.toString()))
         verify(listener).onCompleted( argThat {
             assertThat(this).isSameAs(engagement)
-            assertThat(response).isEqualTo(Response(200, null, result, null))
+            assertThat(this.statusCode).isEqualTo(200)
+            assertThat(this.json.toString()).isEqualTo(result.toString())
+            assertThat(this.error).isNull()
             true
         })
     }
@@ -168,7 +170,7 @@ class EventHandlerTest {
                 0,
                 "sdkVersion")
         
-        val cached = JsonObjectEquals(archived.toString())
+        val cached = JSONObject(archived.toString())
                 .put("isCachedResponse", true)
         verify(archive, never()).put(
                 eq(engagement.name),
@@ -176,7 +178,9 @@ class EventHandlerTest {
                 eq(cached.toString()))
         verify(listener).onCompleted(argThat {
             assertThat(this).isSameAs(engagement)
-            assertThat(Response(-1, null, cached, null)).isEqualTo(response)
+            assertThat(this.statusCode).isEqualTo(-1)
+            assertThat(this.json.toString()).isEqualTo(cached.toString())
+            assertThat(this.error).isNull()
             true
         })
     }
@@ -332,14 +336,5 @@ class EventHandlerTest {
     
     open class KEngagement : Engagement<KEngagement> {
         constructor(point: String, flavour: String?) : super(point, flavour)
-    }
-
-    /**
-     * Ugly workaround to insert an equals() implementation for our purpose.
-     */
-    private class JsonObjectEquals(json: String) : JSONObject(json) {
-        override fun equals(other: Any?) =
-            if (other is JSONObject) other.toString().equals(toString())
-            else super.equals(other)
     }
 }

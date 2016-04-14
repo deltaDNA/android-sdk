@@ -33,6 +33,7 @@ import com.deltadna.android.sdk.util.CloseableIterator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -144,7 +145,7 @@ final class EventHandler {
             final EngageListener<E> listener,
             String userId,
             String sessionId,
-            int engageApiVersion,
+            final int engageApiVersion,
             String sdkVersion) {
         
         final JSONObject event;
@@ -176,11 +177,36 @@ final class EventHandler {
         network.engage(event, new RequestListener<JSONObject>() {
             @Override
             public void onCompleted(Response<JSONObject> result) {
-                engagement.response = result;
-                archive.put(
-                        engagement.name,
-                        engagement.flavour,
-                        engagement.response.body.toString());
+                engagement.setResponse(result);
+                if (engagement.isSuccessful()) {
+                    //noinspection ConstantConditions
+                    archive.put(
+                            engagement.name,
+                            engagement.flavour,
+                            engagement.getJson().toString());
+                } else {
+                    Log.w(TAG, String.format(
+                            Locale.US,
+                            "Not caching %s due to failure, checking archive instead",
+                            engagement));
+                    
+                    if (archive.contains(engagement.name, engagement.flavour)) {
+                        try {
+                            final JSONObject json = new JSONObject(
+                                    archive.get(engagement.name, engagement.flavour))
+                                    .put("isCachedResponse", true);
+                            engagement.setResponse(
+                                    new Response<>(-1, null, json, null));
+                            
+                            Log.d(TAG, "Using cached engage instead " + json);
+                        } catch (JSONException e) {
+                            // TODO should we clear the archive?
+                            Log.w(  TAG,
+                                    "Failed converting cached engage to JSON",
+                                    e);
+                        }
+                    }
+                }
                 
                 listener.onCompleted(engagement);
             }
@@ -192,7 +218,8 @@ final class EventHandler {
                         final JSONObject json = new JSONObject(
                                 archive.get(engagement.name, engagement.flavour))
                                 .put("isCachedResponse", true);
-                        engagement.response = new Response<>(-1, null, json, null);
+                        engagement.setResponse(
+                                new Response<>(-1, null, json, null));
                         
                         Log.d(TAG, "Using cached engage " + json);
                         

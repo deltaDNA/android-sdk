@@ -278,10 +278,10 @@ public final class ImageMessage implements Serializable {
      */
     @Nullable
     public static ImageMessage create(Engagement engagement) {
-        final Response<JSONObject> response = engagement.response;
-        if (response.isSuccessful() && response.body.has("image")) {
+        //noinspection ConstantConditions
+        if (engagement.isSuccessful() && engagement.getJson().has("image")) {
             try {
-                return new ImageMessage(response.body);
+                return new ImageMessage(engagement.getJson());
             } catch (JSONException e) {
                 Log.w(TAG, "Failed creating image message", e);
                 return null;

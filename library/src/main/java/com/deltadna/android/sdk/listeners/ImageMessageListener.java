@@ -22,10 +22,8 @@ import android.content.Intent;
 import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.ImageMessageActivity;
-import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * An {@link EngageListener} to be used for Image Message requests, which will
@@ -56,11 +54,11 @@ public abstract class ImageMessageListener implements EngageListener {
     
     @Override
     public void onCompleted(Engagement engagement) {
-        final Response<JSONObject> response = engagement.getResponse();
-        if (response.isSuccessful() && response.body.has("image")) {
+        //noinspection ConstantConditions
+        if (engagement.isSuccessful() && engagement.getJson().has("image")) {
             final ImageMessage message;
             try {
-                message = new ImageMessage(response.body);
+                message = new ImageMessage(engagement.getJson());
             } catch (JSONException e) {
                 onError(e);
                 return;

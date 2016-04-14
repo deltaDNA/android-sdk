@@ -240,15 +240,15 @@ requestEngagement(
                 .putParam("missionName", "Diso Volante"),
         new OutOfCreditsListener());
 ```
-The `Engagement` object which was sent will be returned in the listener's `onCompleted(Engagement)` callback method, at which point it has been populated with data from the platform ready to be retrieved by calling `getResponse()` on the `Engagement`.
+The `Engagement` object which was sent will be returned in the listener's `onCompleted(Engagement)` callback method, at which point it has been populated with data from the platform ready to be retrieved by calling `getJson()` on the `Engagement`.
 ```java
 class OutOfCreditsListener implements EngageListener<Engagement> {
     
     public void onCompleted(Engagement engagement) {
         // do something with the result
-        if (engagement.getResponse().isSuccessful()) {
+        if (engagement.isSuccessful()) {
             // for example with parameters
-            JSONObject parameters = engagement.getResponse().body.get("parameters");
+            JSONObject parameters = engagement.getJson()
         }
     }
     
@@ -257,7 +257,7 @@ class OutOfCreditsListener implements EngageListener<Engagement> {
     }
 }
 ```
-If there was an error processing your Engage request at the server then the details will be available in the `Engagement` by reading the `Response`'s `error` field. Any non-server errors, such as due to an Internet connection not being available, will be propagated into the `onError(Throwable)` callback method. In this case `onCompleted(Engagement)` will never be called.
+If there was an error processing your Engage request at the server then the details will be available in the `Engagement` by calling `getError()`. Any non-server errors, such as due to an Internet connection not being available, will be propagated into the `onError(Throwable)` callback method. In this case `onCompleted(Engagement)` will never be called.
 
 ### Image Messaging
 An Image Messaging request is performed in a similar way to an Engage request with an `ImageMessage` instance being built up from the returned `Engagement` in the `onCompleted(Engagement)` callback method. Since the decision point may not have been set-up to show an Image Message, the return value of `ImageMessage.create(Engagement)` needs to be null checked.
