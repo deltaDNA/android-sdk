@@ -67,14 +67,6 @@ class EventTest {
         }
     }
     
-    @Test
-    fun getJsonParams() {
-        with(Params().put("key", "value")) {
-            assertThat(KEvent("name", this).jsonParams)
-                    .isEqualTo(this.toJson())
-        }
-    }
-    
     private class KEvent : Event<KEvent> {
         constructor(name: String?) : super(name)
         constructor(name: String?, params: Params?) : super(name, params)

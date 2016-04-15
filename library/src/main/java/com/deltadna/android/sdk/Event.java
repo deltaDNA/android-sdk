@@ -18,8 +18,6 @@ package com.deltadna.android.sdk;
 
 import com.deltadna.android.sdk.helpers.Preconditions;
 
-import org.json.JSONObject;
-
 /**
  * Constructs an event.
  */
@@ -69,9 +67,5 @@ public class Event<T extends Event<T>> {
     public T putParam(String key, Object value) {
         params.put(key, value);
         return (T) this;
-    }
-    
-    public final JSONObject getJsonParams() {
-        return params.toJson();
     }
 }
