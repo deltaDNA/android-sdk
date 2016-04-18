@@ -22,6 +22,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.deltadna.android.sdk.helpers.Settings;
+
 class SessionRefreshHandler implements Application.ActivityLifecycleCallbacks {
     
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -33,17 +35,17 @@ class SessionRefreshHandler implements Application.ActivityLifecycleCallbacks {
     };
     
     private final Application app;
+    private final Settings settings;
     private final Listener listener;
-    private final int expiry;
     
     SessionRefreshHandler(
             Application app,
-            Listener listener,
-            int expiry) {
+            Settings settings,
+            Listener listener) {
         
         this.app = app;
+        this.settings = settings;
         this.listener = listener;
-        this.expiry = expiry;
     }
     
     void register() {
@@ -73,7 +75,10 @@ class SessionRefreshHandler implements Application.ActivityLifecycleCallbacks {
     @Override
     public void onActivityStopped(Activity activity) {
         handler.removeCallbacks(refresher);
-        handler.postDelayed(refresher, expiry);
+        
+        if (settings.getSessionTimeout() > 0) {
+            handler.postDelayed(refresher, settings.getSessionTimeout());
+        }
     }
     
     @Override

@@ -72,8 +72,6 @@ public final class DDNA {
         TIMESTAMP_FORMAT = format;
     }
     
-    private static final int TIME_FIVE_MINUTES = 5 * 60 * 1000;
-    
     private static DDNA instance;
     
     private final Settings settings;
@@ -157,7 +155,7 @@ public final class DDNA {
             
             started = true;
             
-            if (settings.isAutomaticSessionRefresh()) {
+            if (settings.getSessionTimeout() > 0) {
                 sessionHandler.register();
             }
             
@@ -223,8 +221,9 @@ public final class DDNA {
     }
     
     DDNA newSession(boolean suppressWarning) {
-        if (!suppressWarning && settings.isAutomaticSessionRefresh()) {
-            Log.w(BuildConfig.LOG_TAG, "Automatic session refresh is enabled");
+        if (!suppressWarning && settings.getSessionTimeout() > 0) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Automatic session refreshing is enabled");
         }
         
         sessionId = UUID.randomUUID().toString();
@@ -718,6 +717,7 @@ public final class DDNA {
         
         sessionHandler = new SessionRefreshHandler(
                 application,
+                settings,
                 new SessionRefreshHandler.Listener() {
                     @Override
                     public void onExpired() {
@@ -725,8 +725,7 @@ public final class DDNA {
                                 "Session expired, updating id");
                         newSession(true);
                     }
-                },
-                TIME_FIVE_MINUTES);
+                });
         eventHandler = new EventHandler(
                 store,
                 archive,

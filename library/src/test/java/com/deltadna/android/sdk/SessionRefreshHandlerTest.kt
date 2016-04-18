@@ -18,10 +18,8 @@ package com.deltadna.android.sdk
 
 import android.app.Activity
 import android.os.Build
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.never
-import com.nhaarman.mockito_kotlin.reset
-import com.nhaarman.mockito_kotlin.verify
+import com.deltadna.android.sdk.helpers.Settings
+import com.nhaarman.mockito_kotlin.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -36,22 +34,27 @@ import org.robolectric.annotation.Config
         sdk = intArrayOf(Build.VERSION_CODES.LOLLIPOP))
 class SessionRefreshHandlerTest {
     
-    private val expiry = 1000
+    private companion object { val TIMEOUT = 1000 }
+    
+    private val settings = with(mock<Settings>()) {
+        whenever(sessionTimeout).thenReturn(TIMEOUT)
+        this
+    }
     private val listener = mock<SessionRefreshHandler.Listener>()
     private val activity = Robolectric.buildActivity(Activity::class.java)
     
     private var uut = SessionRefreshHandler(
             RuntimeEnvironment.application,
-            listener,
-            expiry)
+            settings,
+            listener)
     
     @Before
     fun before() {
         activity.create()
         uut = SessionRefreshHandler(
                 RuntimeEnvironment.application,
-                listener,
-                expiry)
+                settings,
+                listener)
     }
     
     @After
@@ -66,7 +69,7 @@ class SessionRefreshHandlerTest {
         activity.start()
         activity.stop()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(expiry.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
         
         verify(listener).onExpired()
     }
@@ -77,7 +80,7 @@ class SessionRefreshHandlerTest {
         activity.stop()
         activity.restart()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(expiry.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
         
         verify(listener, never()).onExpired()
     }
@@ -88,7 +91,7 @@ class SessionRefreshHandlerTest {
         activity.stop()
         uut.unregister()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(expiry.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
         
         verify(listener, never()).onExpired()
     }

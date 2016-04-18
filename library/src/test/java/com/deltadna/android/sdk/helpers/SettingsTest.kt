@@ -32,11 +32,19 @@ class SettingsTest {
         uut = Settings()
     }
     
+    @Test(expected = IllegalArgumentException::class)
+    fun sessionTimeoutInvalid() {
+        uut.sessionTimeout = -1
+    }
+    
     @Test
-    fun automaticSessionRefresh() {
-        assertThat(uut.isAutomaticSessionRefresh).isTrue()
+    fun sessionTimeout() {
+        assertThat(uut.sessionTimeout).isEqualTo(5 * 60 * 1000)
         
-        uut.isAutomaticSessionRefresh = false
-        assertThat(uut.isAutomaticSessionRefresh).isFalse()
+        uut.sessionTimeout = 0
+        assertThat(uut.sessionTimeout).isEqualTo(0)
+        
+        uut.sessionTimeout = 1000
+        assertThat(uut.sessionTimeout).isEqualTo(1000)
     }
 }

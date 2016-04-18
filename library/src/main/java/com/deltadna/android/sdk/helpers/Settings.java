@@ -61,7 +61,8 @@ public class Settings{
 	 */
 	private int mBackgroundEventUploadRepeatRateSeconds = 60;
     
-    private boolean automaticSessionRefresh = true;
+    private int sessionTimeout = 5 * 60 * 1000;
+    
     private boolean useInternalStorageForEvents;
     
 	/**
@@ -217,12 +218,28 @@ public class Settings{
 		mBackgroundEventUploadRepeatRateSeconds = i;
 	}
     
-    public boolean isAutomaticSessionRefresh() {
-        return automaticSessionRefresh;
+    /**
+     * Gets the session timeout.
+     *
+     * @return the session timeout, in milliseconds
+     */
+    public int getSessionTimeout() {
+        return sessionTimeout;
     }
     
-    public void setAutomaticSessionRefresh(boolean enabled) {
-        automaticSessionRefresh = enabled;
+    /**
+     * Sets the session timeout.
+     * <p>
+     * A timeout of 0 will disable automatic session refreshing.
+     *
+     * @param timeout the session timeout, in milliseconds
+     *
+     * @throws IllegalArgumentException if {@code timeout} is negative
+     */
+    public void setSessionTimeout(int timeout) {
+        Preconditions.checkArg(timeout >= 0, "timeout cannot be negative");
+        
+        sessionTimeout = timeout;
     }
     
     public boolean isUseInternalStorageForEvents() {
