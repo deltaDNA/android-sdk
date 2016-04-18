@@ -234,6 +234,10 @@ public final class ImageMessageActivity extends Activity {
                                 break;
                             }
                         }
+                        
+                        if (action == null) {
+                            action = imageMessage.background.action(orientation);
+                        }
                     } else {
                         // touch is outside the popup so use shim action
                         action = imageMessage.shim.action;
