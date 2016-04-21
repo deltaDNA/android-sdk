@@ -14,38 +14,7 @@
  * limitations under the License.
  */
 
-apply plugin: 'com.android.library'
-apply plugin: 'jacoco-android'
-
-android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    
-    defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        
-        versionCode 1
-        versionName "${VERSION_NAME}.${System.getenv('BUILD_NUMBER') ?: getSha()}"
-        
-        buildConfigField('String', logTagName, "\"$logTagValue\"")
-        
-        archivesBaseName = "${POM_ARTIFACT_ID}-${versionName}"
-        
-        consumerProguardFiles 'proguard.cfg'
-    }
-    
-    compileOptions {
-        sourceCompatibility rootProject.ext.sourceCompatibilityVersion
-        targetCompatibility rootProject.ext.targetCompatibilityVersion
-    }
-    
-    buildTypes {
-        debug {
-            testCoverageEnabled true
-        }
-    }
-}
+android {}
 
 dependencies {
     compile "com.android.support:support-annotations:$supportVersion"
@@ -53,5 +22,3 @@ dependencies {
     
     provided project(':library')
 }
-
-apply from: "$rootProject.projectDir/gradle/mvn-push.gradle"

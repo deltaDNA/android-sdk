@@ -14,71 +14,8 @@
  * limitations under the License.
  */
 
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'jacoco-android'
-
-android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-    
-    defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        
-        versionCode 1
-        versionName VERSION_NAME
-        
-        buildConfigField('String', logTagName, "\"$logTagValue\"")
-        
-        archivesBaseName = "${POM_ARTIFACT_ID}-${versionName}.${System.getenv("BUILD_NUMBER") ?: getSha()}"
-        
-        consumerProguardFiles 'proguard.cfg'
-    }
-    
-    sourceSets {
-        test.java.srcDirs += 'src/test/kotlin'
-    }
-    
-    compileOptions {
-        sourceCompatibility rootProject.ext.sourceCompatibilityVersion
-        targetCompatibility rootProject.ext.targetCompatibilityVersion
-    }
-    
-    testOptions {
-        unitTests.returnDefaultValues = true
-    }
-    
-    buildTypes {
-        debug {
-            testCoverageEnabled true
-        }
-    }
-}
+android {}
 
 dependencies {
     compile "com.android.support:support-annotations:$supportVersion"
-    
-    testCompile 'com.google.truth:truth:0.28'
-    testCompile "com.nhaarman:mockito-kotlin:0.3.0"
-    testCompile 'com.squareup.okhttp:mockwebserver:2.7.5'
-    testCompile 'junit:junit:4.12'
-    testCompile 'nl.jqno.equalsverifier:equalsverifier:2.0.1'
-    testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-    testCompile 'org.json:json:20160212'
-    testCompile 'org.robolectric:robolectric:3.0'
-}
-
-apply from: "$rootProject.projectDir/gradle/mvn-push.gradle"
-
-// https://github.com/dam5s/android-example-kotlin/issues/1
-buildscript {
-    repositories {
-        jcenter()
-    }
-    
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-    }
 }
