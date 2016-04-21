@@ -16,6 +16,7 @@
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'jacoco-android'
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -46,6 +47,12 @@ android {
     
     testOptions {
         unitTests.returnDefaultValues = true
+    }
+    
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
     }
 }
 

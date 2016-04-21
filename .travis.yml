@@ -12,7 +12,10 @@ android:
     - extra-google-m2repository
 
 script:
-  - ./gradlew build check
+  - ./gradlew build check jacocoTestReport
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
