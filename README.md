@@ -13,7 +13,6 @@
 * [Initialising](#initialising)
 * [Starting and stopping](#starting-and-stopping)
 * [Recording events](#recording-events)
- * [Anatomy of an event](#anatomy-of-an-event)
  * [Simple event](#simple-event)
  * [Complex event](#complex-event)
  * [Transactions](#transactions)
@@ -27,21 +26,13 @@
 * [License](#license)
 
 ## Overview
-The deltaDNA SDK allows your Android games to record in-game events and upload
-player actions. It contains event caching, numerous helper methods, and some
-automated behaviours to help simplify your integration.
+The deltaDNA SDK allows your Android games to record in-game events and upload player actions. It contains event caching, numerous helper methods, and some automated behaviours to help simplify your integration.
 
-Events are sent to the deltaDNA platform as JSON objects. These events are
-managed and tracked using the online dashboard.
+Events are sent to the deltaDNA platform as JSON objects. These events are managed and tracked using the online dashboard.
 
-When your game records events the SDK will store them locally and upload them
-at regular intervals when a connection is available, or at a time of your
-choosing. This allows the SDK to collect events regardless of connectivity and
-gives you control over the timing and frequency of uploads.
+When your game records events the SDK will store them locally and upload them at regular intervals when a connection is available, or at a time of your choosing. This allows the SDK to collect events regardless of connectivity and gives you control over the timing and frequency of uploads.
 
-Events vary in complexity, but are all derived from a common event schema.
-This document and the accompanying example application provide examples of
-increasingly complex events.
+Events vary in complexity, but are all derived from a common event schema. This document and the accompanying example application provide examples of increasingly complex events.
 
 ## Adding to a project
 The deltaDNA SDK can be used in Android projects using minimum SDK version 15 and newer (Android 4.0.3+).
@@ -62,17 +53,11 @@ compile 'com.deltadna.android:deltadna-sdk:4.1.0-SNAPSHOT'
 ```
 
 ## Initialising
-The SDK needs to be initialised with the following parameters in an
-`Application` subclass:
+The SDK needs to be initialised with the following parameters in an `Application` subclass:
 * `Application` instance
-* `environmentKey`, a unique 32 character string assigned to your application.
-You will be assigned separate application keys for development and production
-builds of your game. You will need to change the environment key that you
-initialise the SDK with as you move from development and testing to production.
-* `collectUrl`, this is the address of the server that will be collecting your
-events.
-* `engageUrl`, this is the address of the server that will provide real-time A/B
-Testing and Targeting. This is only required if your game uses these features.
+* `environmentKey`, a unique 32 character string assigned to your application. You will be assigned separate application keys for development and production builds of your game. You will need to change the environment key that you initialise the SDK with as you move from development and testing to production.
+* `collectUrl`, this is the address of the server that will be collecting your events.
+* `engageUrl`, this is the address of the server that will provide real-time A/B Testing and Targeting. This is only required if your game uses these features.
 ```java
 public class MyApplication extends Application {
 
@@ -97,16 +82,12 @@ You will need to register your `Application` subclass in the manifest file
 </application>
 ```
 
-After the `initialise()` call the SDK will be available throughout the entire
-lifecycle of your application by calling `DDNA.instance()`.
+After the `initialise()` call the SDK will be available throughout the entire lifecycle of your application by calling `DDNA.instance()`.
 
-You may also set optional attributes on the `Configuration`, such as the client
-version, or user id, amongst other options.
+You may also set optional attributes on the `Configuration`, such as the client version, or user id, amongst other options.
 
 ## Starting and stopping
-Inside of your `Activity` class you will need to start the SDK with
-`DDNA.instance().startSdk()` from the `onCreate(Bundle)` method, and likewise
-stop the SDK with `DDNA.instance().stopSdk()` from the `onDestroy()` method.
+Inside of your `Activity` class you will need to start the SDK with `DDNA.instance().startSdk()` from the `onCreate(Bundle)` method, and likewise stop the SDK with `DDNA.instance().stopSdk()` from the `onDestroy()` method.
 ```java
 public class MyActivity extends AppCompatActivity {
 
@@ -125,32 +106,9 @@ public class MyActivity extends AppCompatActivity {
     }
 }
 ```
-This is the minimum amount of code needed to initialise the SDK and start
-sending events. It will automatically send the *newPlayer* event the first
-time the SDK is run, and the *gameStarted* and *clientDevice* events each
-time the game runs.
+This is the minimum amount of code needed to initialise the SDK and start sending events. It will automatically send the *newPlayer* event the first time the SDK is run, and the *gameStarted* and *clientDevice* events each time the game runs.
 
 ## Recording events
-### Anatomy of an event
-All events are recorded as JSON documents with a shared basic schema. The JSON
-will be different for every event type, but all of them should adhere to the
-following minimal schema:
-```json
-{
-    "eventName": "gameEnded",
-    "userID": "a2e92bdd-f59d-498f-9385-2ae6ada432e3",
-    "sessionID": "0bc56224-8939-4639-b5ba-197f84dad4f4",
-    "eventTimestamp":"2014-07-04 11:09:42.491",
-    "eventParams": {
-        "platform": "ANDROID",
-        "sdkVersion": "Android SDK v4.0",
-    }
-}
-```
-The SDK will automatically populate the above fields. When you add additional
-parameters to an event they will be placed inside of the `eventParams`
-element.
-
 ### Simple event
 By using one of the standard event schemas we can record an event such as
 ```java
@@ -175,9 +133,7 @@ Which would be uploaded with the following JSON
 ```
 
 ### Complex event
-If you create more complicated events which get reused throughout of your game
-then instead of building up the event each time you can subclass from `Event`
-and add your parameters into the constructor
+If you create more complicated events which get reused throughout of your game then instead of building up the event each time you can subclass from `Event` and add your parameters into the constructor
 ```java
 public class MissionStartedEvent extends Event {
 
@@ -196,8 +152,7 @@ public class MissionStartedEvent extends Event {
     }
 }
 ```
-And you will be able to record events by creating a new instance and passing
-it to `recordEvent(Event)`
+And you will be able to record events by creating a new instance and passing it to `recordEvent(Event)`
 ```java
 DDNA.instance().recordEvent(new MissionStartedEvent(
         "Mission01",
@@ -207,10 +162,7 @@ DDNA.instance().recordEvent(new MissionStartedEvent(
 ```
 
 ### Transactions
-A transaction is a complex event which introduces nesting, arrays, and some
-special objects that you will encounter when the player buys, trades, wins,
-exchanges currency and items with the game or other players. To help with this
-we provide `Transaction`, which is an `Event` with additional properties
+A transaction is a complex event which introduces nesting, arrays, and some special objects that you will encounter when the player buys, trades, wins, exchanges currency and items with the game or other players. To help with this we provide `Transaction`, which is an `Event` with additional properties
 ```java
 recordEvent(new Transaction(
         "IAP - Large Treasure Chest",
@@ -224,12 +176,9 @@ recordEvent(new Transaction(
         .setId("47891208312996456524019-178.149.115.237:51787")
         .setProductId("4019"));
 ```
-It is also worth noting that the currency value is always sent as an integer
-in the minor currency unit and with the ISO-4217 3 character currency code.
+It is also worth noting that the currency value is always sent as an integer in the minor currency unit and with the ISO-4217 3 character currency code.
 
-This event may be more complex, but the structure is logical, flexible, and
-provides a mechanism for players spending or receiving any combination of
-currencies and items.
+This event may be more complex, but the structure is logical, flexible, and provides a mechanism for players spending or receiving any combination of currencies and items.
 
 ## Engage
 An Engage request can be performed by calling `requestEngagement(Engagement, EngageListener)`, providing your `Engagement` and a an `EngageListener` for listening to the completion or error.
@@ -319,36 +268,28 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 ```
 
 ## Push notifications
-The SDK can store the Android Registration Id for the device and send it to
-deltaDNA so that you may send targeted push notification messages to players.
+The SDK can store the Android Registration Id for the device and send it to deltaDNA so that you may send targeted push notification messages to players.
 
-If your application already handles retrieving of the id then you can set it on
-the SDK by calling
+If your application already handles retrieving of the id then you can set it on the SDK by calling
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
 You may however also make use of the [deltadna-sdk-notifications](library-notifications) addon which requires less work on your side for refreshing the GCM id/token.
 
-If you would like to unregister the client from receiving push notifications
-then you should call
+If you would like to unregister the client from receiving push notifications then you should call
 ```Java
 DDNA.instance().clearRegistrationId();
 ```
 
 ## Settings
-If you need further customisation on how the SDK works, such as disabling the
-automatic event uploads, or changing the number of retries for failed requests
-then you may do so through the `Settings` class, which can be retrieved through
+If you need further customisation on how the SDK works, such as disabling the automatic event uploads, or changing the number of retries for failed requests then you may do so through the `Settings` class, which can be retrieved through
 ```java
 DDNA.instance().getSettings();
 ```
 Settings can also be set during the initialisation step on the `Configuration`.
 
 ## ProGuard
-There is no need to add additional directives in your ProGuard configuration if
-you are setting `minifyEnabled true` for your application as the library
-provides its own configuration file which gets included by the Android build
-tools during the build process.
+There is no need to add additional directives in your ProGuard configuration if you are setting `minifyEnabled true` for your application as the library provides its own configuration file which gets included by the Android build tools during the build process.
 
 ## Changelog
 Can be found [here](CHANGELOG.md).
@@ -358,5 +299,4 @@ Can be found [here](CHANGELOG.md).
 * [version 4.1](docs/migrations/4.1.md)
 
 ## License
-
 The sources are available under the Apache 2.0 license.
