@@ -28,12 +28,6 @@
 ## Overview
 The deltaDNA SDK allows your Android games to record in-game events and upload player actions. It contains event caching, numerous helper methods, and some automated behaviours to help simplify your integration.
 
-Events are sent to the deltaDNA platform as JSON objects. These events are managed and tracked using the online dashboard.
-
-When your game records events the SDK will store them locally and upload them at regular intervals when a connection is available, or at a time of your choosing. This allows the SDK to collect events regardless of connectivity and gives you control over the timing and frequency of uploads.
-
-Events vary in complexity, but are all derived from a common event schema. This document and the accompanying example application provide examples of increasingly complex events.
-
 ## Adding to a project
 The deltaDNA SDK can be used in Android projects using minimum SDK version 15 and newer (Android 4.0.3+).
 
@@ -57,7 +51,7 @@ The SDK needs to be initialised with the following parameters in an `Application
 * `Application` instance
 * `environmentKey`, a unique 32 character string assigned to your application. You will be assigned separate application keys for development and production builds of your game. You will need to change the environment key that you initialise the SDK with as you move from development and testing to production.
 * `collectUrl`, this is the address of the server that will be collecting your events.
-* `engageUrl`, this is the address of the server that will provide real-time A/B Testing and Targeting. This is only required if your game uses these features.
+* `engageUrl`, this is the address of the server that will provide real-time A/B Testing and Targeting.
 ```java
 public class MyApplication extends Application {
 
@@ -286,7 +280,7 @@ If you need further customisation on how the SDK works, such as disabling the au
 ```java
 DDNA.instance().getSettings();
 ```
-Settings can also be set during the initialisation step on the `Configuration`.
+Settings can also be set during the initialisation step on the `Configuration`, which is the recommended approach.
 
 ## ProGuard
 There is no need to add additional directives in your ProGuard configuration if you are setting `minifyEnabled true` for your application as the library provides its own configuration file which gets included by the Android build tools during the build process.
