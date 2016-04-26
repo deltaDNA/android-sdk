@@ -289,8 +289,8 @@ There is no need to add additional directives in your ProGuard configuration if 
 Can be found [here](CHANGELOG.md).
 
 ## Migrations
-* [version 4.0](docs/migrations/4.0.md)
-* [version 4.1](docs/migrations/4.1.md)
+* [Version 4.0](docs/migrations/4.0.md)
+* [Version 4.1](docs/migrations/4.1.md)
 
 ## License
 The sources are available under the Apache 2.0 license.
