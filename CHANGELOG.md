@@ -4,10 +4,8 @@
 Added automatic session refreshing.  
 Added improved APIs for Engagements and Image Messaging.  
 Added separate notifications project as an optional module.  
+Fixed JavaDoc links to Android/Java classes.  
 Fixed Image Message background action.
-
-## [4.0.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.4) (YYYY-MM-DD)
-Fixed JavaDoc links to Android/Java classes.
 
 ## [4.0.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.0.3) (2016-03-29)
 Added support for event de-duplication.
