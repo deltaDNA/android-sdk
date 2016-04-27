@@ -295,6 +295,7 @@ public final class DDNA {
      *
      * @deprecated as of version 4, replaced by {@link #recordEvent(Event)}
      */
+    @Deprecated
     public DDNA recordEvent(String name, @Nullable Params params) {
         return recordEvent((params != null)
                 ? new Event(name, params)
@@ -313,6 +314,7 @@ public final class DDNA {
      *
      * @deprecated as of version 4, replaced by {@link #recordEvent(Event)}
      */
+    @Deprecated
     public DDNA recordEvent(String name, @Nullable JSONObject params) {
         return recordEvent((params != null)
                 ? new Event(name, new Params(params))

@@ -206,7 +206,7 @@ If there was an error processing your Engage request at the server then the deta
 ### Image Messaging
 An Image Messaging request is performed in a similar way to an Engage request with an `ImageMessage` instance being built up from the returned `Engagement` in the `onCompleted(Engagement)` callback method. Since the decision point may not have been set-up to show an Image Message, the return value of `ImageMessage.create(Engagement)` needs to be null checked.
 ```java
-DDNA.instance().requestImageMessage(
+DDNA.instance().requestEngagement(
         new Engagement("missionDifficulty"),
         new EngageListener<Engagement>() {
             @Override
