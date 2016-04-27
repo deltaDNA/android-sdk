@@ -16,8 +16,11 @@
 
 package com.deltadna.android.sdk;
 
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -47,7 +50,7 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class EventStore {
+class EventStore extends BroadcastReceiver {
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
@@ -60,10 +63,21 @@ class EventStore {
     private static final int EVENTS_LIMIT = 1024 * 1024;
     private static final int STORE_LIMIT = 5 * EVENTS_LIMIT;
     
+    private static final IntentFilter FILTER;
+    static {
+        final IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
+        filter.addDataScheme("file");
+        
+        FILTER = filter;
+    }
+    
     private static final Lock LEGACY_MIGRATION_LOCK = new ReentrantLock();
     
     private final Context context;
     private final Settings settings;
+    private final Preferences prefs;
+    
     private final DbHelper db;
     
     @Nullable
@@ -72,6 +86,7 @@ class EventStore {
     EventStore(Context context, Settings settings, Preferences prefs) {
         this.context = context;
         this.settings = settings;
+        this.prefs = prefs;
         
         db = new DbHelper(context);
         
@@ -84,22 +99,20 @@ class EventStore {
             sha1 = digest;
         }
         
-        for (final Location location : Location.values()) {
-            if (location.available()) {
-                final File dir = location.directory(context);
-                if (!dir.exists()) {
-                    if (!dir.mkdirs()) {
-                        Log.w(TAG, "Failed creating " + dir);
-                    } else {
-                        Log.d(TAG, "Created " + dir);
-                    }
-                }
-            } else {
-                Log.w(TAG, location + " not available");
-            }
-        }
+        context.registerReceiver(this, FILTER);
         
-        new MigrateLegacyStore(prefs).execute();
+        prepare();
+    }
+    
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        final String action = intent.getAction();
+        if (action != null && action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
+            Log.d(TAG, "Received media mounted broadcast");
+            prepare();
+        } else {
+            Log.w(TAG, "Unexpected broadcast action: " + action);
+        }
     }
     
     /**
@@ -140,6 +153,25 @@ class EventStore {
         }
     }
     
+    private void prepare() {
+        for (final Location location : Location.values()) {
+            if (location.available()) {
+                final File dir = location.directory(context);
+                if (!dir.exists()) {
+                    if (!dir.mkdirs()) {
+                        Log.w(TAG, "Failed creating " + dir);
+                    } else {
+                        Log.d(TAG, "Created " + dir);
+                    }
+                }
+            } else {
+                Log.w(TAG, location + " not available");
+            }
+        }
+        
+        new MigrateLegacyStore(prefs).execute();
+    }
+    
     @Nullable
     private String md5(byte[] content) {
         if (sha1 == null) return null;
@@ -167,7 +199,8 @@ class EventStore {
             store = new LegacyEventStore(
                     directory.getPath(),
                     prefs,
-                    false);
+                    false,
+                    true);
         }
         
         @Override

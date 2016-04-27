@@ -55,12 +55,12 @@ class LegacyEventStore {
      * @param path Path to where we hold the events.
      * @param debug
      */
-    public LegacyEventStore(String path, Preferences prefs, boolean debug) {
+    public LegacyEventStore(String path, Preferences prefs, boolean debug, boolean ignoreMissingDir) {
         this.prefs = prefs;
         mDebug = debug;
 
         try{
-            initialiseFileStreams(path, false);
+            initialiseFileStreams(path, false, ignoreMissingDir);
             mInitialised = true;
         }catch (Exception e){
             log("Problem initialising Event Store: " + e.getMessage());
@@ -200,10 +200,12 @@ class LegacyEventStore {
      * @param path Base path to use.
      * @param reset TRUE if existing files should be deleted.
      */
-    private void initialiseFileStreams(String path, boolean reset){
+    private void initialiseFileStreams(String path, boolean reset, boolean ignoreMissingDir) {
         File dir = new File(path);
 
         if(!dir.exists()){
+            if (ignoreMissingDir) return;
+            
             dir.mkdirs();
         }
 
