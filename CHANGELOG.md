@@ -1,5 +1,7 @@
 # Change Log
 
+## [4.1.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.1) (YYYY-MM-DD)
+
 ## [4.1.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.0) (2016-04-29)
 Added automatic session refreshing.  
 Added improved APIs for Engagements and Image Messaging.  
