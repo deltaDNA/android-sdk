@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.exceptions
+android {}
 
-import com.deltadna.android.sdk.net.Response
-
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
-@RunWith(JUnit4::class)
-class ResponseExceptionTest {
+dependencies {
+    compile "com.android.support:support-annotations:$supportVersion"
+    compile 'com.google.android.gms:play-services-gcm:7.8.0'
     
-    @Test(expected = IllegalArgumentException::class)
-    fun failsOnSuccessfulResponse() {
-        ResponseException(Response<String>(200, null, null))
-    }
+    provided project(':library')
 }

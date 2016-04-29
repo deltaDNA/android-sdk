@@ -73,7 +73,7 @@ class NetworkManagerTest {
     @Before
     fun before() {
         val settings = mock<Settings>()
-        whenever(settings.httpRequestMaxRetries()).thenReturn(1)
+        whenever(settings.httpRequestMaxRetries).thenReturn(1)
         
         server = MockWebServer()
         server!!.start()

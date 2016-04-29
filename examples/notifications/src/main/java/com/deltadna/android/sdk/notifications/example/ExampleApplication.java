@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.exceptions;
+package com.deltadna.android.sdk.notifications.example;
 
-import com.deltadna.android.sdk.net.Response;
+import android.app.Application;
 
-/**
- * Static factory for creating {@link ResponseException}s from
- * {@link Response}s.
- */
-public final class ResponseExceptionFactory {
+import com.deltadna.android.sdk.DDNA;
+
+public class ExampleApplication extends Application {
     
-    public static ResponseException create(Response<String> response) {
-        if (response.code == 400) {
-            return new BadRequestException(response);
-        } else {
-            return new ResponseException(response);
-        }
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        
+        DDNA.initialise(new DDNA.Configuration(
+                this,
+                "07575004106474324897044893014183",
+                "http://collect3347ndrds.deltadna.net/collect/api",
+                "http://engage3347ndrds.deltadna.net"));
     }
-    
-    private ResponseExceptionFactory() {}
 }

@@ -14,24 +14,11 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.exceptions
+package com.deltadna.android.sdk.util;
 
-import com.deltadna.android.sdk.net.Response
+import java.util.Iterator;
 
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
-import com.google.common.truth.Truth.assertThat
-
-@RunWith(JUnit4::class)
-class ResponseExceptionFactoryTest {
+public interface CloseableIterator<T> extends Iterator<T> {
     
-    @Test
-    fun create() {
-        assertThat(ResponseExceptionFactory.create(Response<String>(400, null, null)))
-                .isInstanceOf(BadRequestException::class.java)
-        assertThat(ResponseExceptionFactory.create(Response<String>(404, null, null)))
-                .isInstanceOf(ResponseException::class.java)
-    }
+    void close(boolean clear);
 }

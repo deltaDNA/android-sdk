@@ -35,7 +35,7 @@ deltaDNA SDK允许你的Android游戏记录游戏中的事件和上传玩家的�
 事件的复杂度有所不同，但是所有的事件均采用一个共同的事件结构。本文档和附带的案例应用程序将提供各种复杂度的事件示例。
 
 ## 添加至项目
-deltaDNA SDK可以用于基于第9版和更新版本（Android 2.3+）内核SDK的Android项目。
+deltaDNA SDK可以用于基于第15版和更新版本（Android 4.0.3+）内核SDK的Android项目。
 
 ### Gradle
 在你的顶层构建脚本
@@ -49,7 +49,7 @@ allprojects {
 ```
 在你APP的构建脚本
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.0.3'
+compile 'com.deltadna.android:deltadna-sdk:4.1.0'
 ```
 
 ## 初始化
@@ -277,7 +277,7 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
-然而你可能还会使用[deltadna-notifications](https://github.com/deltaDNA/android-notifications-sdk)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
+然而你可能还会使用[deltadna-sdk-notifications](library-notifications)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
 
 如果你想要在接收推送通知时注销客户端，你需要调用
 ```Java

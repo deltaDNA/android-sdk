@@ -2,6 +2,7 @@
 .idea/
 *.iml
 /captures
+coverage-error.log
 
 # Gradle
 .gradle

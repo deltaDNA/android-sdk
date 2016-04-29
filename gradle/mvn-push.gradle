@@ -92,10 +92,14 @@ afterEvaluate { project ->
     }
     
     task androidJavadocs(type: Javadoc) {
+        failOnError false // FIXME :library-notifications:androidJavadocs fails
         source = android.sourceSets.main.java.srcDirs
-        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-        // https://github.com/chrisbanes/gradle-mvn-push/issues/39
-        classpath += project.android.libraryVariants.toList().first().javaCompile.classpath
+        title = "$POM_NAME $VERSION_NAME API"
+        //options.links('http://docs.oracle.com/javase/6/docs/api/')
+        options.linksOffline('http://d.android.com/reference', "${android.sdkDirectory}/docs/reference")
+        options.linksOffline('http://developers.google.com/android/reference', "${android.sdkDirectory}/extras/google/google_play_services/docs/reference")
+        classpath += files(android.libraryVariants.toList().first().javaCompile.classpath.files)
+        classpath += files(android.getBootClasspath())
     }
     
     task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {

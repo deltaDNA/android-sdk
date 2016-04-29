@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.exceptions
+package com.deltadna.android.sdk;
 
-import com.deltadna.android.sdk.net.Response
+import android.support.annotation.Nullable;
 
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-
-@RunWith(JUnit4::class)
-class BadRequestExceptionTest {
+interface EventStoreItem {
     
-    @Test(expected = IllegalArgumentException::class)
-    fun failsOnNonBadRequestResponse() {
-        BadRequestException(Response<String>(404, null, null))
-    }
+    boolean available();
+    
+    @Nullable
+    String get();
 }

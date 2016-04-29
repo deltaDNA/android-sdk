@@ -61,7 +61,6 @@ public final class DDNA {
             "Android SDK v" + BuildConfig.VERSION_NAME;
     private static final int ENGAGE_API_VERSION = 4;
     
-    private static final String EVENT_STORAGE_PATH = "%s/ddsdk/events/";
     private static final String ENGAGE_STORAGE_PATH = "%s/ddsdk/engage/";
     
     private static final SimpleDateFormat TIMESTAMP_FORMAT;
@@ -76,7 +75,6 @@ public final class DDNA {
     private static DDNA instance;
     
     private final Settings settings;
-    
     @Nullable
     private final String clientVersion;
     
@@ -84,7 +82,9 @@ public final class DDNA {
     private final EventStore store;
     private final EngageArchive archive;
     private final NetworkManager network;
-    private final EventHandler handler;
+    
+    private final SessionRefreshHandler sessionHandler;
+    private final EventHandler eventHandler;
     
     private final String engageStoragePath;
     
@@ -151,18 +151,21 @@ public final class DDNA {
             Log.w(BuildConfig.LOG_TAG, "SDK already started");
         } else {
             setUserId(userId);
-            newSession();
+            newSession(true);
             
             started = true;
             
-            triggerDefaultEvents();
+            if (settings.getSessionTimeout() > 0) {
+                sessionHandler.register();
+            }
             
-            // setup automated event uploads
             if (settings.backgroundEventUpload()) {
-                handler.start(
+                eventHandler.start(
                         settings.backgroundEventUploadStartDelaySeconds(),
                         settings.backgroundEventUploadRepeatRateSeconds());
             }
+            
+            triggerDefaultEvents();
             
             Log.d(BuildConfig.LOG_TAG, "SDK started");
         }
@@ -173,8 +176,8 @@ public final class DDNA {
     /**
      * Stops the SDK.
      * <p>
-     * Calling this method sends a 'gameEnded' event to Collect and
-     * disables background uploads.
+     * Calling this method sends a 'gameEnded' event to Collect, disables
+     * background uploads and automatic session refreshing.
      *
      * @return this {@link DDNA} instance
      */
@@ -186,7 +189,8 @@ public final class DDNA {
         } else {
             recordEvent("gameEnded");
             
-            handler.stop(true);
+            sessionHandler.unregister();
+            eventHandler.stop(true);
             if (archive != null) {
                 archive.save();
             }
@@ -213,6 +217,15 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA newSession() {
+        return newSession(false);
+    }
+    
+    DDNA newSession(boolean suppressWarning) {
+        if (!suppressWarning && settings.getSessionTimeout() > 0) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Automatic session refreshing is enabled");
+        }
+        
         sessionId = UUID.randomUUID().toString();
         return this;
     }
@@ -262,10 +275,10 @@ public final class DDNA {
             jsonEvent.put("eventParams", params);
         } catch (JSONException e) {
             // should never happen due to params enforcement
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
         
-        handler.handleEvent(jsonEvent);
+        eventHandler.handleEvent(jsonEvent);
         
         return this;
     }
@@ -282,6 +295,7 @@ public final class DDNA {
      *
      * @deprecated as of version 4, replaced by {@link #recordEvent(Event)}
      */
+    @Deprecated
     public DDNA recordEvent(String name, @Nullable Params params) {
         return recordEvent((params != null)
                 ? new Event(name, params)
@@ -300,6 +314,7 @@ public final class DDNA {
      *
      * @deprecated as of version 4, replaced by {@link #recordEvent(Event)}
      */
+    @Deprecated
     public DDNA recordEvent(String name, @Nullable JSONObject params) {
         return recordEvent((params != null)
                 ? new Event(name, new Params(params))
@@ -343,7 +358,7 @@ public final class DDNA {
      */
     public DDNA requestEngagement(
             String decisionPoint,
-            EngageListener listener) {
+            EngageListener<Engagement> listener) {
         
         return requestEngagement(new Engagement(decisionPoint), listener);
     }
@@ -362,9 +377,9 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code engagement} is null
      */
-    public DDNA requestEngagement(
-            Engagement engagement,
-            EngageListener listener) {
+    public <E extends Engagement> DDNA requestEngagement(
+            E engagement,
+            EngageListener<E> listener) {
         
         Preconditions.checkArg(engagement != null, "engagement cannot be null");
         
@@ -374,34 +389,12 @@ public final class DDNA {
             return this;
         }
         
-        final JSONObject event;
-        try {
-            event = new JSONObject()
-                    .put("userID", getUserId())
-                    .put("decisionPoint", engagement.name)
-                    .put("sessionID", sessionId)
-                    .put("version", ENGAGE_API_VERSION)
-                    .put("sdkVersion", SDK_VERSION)
-                    .put("platform", ClientInfo.platform())
-                    .put("manufacturer", ClientInfo.manufacturer())
-                    .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
-                    .put("timezoneOffset", ClientInfo.timezoneOffset())
-                    .put("locale", ClientInfo.locale());
-            
-            if (!TextUtils.isEmpty(engagement.flavour)) {
-                event.put("flavour", engagement.flavour);
-            }
-            
-            if (!engagement.params.isEmpty()) {
-                event.put("parameters", engagement.params.json);
-            }
-        } catch (JSONException e) {
-            // should never happen due to params enforcement
-            throw new RuntimeException(e);
-        }
-        
-        handler.handleEngagement(
-                engagement.name, engagement.flavour, event, listener);
+        eventHandler.handleEngagement(
+                engagement,
+                listener,
+                getUserId(),
+                sessionId,
+                ENGAGE_API_VERSION, SDK_VERSION);
         
         return this;
     }
@@ -427,10 +420,11 @@ public final class DDNA {
      * @deprecated  as of version 4, replaced by
      *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestEngagement(
             String decisionPoint,
             @Nullable JSONObject params,
-            EngageListener listener) {
+            EngageListener<Engagement> listener) {
         
         return requestEngagement(decisionPoint, null, params, listener);
     }
@@ -451,11 +445,12 @@ public final class DDNA {
      * @deprecated  as of version 4, replaced by
      *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestEngagement(
             String decisionPoint,
             @Nullable String flavour,
             @Nullable JSONObject params,
-            EngageListener listener) {
+            EngageListener<Engagement> listener) {
         
         return requestEngagement(
                 (params != null)
@@ -478,7 +473,11 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code decisionPoint} is null
      *                                  or empty
+     *
+     * @deprecated  as of version 4.1, replaced by
+     *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestImageMessage(
             String decisionPoint,
             ImageMessageListener listener) {
@@ -497,7 +496,11 @@ public final class DDNA {
      * @param listener      listener for the result
      *
      * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1, replaced by
+     *              {@link #requestEngagement(Engagement, EngageListener)}
      */
+    @Deprecated
     public DDNA requestImageMessage(
             Engagement engagement,
             ImageMessageListener listener) {
@@ -515,7 +518,7 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA upload() {
-        handler.dispatch();
+        eventHandler.dispatch();
         return this;
     }
     
@@ -623,7 +626,7 @@ public final class DDNA {
         preferences.clear();
         store.clear();
         archive.clear();
-
+        
         return this;
     }
     
@@ -701,23 +704,31 @@ public final class DDNA {
             @Nullable String userId) {
         
         this.settings = settings;
-        
         this.clientVersion = clientVersion;
         
-        // FIXME event store and event archive
+        // FIXME event archive
         final File dir = application.getExternalFilesDir(null);
         final String path = (dir != null)
                 ? dir.getAbsolutePath()
                 : "/";
         
         preferences = new Preferences(application);
-        store = new EventStore(
-                String.format(Locale.US, EVENT_STORAGE_PATH, path),
-                preferences,
-                settings.debugMode());
+        store = new EventStore(application, settings, preferences);
         archive = new EngageArchive(engageStoragePath =
                 String.format(Locale.US, ENGAGE_STORAGE_PATH, path));
-        handler = new EventHandler(
+        
+        sessionHandler = new SessionRefreshHandler(
+                application,
+                settings,
+                new SessionRefreshHandler.Listener() {
+                    @Override
+                    public void onExpired() {
+                        Log.d(  BuildConfig.LOG_TAG,
+                                "Session expired, updating id");
+                        newSession(true);
+                    }
+                });
+        eventHandler = new EventHandler(
                 store,
                 archive,
                 network = new NetworkManager(
@@ -734,7 +745,7 @@ public final class DDNA {
         if (    !url.toLowerCase(Locale.US).startsWith("http://")
                 && !url.toLowerCase(Locale.US).startsWith("https://")) {
             
-            url = "http://" + url;
+            return "http://" + url;
         }
         
         return url;

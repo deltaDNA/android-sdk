@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.exceptions;
-
-import com.deltadna.android.sdk.helpers.Preconditions;
-import com.deltadna.android.sdk.net.Response;
+package com.deltadna.android.sdk.notifications;
 
 /**
- * {@link Exception} for a failed {@link Response}, where the code
- * does not fall within the 200-299 range.
+ * Actions must match definitions in AndroidManifest.xml.
  */
-public class ResponseException extends Exception {
+class Actions {
     
-    public final Response response;
+    static final String NOTIFICATION_OPENED =
+            "com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED";
+    static final String NOTIFICATION_DISMISSED =
+            "com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED";
     
-    ResponseException(Response response) {
-        super("Failed with response " + response);
-        
-        Preconditions.checkArg(
-                !response.isSuccessful(),
-                "exception cannot be used for successful responses");
-        
-        this.response = response;
-    }
+    private Actions() {}
 }

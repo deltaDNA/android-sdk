@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk.net
 
 import com.google.common.truth.Truth.assertThat
+import com.nhaarman.mockito_kotlin.*
 import nl.jqno.equalsverifier.EqualsVerifier
 import org.junit.Assert.fail
 import org.junit.Test
@@ -26,6 +27,7 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.net.HttpURLConnection
 
 @RunWith(JUnit4::class)
 class ResponseTest {
@@ -35,24 +37,32 @@ class ResponseTest {
         val code = 1
         val bytes = byteArrayOf(1)
         val body = Object()
-        val uut = Response(code, bytes, body)
+        val error = "error"
+        val uut = Response(code, bytes, body, error)
         
         assertThat(uut.code).isSameAs(code)
         assertThat(uut.bytes).isSameAs(bytes)
         assertThat(uut.body).isSameAs(body)
+        assertThat(uut.error).isSameAs(error)
     }
     
     @Test
     fun isSuccessful() {
-        assertThat(Response(Integer.MIN_VALUE, null, null).isSuccessful).isFalse()
+        assertThat(Response(Integer.MIN_VALUE, null, null, null).isSuccessful)
+                .isFalse()
         
-        assertThat(Response(199, null, null).isSuccessful).isFalse()
-        assertThat(Response(200, null, null).isSuccessful).isTrue()
+        assertThat(Response(199, null, null, null).isSuccessful)
+                .isFalse()
+        assertThat(Response(200, null, null, null).isSuccessful)
+                .isTrue()
         
-        assertThat(Response(299, null, null).isSuccessful).isTrue()
-        assertThat(Response(300, null, null).isSuccessful).isFalse()
+        assertThat(Response(299, null, null, null).isSuccessful)
+                .isTrue()
+        assertThat(Response(300, null, null, null).isSuccessful)
+                .isFalse()
         
-        assertThat(Response(Integer.MAX_VALUE, null, null).isSuccessful).isFalse()
+        assertThat(Response(Integer.MAX_VALUE, null, null, null).isSuccessful)
+                .isFalse()
     }
     
     @Test
@@ -61,48 +71,70 @@ class ResponseTest {
     }
     
     @Test
-    fun create() {
-        val code = 1
-        val input = "lorem ipsum"
-        val stream = ByteArrayInputStream(input.toByteArray())
-        
-        val uut = Response.create(
-                code,
-                input.toByteArray().size,
-                stream,
-                ResponseBodyConverter.STRING)
-        
-        assertThat(uut.code).isEqualTo(code)
-        assertThat(uut.body).isEqualTo(input)
-        assertThat(stream.available()).isEqualTo(0)
+    fun inputStreamReadAndClosed() {
+        with(mock<HttpURLConnection>()) {
+            val input = "input".toByteArray()
+            val stream = spy(ByteArrayInputStream(input))
+            whenever(this.responseCode).thenReturn(200)
+            whenever(this.contentLength).thenReturn(input.size)
+            whenever(this.inputStream).thenReturn(stream)
+            
+            with(Response.create<String>(this, ResponseBodyConverter.STRING)) {
+                assertThat(code).isEqualTo(200)
+                assertThat(bytes).isEqualTo(input)
+                assertThat(body).isEqualTo(String(bytes))
+                assertThat(error).isNull()
+            }
+            verify(stream, times(input.size + 1)).read()
+            verify(stream).close()
+        }
+    }
+    
+    @Test
+    fun errorStreamReadAndClosed() {
+        with(mock<HttpURLConnection>()) {
+            val input = "input".toByteArray()
+            val stream = spy(ByteArrayInputStream(input))
+            whenever(this.responseCode).thenReturn(300)
+            whenever(this.contentLength).thenReturn(input.size)
+            whenever(this.errorStream).thenReturn(stream)
+            
+            with(Response.create<String>(this, ResponseBodyConverter.STRING)) {
+                assertThat(code).isEqualTo(300)
+                assertThat(bytes).isEqualTo(input)
+                assertThat(body).isNull()
+                assertThat(error).isEqualTo(String(bytes))
+            }
+            verify(stream, times(input.size + 1)).read()
+            verify(stream).close()
+        }
     }
     
     @Test
     fun createWithStreamingInput() {
         val input = arrayOf("lorem ", "ipsum")
         val stream = PipedInputStream()
-        val out = PipedOutputStream(stream)
+        val connection = with(mock<HttpURLConnection>()) {
+            whenever(this.responseCode).thenReturn(200)
+            whenever(this.contentLength).thenReturn(-1)
+            whenever(this.inputStream).thenReturn(stream)
+            this
+        }
         
+        val out = PipedOutputStream(stream)
         Thread(Runnable {
             for (token in input) {
                 Thread.sleep(100)
                 out.write(token.toByteArray())
             }
-            
             out.close()
         }).start()
-        val uut = Response.create(
-                1,
-                -1,
-                stream,
-                ResponseBodyConverter.STRING)
+        val uut = Response.create(connection, ResponseBodyConverter.STRING)
         
         assertThat(uut.body).isEqualTo("lorem ipsum")
         try {
             stream.read()
             fail("stream has not been closed")
-        } catch (e: IOException) {
-            // expected
-        }
+        } catch (expected: IOException) {}
     }
 }

@@ -17,7 +17,6 @@
 package com.deltadna.android.sdk.net
 
 import android.os.Handler
-import com.deltadna.android.sdk.exceptions.ResponseException
 import com.deltadna.android.sdk.listeners.RequestListener
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
@@ -29,6 +28,7 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.runners.MockitoJUnitRunner
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 @RunWith(MockitoJUnitRunner::class)
@@ -61,7 +61,7 @@ class NetworkDispatcherTest {
     @Test
     fun successfulRequest() {
         val responseBody = "response"
-        val listener = mock<RequestListener<Response<String>>>()
+        val listener = mock<RequestListener<String>>()
         
         server!!.enqueue(MockResponse()
                 .setResponseCode(200)
@@ -79,54 +79,60 @@ class NetworkDispatcherTest {
         Thread.sleep(100)
         
         assertThat(server!!.requestCount).isEqualTo(1)
-        verify(listener).onSuccess(
-                eq(Response(200, responseBody.toByteArray(), responseBody)))
+        verify(listener).onCompleted(eq(Response(
+                200,
+                responseBody.toByteArray(),
+                responseBody,
+                null)))
     }
     
     @Test
     fun failureRetriesRequest() {
         val responseBody = "not found"
-        val listener = mock<RequestListener<Response<Void>>>()
+        val listener = mock<RequestListener<Void>>()
         
-        for (i in 0..1 + MAX_RETRIES - 1) {
+        for (i in 0..MAX_RETRIES) {
             server!!.enqueue(MockResponse()
                     .setResponseCode(404)
-                    .setBody(responseBody))
+                    .setBody(responseBody)
+                    .setBodyDelay(150, TimeUnit.MILLISECONDS))
         }
         
         uut!!.enqueue(
                 Request.Builder<Void>()
                         .get()
                         .url(server!!.url("/failure").toString())
+                        .readTimeout(100)
                         .maxRetries(MAX_RETRIES)
                         .build(),
                 listener)
         
-        for (i in 0..1 + MAX_RETRIES - 1) {
+        Thread.sleep(200L * MAX_RETRIES)
+        for (i in 0..MAX_RETRIES) {
             server!!.takeRequest()
         }
         Thread.sleep(100)
         
         assertThat(server!!.requestCount).isEqualTo(MAX_RETRIES + 1)
-        verify(listener).onFailure(argThat {
-                assertThat(this).isInstanceOf(ResponseException::class.java)
-                assertThat((this as ResponseException).response).isEqualTo(
-                        Response(404, responseBody.toByteArray(), responseBody))
-                true
-            })
+        verify(listener).onError(isA<IOException>())
     }
     
     @Test
     fun retriesRespectDelay() {
-        val listener = mock<RequestListener<Response<Void>>>()
+        val listener = mock<RequestListener<Void>>()
         
-        server!!.enqueue(MockResponse().setResponseCode(404))
-        server!!.enqueue(MockResponse().setResponseCode(200))
+        server!!.enqueue(MockResponse()
+                .setResponseCode(404)
+                .setBodyDelay(150, TimeUnit.MILLISECONDS))
+        server!!.enqueue(MockResponse()
+                .setResponseCode(200)
+                .setBodyDelay(150, TimeUnit.MILLISECONDS))
         
         uut!!.enqueue(
                 Request.Builder<Void>()
                         .get()
                         .url(server!!.url("/delay").toString())
+                        .readTimeout(100)
                         .maxRetries(1)
                         .retryDelay(1000)
                         .build(),
@@ -141,14 +147,14 @@ class NetworkDispatcherTest {
         assertThat(second - first).isGreaterThan(900L)
         assertThat(second - first).isAtMost(1100L)
         assertThat(server!!.requestCount).isEqualTo(2)
-        verify(listener).onSuccess(any())
+        verify(listener).onCompleted(any())
     }
     
     // FIXME test failing only on jenkins
     @Ignore
     @Test
     fun requestCancellation() {
-        val listener = mock<RequestListener<Response<Void>>>()
+        val listener = mock<RequestListener<Void>>()
         
         server!!.enqueue(MockResponse()
                 .setResponseCode(200)

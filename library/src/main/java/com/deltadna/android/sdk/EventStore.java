@@ -16,245 +16,526 @@
 
 package com.deltadna.android.sdk;
 
+import android.content.BroadcastReceiver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
+import android.os.Environment;
+import android.provider.BaseColumns;
+import android.support.annotation.Nullable;
+import android.util.Log;
 
-import com.deltadna.android.sdk.helpers.Utils;
+import com.deltadna.android.sdk.helpers.Settings;
+import com.deltadna.android.sdk.util.CloseableIterator;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Vector;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * DeltaDNA event store, implements a two file buffer of events.
- */
-class EventStore {
-	static private final String PF_KEY_IN_FILE = "DDSDK_EVENT_IN_FILE";
-	static private final String PF_KEY_OUT_FILE = "DDSDK_EVENT_OUT_FILE";
-	static private final String FILE_A = "A";
-	static private final String FILE_B = "B";
-	static private final int MAX_FILE_SIZE = 4 * 1024 * 1024;	// 4MB
+class EventStore extends BroadcastReceiver {
     
+    private static final String TAG = BuildConfig.LOG_TAG
+            + ' '
+            + EventStore.class.getSimpleName();
+    private static final String DIRECTORY = "com.deltadna.android.sdk"
+            + File.separator
+            + "events"
+            + File.separator;
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final int EVENTS_LIMIT = 1024 * 1024;
+    private static final int STORE_LIMIT = 5 * EVENTS_LIMIT;
+    
+    private static final IntentFilter FILTER;
+    static {
+        final IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
+        filter.addDataScheme("file");
+        
+        FILTER = filter;
+    }
+    
+    private static final Lock LEGACY_MIGRATION_LOCK = new ReentrantLock();
+    
+    private final Context context;
+    private final Settings settings;
     private final Preferences prefs;
     
-	private String mInFilePath = null;
-	private String mOutFilePath = null;
-	
-	private File mInFile = null;
-
-	private boolean mInitialised = false;
-	private boolean mDebug = false;
-	
-	protected ReentrantLock mLock = new ReentrantLock();
-
-	/**
-	 * Initializes a new instance of the {@link EventStore} class.
-	 * 
-	 * @param path Path to where we hold the events.
-	 * @param debug
-	 */
-    public EventStore(String path, Preferences prefs, boolean debug) {
+    private final DbHelper db;
+    
+    @Nullable
+    private final MessageDigest sha1;
+    
+    EventStore(Context context, Settings settings, Preferences prefs) {
+        this.context = context;
+        this.settings = settings;
         this.prefs = prefs;
-		mDebug = debug;
+        
+        db = new DbHelper(context);
+        
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException e) {
+            Log.w(TAG, "Hashing will be disabled" , e);
+        } finally {
+            sha1 = digest;
+        }
+        
+        context.registerReceiver(this, FILTER);
+        
+        prepare();
+    }
+    
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        final String action = intent.getAction();
+        if (action != null && action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
+            Log.d(TAG, "Received media mounted broadcast");
+            prepare();
+        } else {
+            Log.w(TAG, "Unexpected broadcast action: " + action);
+        }
+    }
+    
+    /**
+     * Adds content to the store in a non-blocking manner.
+     *
+     * @param content the content to be saved
+     */
+    synchronized void add(String content) {
+        final byte[] bytes = content.getBytes(UTF8);
+        if (bytes.length > EVENTS_LIMIT) {
+            Log.w(TAG, "Skipping " + content + " due to bulk events limit");
+            return;
+        } else if (db.getEventsSize() + bytes.length > STORE_LIMIT) {
+            Log.w(TAG, "Skipping " + content + " due to full event store");
+            return;
+        }
+        
+        new SaveTask(bytes).execute();
+    }
 
-		try{
-			initialiseFileStreams(path, false);
-			mInitialised = true;
-		}catch (Exception e){
-			Log("Problem initialising Event Store: " + e.getMessage());
-		}
-	}
-	/**
-	 * Pushes a new object onto the event store.
-	 * 
-	 * @param obj The event to push
-	 * 
-	 * @return TRUE on success, FALSE otherwise.
-	 */
-	public boolean push(String obj){
-		boolean result = false;
-		
-		mLock.lock();
-		
-		if(mInitialised && (mInFile.length() < MAX_FILE_SIZE)){
-			try{
-				byte[] record = obj.getBytes("UTF-8");
-				byte[] length = Utils.toBytes(record.length);
-				
-				FileOutputStream strm = new FileOutputStream(mInFile, true);
-				strm.write(length);
-				strm.write(record);
-				strm.flush();
-				strm.close();
-				strm = null;
-				result = true;
-				
-			}catch (Exception e){
-				Log("Problem pushing event to Event Store: " + e.getMessage());
-			}
-		}
-		
-		mLock.unlock();
-		
-		return result;
-	}
-	/**
-	 * Swap the in and out buffers.
-	 * 
-	 * @return TRUE on success, FALSE otherwise.
-	 */
-	public boolean swap(){
-		boolean result = false;
-		
-		mLock.lock();
+    synchronized CloseableIterator<EventStoreItem> items() {
+        return new EventIterator(db, context);
+    }
 
-		File tempFile = new File(mOutFilePath);
-
-		// only swap if out buffer is empty
-		if(!tempFile.exists() || (tempFile.length() == 0)){
-			File outFile = mInFile;
-			mInFile = tempFile;
-			try {
-				mInFile.createNewFile();
-				mInFilePath = mInFile.getAbsolutePath();
-				mOutFilePath = outFile.getAbsolutePath();
+    synchronized void clear() {
+        db.removeEventRows();
+        for (final Location location : Location.values()) {
+            if (location.available()) {
+                final File dir = location.directory(context);
+                for (final File file : dir.listFiles()) {
+                    if (!file.delete()) {
+                        Log.w(TAG, "Failed to clear " + file);
+                    }
+                }
+            } else {
+                Log.w(TAG, location + " not available for clearing");
+            }
+        }
+    }
+    
+    private void prepare() {
+        for (final Location location : Location.values()) {
+            if (location.available()) {
+                final File dir = location.directory(context);
+                if (!dir.exists()) {
+                    if (!dir.mkdirs()) {
+                        Log.w(TAG, "Failed creating " + dir);
+                    } else {
+                        Log.d(TAG, "Created " + dir);
+                    }
+                }
+            } else {
+                Log.w(TAG, location + " not available");
+            }
+        }
+        
+        new MigrateLegacyStore(prefs).execute();
+    }
+    
+    @Nullable
+    private String md5(byte[] content) {
+        if (sha1 == null) return null;
+        
+        final StringBuilder hex = new StringBuilder();
+        for (final byte aByte : sha1.digest(content)) {
+            hex.append(String.format("%02x", aByte));
+        }
+        return hex.toString();
+    }
+    
+    private final class MigrateLegacyStore extends AsyncTask<Void, Void, Void> {
+        
+        private final Preferences prefs;
+        
+        private final File directory;
+        private final LegacyEventStore store;
+        
+        MigrateLegacyStore(Preferences prefs) {
+            this.prefs = prefs;
+            
+            directory = new File(
+                    context.getExternalFilesDir(null),
+                    "/ddsdk/events/");
+            store = new LegacyEventStore(
+                    directory.getPath(),
+                    prefs,
+                    false,
+                    true);
+        }
+        
+        @Override
+        protected Void doInBackground(Void... params) {
+            LEGACY_MIGRATION_LOCK.lock();
+            try {
+                if (!directory.exists()) {
+                    return null;
+                } else {
+                    Log.d(TAG, "Migrating legacy store");
+                }
                 
+                // migrate
+                store.swap();
+                for (final String item : store.read()) {
+                    add(item);
+                }
+                store.clearOutfile();
+                store.clear();
+                
+                // clean files
+                for (final File file : directory.listFiles()) {
+                    if (!file.delete()) {
+                        Log.w(TAG, "Failed to delete legacy " + file);
+                    }
+                }
+                if (!directory.delete()) {
+                    Log.w(TAG, "Failed to delete legacy files in " + directory);
+                } else {
+                    Log.d(TAG, "Deleted legacy files in " + directory);
+                }
+                
+                // clean prefs
                 final SharedPreferences.Editor editor = prefs.getPrefs().edit();
-                editor.putString(PF_KEY_IN_FILE, mInFile.getName());
-                editor.putString(PF_KEY_OUT_FILE, outFile.getName());
+                editor.remove("DDSDK_EVENT_IN_FILE");
+                editor.remove("DDSDK_EVENT_OUT_FILE");
                 editor.apply();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-
-			result = true;
-		}
-		
-		mLock.unlock();
-		
-		return result;
-	}
-	/**
-	 * Read the contents of the out buffer as a list of String.  Can be
-	 * called multiple times.
-	 * 
-	 * @return A list of events.
-	 */
-	public Vector<String> read(){
-		mLock.lock();
-		
-		Vector<String> results = new Vector<String>();
-		try{
-			File tempFile = new File(mOutFilePath);
-			FileInputStream outStrm = new FileInputStream(tempFile);
-			byte[] lengthField = new byte[4];
-			while(outStrm.read(lengthField, 0, lengthField.length) > 0){
-				int eventLength = Utils.toInt32(lengthField);
-				byte[] recordField = new byte[eventLength];
-				outStrm.read(recordField, 0, recordField.length);
-				String record = new String(recordField, "UTF-8");
-				results.add(record);
-			}
-			outStrm.close();
-
-		}catch(Exception e){
-			Log("Problem reading events from Event Store: " + e.getMessage());
-		}
-
-		mLock.unlock();
-
-		return results;
-	}
-	/**
-	 * Clears the out buffer.
-	 */
-	public void clear(){
-		mLock.lock();
-		
-		if(mInFile != null){
-			mInFile.delete();
-		}
-
-		File tempFile = new File(mOutFilePath);
-		tempFile.delete();
-		tempFile = null;
-		
-		mLock.unlock();
-	}
-	/**
-	 * Clears the out file and creates a new one.
-	 */
-	public void clearOutfile(){
-		mLock.lock();
-
-		File tempFile = new File(mOutFilePath);
-		tempFile.delete();
-		tempFile = null;
-		
-		mLock.unlock();
-	}
-	/**
-	 * Initialises the file streams for the store.
-	 * 
-	 * @param path Base path to use.
-	 * @param reset TRUE if existing files should be deleted.
-	 */
-	private void initialiseFileStreams(String path, boolean reset){
-		File dir = new File(path);
-
-		if(!dir.exists()){
-			dir.mkdirs();
-		}
-
-		String inFile = prefs.getPrefs().getString(PF_KEY_IN_FILE, FILE_A);
-		String outFile = prefs.getPrefs().getString(PF_KEY_OUT_FILE, FILE_B);
-		File tempFile = new File(inFile);
-		inFile = tempFile.getName();		// support legacy pp that could have full pathx
-		tempFile = new File(outFile);
-		outFile = tempFile.getName();
-		
-		mInFile = new File(path, inFile);
-		tempFile = new File(path, outFile);
-		if(reset){
-			mInFile.delete();
-			tempFile.delete();
-		}
-
-		mInFilePath = tempFile.getAbsolutePath();
-		mOutFilePath = tempFile.getAbsolutePath();
-		
-		if(mInFile.exists() && tempFile.exists() && !reset){
-			Log("Loaded existing Event Store in @ " + mInFile.getAbsolutePath() + " out @ " + tempFile.getAbsolutePath());
-		}else{
-			Log("Creating new Event Store in @ " + path);
-			try {
-				mInFile.delete();
-				mInFile.createNewFile();
-				tempFile.delete();
-				tempFile.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+                
+                return null;
+            } finally {
+                LEGACY_MIGRATION_LOCK.unlock();
+            }
+        }
+    }
+    
+    private final class SaveTask extends AsyncTask<Void, Void, Void> {
         
-        final SharedPreferences.Editor editor = prefs.getPrefs().edit();
-        editor.putString(PF_KEY_IN_FILE, mInFile.getName());
-        editor.putString(PF_KEY_OUT_FILE, tempFile.getName());
-        editor.apply();
+        private final byte[] content;
+        private final long time;
         
-		tempFile.delete();
-		tempFile = null;
-	}
-	/**
-	 * Message logging call.
-	 * 
-	 * @param message The message to log.
-	 */
-	private void Log(String message){
-		if (mDebug){
-			android.util.Log.d(BuildConfig.LOG_TAG, "[DDSDK EventStore] " + message);
-		}
-	}
+        SaveTask(byte[] content) {
+            this.content = content;
+            time = System.currentTimeMillis();
+        }
+        
+        @Override
+        protected Void doInBackground(Void... params) {
+            final String name = UUID.randomUUID().toString();
+            final Location location;
+            if (settings.isUseInternalStorageForEvents()) {
+                location = Location.INTERNAL;
+            } else if (Location.EXTERNAL.available()) {
+                location = Location.EXTERNAL;
+            } else {
+                Log.w(TAG, String.format(
+                        Locale.US,
+                        "%s not available, falling back to %s",
+                        Location.EXTERNAL,
+                        Location.INTERNAL));
+                location = Location.INTERNAL;
+            }
+            final String hash = md5(content);
+            
+            final File file = new File(location.directory(context), name);
+            FileOutputStream out = null;
+            try {
+                out = new FileOutputStream(file);
+                out.write(content);
+            } catch (FileNotFoundException e) {
+                Log.e(TAG, "Failed opening stream for " + file, e);
+                return null;
+            } catch (IOException e) {
+                Log.e(TAG, "Failed writing to stream for " + file, e);
+                //noinspection ResultOfMethodCallIgnored
+                file.delete();
+                return null;
+            } finally {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        Log.w(TAG, "Failed closing stream for " + file, e);
+                    }
+                }
+            }
+            
+            if (!db.insertEventRow(time, location, name, hash, file.length())) {
+                Log.e(TAG, "Failed inserting " + new String(content));
+                //noinspection ResultOfMethodCallIgnored
+                file.delete();
+            }
+            
+            return null;
+        }
+    }
+    
+    private static final class DbHelper extends SQLiteOpenHelper {
+        
+        private static final String TABLE_EVENTS = "Events";
+        
+        private static final String EVENTS_ID = BaseColumns._ID;
+        private static final String EVENTS_TIME = "Time";
+        private static final String EVENTS_NAME = "Name";
+        private static final String EVENTS_LOCATION = "Location";
+        private static final String EVENTS_HASH = "Hash";
+        private static final String EVENTS_SIZE = "Size";
+        
+        DbHelper(Context context) {
+            super(context, "com.deltadna.android.sdk", null, 1);
+        }
+        
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            db.execSQL("CREATE TABLE " + TABLE_EVENTS + "("
+                    + EVENTS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + EVENTS_TIME + " INTEGER NOT NULL, "
+                    + EVENTS_LOCATION + " TEXT NOT NULL, "
+                    + EVENTS_NAME + " TEXT NOT NULL UNIQUE, "
+                    + EVENTS_HASH + " TEXT, "
+                    + EVENTS_SIZE + " INTEGER NOT NULL)");
+        }
+        
+        @Override
+        public void onUpgrade(
+                SQLiteDatabase db,
+                int oldVersion,
+                int newVersion) {}
+        
+        long getEventsSize() {
+            final Cursor cursor = getWritableDatabase().rawQuery(
+                    "SELECT SUM(" + EVENTS_SIZE + ") FROM " + TABLE_EVENTS + ";",
+                    new String[] {});
+            final long result = (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
+            cursor.close();
+            return result;
+        }
+        
+        Cursor getEventRows() {
+            return getWritableDatabase().rawQuery(
+                    String.format(
+                            Locale.US,
+                            "SELECT e.%s, e.%s, e.%s, e.%s, e.%s, SUM(e1.%s) AS Total "
+                                    + "FROM %s e "
+                                    + "JOIN %s e1 ON e1.%s <= e.%s "
+                                    + "GROUP BY e.%s "
+                                    + "HAVING SUM(e1.%s) <= %d "
+                                    + "ORDER BY e.%s ASC;",
+                            EVENTS_ID, EVENTS_TIME, EVENTS_LOCATION, EVENTS_NAME, EVENTS_SIZE, EVENTS_SIZE,
+                            TABLE_EVENTS,
+                            TABLE_EVENTS, EVENTS_ID, EVENTS_ID,
+                            EVENTS_ID,
+                            EVENTS_SIZE, EVENTS_LIMIT,
+                            EVENTS_TIME),
+                    new String[]{});
+        }
+        
+        boolean insertEventRow(
+                long time,
+                Location location,
+                String name,
+                @Nullable String hash,
+                long size) {
+            
+            final ContentValues values = new ContentValues(4);
+            values.put(EVENTS_TIME, time);
+            values.put(EVENTS_LOCATION, location.name());
+            values.put(EVENTS_NAME, name);
+            values.put(EVENTS_HASH, hash);
+            values.put(EVENTS_SIZE, size);
+            
+            return (getWritableDatabase().insert(TABLE_EVENTS, null, values)
+                    != -1);
+        }
+        
+        boolean removeEventRow(long id) {
+            return (getWritableDatabase().delete(
+                    TABLE_EVENTS,
+                    EVENTS_ID + " = ?",
+                    new String[] { Long.toString(id) })
+                    == 1);
+        }
+        
+        void removeEventRows() {
+            getWritableDatabase().delete(TABLE_EVENTS, null, null);
+        }
+    }
+    
+    private static final class EventIterator implements
+            CloseableIterator<EventStoreItem> {
+        
+        private final DbHelper db;
+        private final Context context;
+        
+        private final Cursor cursor;
+        
+        EventIterator(DbHelper db, Context context) {
+            this.db = db;
+            this.context = context;
+            
+            cursor = db.getEventRows();
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return (cursor.getCount() > 0 && !cursor.isLast());
+        }
+        
+        @Override
+        @Nullable
+        public EventStoreItem next() {
+            if (!cursor.moveToNext()) throw new NoSuchElementException();
+            
+            final Location location = getCurrentLocation();
+            
+            return new EventStoreItem() {
+                @Override
+                public boolean available() {
+                    return location.available();
+                }
+                
+                @Override
+                @Nullable
+                public String get() {
+                    final File file = new File(
+                            location.directory(context),
+                            getCurrentName());
+                    final StringBuilder builder = new StringBuilder();
+                    BufferedReader reader = null;
+                    try {
+                        reader = new BufferedReader(new InputStreamReader(
+                                new FileInputStream(file)));
+                        
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            builder.append(line);
+                        }
+                    } catch (FileNotFoundException e) {
+                        Log.e(TAG, "Failed opening stream for " + file, e);
+                        return null;
+                    } catch (IOException e) {
+                        Log.e(TAG, "Failed reading stream for " + file, e);
+                        return null;
+                    } finally {
+                        if (reader != null) {
+                            try {
+                                reader.close();
+                            } catch (IOException e) {
+                                Log.w(TAG, "Failed closing stream for " + file, e);
+                            }
+                        }
+                    }
+                    
+                    return builder.toString();
+                }
+            };
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        
+        @Override
+        public void close(boolean clear) {
+            if (clear) {
+                cursor.moveToFirst();
+                while (!cursor.isAfterLast()) {
+                    if (!db.removeEventRow(getCurrentId())) {
+                        Log.w(TAG, "Failed to remove event row");
+                    }
+                    
+                    final File file = new File(
+                            getCurrentLocation().directory(context),
+                            getCurrentName());
+                    if (!file.delete()) {
+                        Log.w(TAG, "Failed deleting " + file);
+                    }
+                    
+                    cursor.moveToNext();
+                }
+            }
+            
+            cursor.close();
+        }
+        
+        private long getCurrentId() {
+            return cursor.getLong(
+                    cursor.getColumnIndex(DbHelper.EVENTS_ID));
+        }
+        
+        private Location getCurrentLocation() {
+            return Location.valueOf(cursor.getString(
+                    cursor.getColumnIndex(DbHelper.EVENTS_LOCATION)));
+        }
+        
+        private String getCurrentName() {
+            return cursor.getString(
+                    cursor.getColumnIndex(DbHelper.EVENTS_NAME));
+        }
+    }
+    
+    private enum Location {
+        INTERNAL {
+            @Override
+            File directory(Context context) {
+                return new File(context.getFilesDir(), DIRECTORY);
+            }
+        },
+        EXTERNAL {
+            @Override
+            boolean available() {
+                return Environment.getExternalStorageState()
+                        .equals(Environment.MEDIA_MOUNTED);
+            }
+            
+            @Override
+            File directory(Context context) {
+                return new File(context.getExternalFilesDir(null), DIRECTORY);
+            }
+        };
+        
+        boolean available() {
+            return true;
+        }
+        
+        abstract File directory(Context context);
+    }
 }

@@ -1,2 +1,6 @@
-include ':library', 'example-demo'
+include ':library'
+include ':library-notifications'
+include ':example-demo'
+include ':example-notifications'
 project(':example-demo').projectDir = file('examples/demo')
+project(':example-notifications').projectDir = file('examples/notifications')

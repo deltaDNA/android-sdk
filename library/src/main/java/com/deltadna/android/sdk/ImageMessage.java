@@ -16,13 +16,14 @@
 
 package com.deltadna.android.sdk;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.CancelableRequest;
-import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONArray;
@@ -30,6 +31,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Locale;
@@ -45,13 +47,10 @@ public final class ImageMessage implements Serializable {
     static final String ACTION_ACTION = "action";
     
     private static final String ALIGN_CENTER = "center";
-    private static final String ALIGN_LEFT = "left";
     private static final String ALIGN_RIGHT = "right";
-    private static final String ALIGN_TOP = "top";
     private static final String ALIGN_BOTTOM = "bottom";
-    
+
     static final String MASK_DIMMED = "dimmed";
-    static final String MASK_CLEAR = "clear";
     
     private static final int METRICTYPE_PIXELS = 0;
     private static final int METRICTYPE_PERCENTAGE = 1;
@@ -98,14 +97,18 @@ public final class ImageMessage implements Serializable {
                         ? null
                         : layoutPortrait.getJSONObject("background"));
         
-        buttons = new Vector<Button>();
-        final JSONArray buttons = spritemap.getJSONArray("buttons");
-        final JSONArray buttonLayoutLandscape = (layoutLandscape == null)
-                ? null
-                : layoutLandscape.getJSONArray("buttons");
-        final JSONArray buttonLayoutPortrait = (layoutPortrait == null)
-                ? null
-                : layoutPortrait.getJSONArray("buttons");
+        buttons = new Vector<>();
+        final JSONArray buttons = spritemap.has("buttons")
+                ? spritemap.getJSONArray("buttons")
+                : new JSONArray();
+        final JSONArray buttonLayoutLandscape =
+                (layoutLandscape == null || buttons.length() == 0)
+                        ? null
+                        : layoutLandscape.getJSONArray("buttons");
+        final JSONArray buttonLayoutPortrait =
+                (layoutPortrait == null || buttons.length() == 0)
+                        ? null
+                        : layoutPortrait.getJSONArray("buttons");
         for (int i = 0; i < buttons.length(); i++) {
             this.buttons.add(new Button(
                     buttons.getJSONObject(i),
@@ -132,30 +135,39 @@ public final class ImageMessage implements Serializable {
     /**
      * Prepares the Image Message for use, by downloading the image.
      *
-     * @param manager   the manager for fetching the image
      * @param listener  the listener for receiving prepared state
      */
-    public void prepare(NetworkManager manager, final PrepareListener listener) {
+    public void prepare(final PrepareListener listener) {
         if (prepared) {
-            listener.onReady(this);
+            listener.onPrepared(this);
         } else {
             // do we have an image?
             final File file = new File(getImageFilepath());
             if (!file.exists() && request == null) {
-                request = manager.fetch(
+                if (!file.getParentFile().exists()) {
+                    if (!file.getParentFile().mkdirs()) {
+                        Log.w(  TAG,
+                                "Failed to create path for " + file);
+                        listener.onError(new IOException(
+                                "Failed to create path for " + file));
+                        return;
+                    }
+                }
+                
+                request = DDNA.instance().getNetworkManager().fetch(
                         imageUrl,
                         file,
-                        new RequestListener<Response<File>>() {
+                        new RequestListener<File>() {
                             @Override
-                            public void onSuccess(Response<File> result) {
+                            public void onCompleted(Response<File> result) {
                                 prepared = true;
                                 request = null;
                                 
-                                listener.onReady(ImageMessage.this);
+                                listener.onPrepared(ImageMessage.this);
                             }
                             
                             @Override
-                            public void onFailure(Throwable t) {
+                            public void onError(Throwable t) {
                                 prepared = false;
                                 request = null;
                                 
@@ -164,9 +176,29 @@ public final class ImageMessage implements Serializable {
                         });
             } else {
                 prepared = true;
-                listener.onReady(this);
+                listener.onPrepared(this);
             }
         }
+    }
+    
+    /**
+     * Opens the {@link ImageMessageActivity} for showing this Image Message.
+     *
+     * @param activity      the {@link Activity} from which the request is
+     *                      being started
+     * @param requestCode   the request code that will be used in
+     *                      {@link Activity#onActivityResult(int, int, Intent)}
+     *                      for the result
+     *
+     * @throws IllegalStateException if the Image Message is not prepared
+     */
+    public void show(Activity activity, int requestCode) {
+        if (!prepared) throw new IllegalStateException(
+                "image message has not been prepared yet");
+        
+        activity.startActivityForResult(
+                ImageMessageActivity.createIntent(activity, this),
+                requestCode);
     }
     
     /**
@@ -213,7 +245,7 @@ public final class ImageMessage implements Serializable {
             return new JSONObject(parameters);
         } catch (JSONException e) {
             // cannot happen as parameters came from JSON
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
     
@@ -232,10 +264,55 @@ public final class ImageMessage implements Serializable {
                 + '.' + imageFormat;
     }
     
+    /**
+     * Creates an Image Message from an Engagement once it has been populated
+     * with response data after a successful request.
+     * <p>
+     * {@code null} may be returned in case the Engagement was not set-up to
+     * display an Image Message.
+     *
+     * @param engagement the Engagement with response data
+     *
+     * @return  the Image Message created from {@code engagement}, else
+     *          {@code null}
+     */
+    @Nullable
+    public static ImageMessage create(Engagement engagement) {
+        //noinspection ConstantConditions
+        if (engagement.isSuccessful() && engagement.getJson().has("image")) {
+            try {
+                return new ImageMessage(engagement.getJson());
+            } catch (JSONException e) {
+                Log.w(TAG, "Failed creating image message", e);
+                return null;
+            }
+        }
+        
+        return null;
+    }
+    
     public interface PrepareListener {
         
-        void onReady(ImageMessage src);
+        /**
+         * Notifies the listener that the Image Message has been prepared.
+         * <p>
+         * In most implementations {@link #show(Activity, int)} should be
+         * called, if the application is still in an appropriate state to do
+         * so.
+         *
+         * @param src the prepared Image Message
+         */
+        void onPrepared(ImageMessage src);
         
+        /**
+         * Notifies the listener that an error has happened during the
+         * preparation request.
+         * <p>
+         * If this method is called {@link #onPrepared(ImageMessage)} will not
+         * be called.
+         *
+         * @param cause the cause of the error
+         */
         void onError(Throwable cause);
     }
     

@@ -18,20 +18,22 @@ package com.deltadna.android.sdk;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 
-import com.deltadna.android.sdk.exceptions.BadRequestException;
+import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.EngageArchive;
+import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.CancelableRequest;
 import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
+import com.deltadna.android.sdk.util.CloseableIterator;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Iterator;
-import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -126,43 +128,102 @@ final class EventHandler {
             upload = executor.submit(new Upload());
         }
     }
-
+    
     /**
      * Handles a collect {@code event} by placing into the queue,
      * to be sent at a later time.
      */
     void handleEvent(JSONObject event) {
-        if (!store.push(event.toString())) {
-            Log.w(TAG, "Unable to handle event due to full event store");
-        }
+        store.add(event.toString());
     }
     
     /**
      * Handles an engage {@code event}.
      */
-    void handleEngagement(
-            final String decisionPoint,
-            @Nullable final String flavour,
-            final JSONObject event,
-            final RequestListener<JSONObject> listener) {
+    <E extends Engagement> void handleEngagement(
+            final E engagement,
+            final EngageListener<E> listener,
+            String userId,
+            String sessionId,
+            final int engageApiVersion,
+            String sdkVersion) {
         
-        network.engage(event, new RequestListener<Response<JSONObject>>() {
+        final JSONObject event;
+        try {
+            event = new JSONObject()
+                    .put("userID", userId)
+                    .put("decisionPoint", engagement.name)
+                    .put("sessionID", sessionId)
+                    .put("version", engageApiVersion)
+                    .put("sdkVersion", sdkVersion)
+                    .put("platform", ClientInfo.platform())
+                    .put("manufacturer", ClientInfo.manufacturer())
+                    .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
+                    .put("timezoneOffset", ClientInfo.timezoneOffset())
+                    .put("locale", ClientInfo.locale());
+            
+            if (!TextUtils.isEmpty(engagement.flavour)) {
+                event.put("flavour", engagement.flavour);
+            }
+            
+            if (!engagement.params.isEmpty()) {
+                event.put("parameters", engagement.params.json);
+            }
+        } catch (JSONException e) {
+            // should never happen due to params enforcement
+            throw new IllegalArgumentException(e);
+        }
+        
+        network.engage(event, new RequestListener<JSONObject>() {
             @Override
-            public void onSuccess(Response<JSONObject> result) {
-                archive.put(decisionPoint, flavour, result.body.toString());
-                listener.onSuccess(result.body);
+            public void onCompleted(Response<JSONObject> result) {
+                engagement.setResponse(result);
+                if (engagement.isSuccessful()) {
+                    //noinspection ConstantConditions
+                    archive.put(
+                            engagement.name,
+                            engagement.flavour,
+                            engagement.getJson().toString());
+                } else {
+                    Log.w(TAG, String.format(
+                            Locale.US,
+                            "Not caching %s due to failure, checking archive instead",
+                            engagement));
+                    
+                    if (archive.contains(engagement.name, engagement.flavour)) {
+                        try {
+                            final JSONObject json = new JSONObject(
+                                    archive.get(engagement.name, engagement.flavour))
+                                    .put("isCachedResponse", true);
+                            engagement.setResponse(
+                                    new Response<>(200, null, json, null));
+                            
+                            Log.d(TAG, "Using cached engage instead " + json);
+                        } catch (JSONException e) {
+                            // TODO should we clear the archive?
+                            Log.w(  TAG,
+                                    "Failed converting cached engage to JSON",
+                                    e);
+                        }
+                    }
+                }
+                
+                listener.onCompleted(engagement);
             }
             
             @Override
-            public void onFailure(Throwable t) {
-                if (archive.contains(decisionPoint, flavour)) {
+            public void onError(Throwable t) {
+                if (archive.contains(engagement.name, engagement.flavour)) {
                     try {
                         final JSONObject json = new JSONObject(
-                                archive.get(decisionPoint, flavour))
+                                archive.get(engagement.name, engagement.flavour))
                                 .put("isCachedResponse", true);
+                        engagement.setResponse(
+                                new Response<>(200, null, json, null));
                         
                         Log.d(TAG, "Using cached engage " + json);
-                        listener.onSuccess(json);
+                        
+                        listener.onCompleted(engagement);
                     } catch (JSONException e1) {
                         /*
                          * This can only happen if the archive has become
@@ -174,10 +235,10 @@ final class EventHandler {
                         Log.e(  TAG,
                                 "Failed converting cached engage to JSON",
                                 e1);
-                        listener.onFailure(e1);
+                        listener.onError(e1);
                     }
                 } else {
-                    listener.onFailure(t);
+                    listener.onError(t);
                 }
             }
         });
@@ -196,27 +257,38 @@ final class EventHandler {
     }
     
     private final class Upload implements Runnable {
-
+        
         @Override
         public void run() {
-            store.swap();
-            
-            final List<String> events = store.read();
-            if (events.isEmpty()) {
-                Log.d(TAG, "No events to upload");
+            final CloseableIterator<EventStoreItem> events = store.items();
+            if (!events.hasNext()) {
+                Log.d(TAG, "No stored events to upload");
                 return;
             }
             
-            final int count = events.size();
             final StringBuilder builder = new StringBuilder("{\"eventList\":[");
-            final Iterator<String> it = events.iterator();
-            while (it.hasNext()) {
-                builder.append(it.next());
-                builder.append(',');
+            int count = 0;
+            while (events.hasNext()) {
+                final EventStoreItem event = events.next();
                 
-                it.remove();
+                if (event.available()) {
+                    final String content = event.get();
+                    if (content != null) {
+                        builder.append(content);
+                        builder.append(',');
+                        
+                        count++;
+                    } else {
+                        Log.w(TAG, "Failed retrieving event, skipping");
+                    }
+                } else {
+                    Log.w(TAG, "Stored event not available, pausing");
+                    break;
+                }
             }
-            builder.deleteCharAt(builder.length() - 1);
+            if (builder.charAt(builder.length()- 1) == ',') {
+                builder.deleteCharAt(builder.length() - 1);
+            }
             builder.append("]}");
             
             final JSONObject payload;
@@ -229,29 +301,34 @@ final class EventHandler {
             
             Log.d(TAG, "Uploading " + count + " events");
             final CountDownLatch latch = new CountDownLatch(1);
-            
             final CancelableRequest request = network.collect(
                     payload,
-                    new RequestListener<Response<Void>>() {
+                    new RequestListener<Void>() {
                         @Override
-                        public void onSuccess(Response<Void> result) {
-                            Log.d(TAG, "Successfully uploaded events");
+                        public void onCompleted(Response<Void> result) {
+                            if (result.isSuccessful()) {
+                                Log.d(TAG, "Successfully uploaded events");
+                                events.close(true);
+                            } else {
+                                Log.w(TAG, "Failed to upload events due to " + result);
+                                if (result.code == 400) {
+                                    Log.w(TAG, "Wiping event store due to unrecoverable data");
+                                    events.close(true);
+                                } else {
+                                    events.close(false);
+                                }
+                            }
                             
-                            store.clearOutfile();
                             latch.countDown();
                         }
                         
                         @Override
-                        public void onFailure(Throwable t) {
-                            Log.e(TAG, "Failed to upload events", t);
+                        public void onError(Throwable t) {
+                            Log.w(  TAG,
+                                    "Failed to upload events, will retry later",
+                                    t);
                             
-                            if (t instanceof BadRequestException) {
-                                Log.w(TAG, "Wiping event store due to unrecoverable data");
-                                store.clearOutfile();
-                            } else {
-                                Log.d(TAG, "Will retry uploading events later");
-                            }
-                            
+                            events.close(false);
                             latch.countDown();
                         }
                     });

@@ -19,20 +19,20 @@ package com.deltadna.android.sdk.listeners;
 import android.app.Activity;
 import android.content.Intent;
 
-import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.ImageMessageActivity;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * An {@link EngageListener} to be used for Image Message requests, which will
  * prepare an {@link ImageMessage} for use to be shown by the
  * {@link ImageMessageActivity}.
  *
- * @see ImageMessageActivity
+ * @deprecated  as of version 4.1, replaced by {@link EngageListener}
  */
+@Deprecated
 public abstract class ImageMessageListener implements EngageListener {
     
     protected final Activity activity;
@@ -53,31 +53,31 @@ public abstract class ImageMessageListener implements EngageListener {
     }
     
     @Override
-    public void onSuccess(JSONObject result) {
-        if (result.has("image")) {
+    public void onCompleted(Engagement engagement) {
+        //noinspection ConstantConditions
+        if (engagement.isSuccessful() && engagement.getJson().has("image")) {
             final ImageMessage message;
             try {
-                message = new ImageMessage(result);
+                message = new ImageMessage(engagement.getJson());
             } catch (JSONException e) {
-                onFailure(e);
+                onError(e);
                 return;
             }
             
             message.prepare(
-                    DDNA.instance().getNetworkManager(),
                     new ImageMessage.PrepareListener() {
                         @Override
-                        public void onReady(ImageMessage src) {
-                            onPrepared(src);
+                        public void onPrepared(ImageMessage src) {
+                            ImageMessageListener.this.onPrepared(src);
                         }
                         
                         @Override
                         public void onError(Throwable cause) {
-                            onFailure(cause);
+                            ImageMessageListener.this.onError(cause);
                         }
                     });
         } else {
-            onFailure(new Exception("Image not found in response"));
+            onError(new Exception("Image not found in response"));
         }
     }
     
@@ -88,7 +88,7 @@ public abstract class ImageMessageListener implements EngageListener {
      */
     protected void show(ImageMessage imageMessage) {
         if (!imageMessage.prepared()) {
-            onFailure(new Exception(imageMessage + " is not prepared"));
+            onError(new Exception(imageMessage + " is not prepared"));
             return;
         }
         
