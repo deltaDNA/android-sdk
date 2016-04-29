@@ -92,8 +92,9 @@ public class NetworkManager {
                                 ? buildHashedEndpoint(collectUrl + "/bulk", payload.toString())
                                 : buildHashedEndpoint(collectUrl, payload.toString()))
                         .header("Accept", "application/json")
-                        .maxRetries(settings.httpRequestMaxRetries())
-                        .retryDelay(Math.round(settings.httpRequestRetryDelaySeconds() * 1000))
+                        .maxRetries(settings.getHttpRequestMaxRetries())
+                        .retryDelay(settings.getHttpRequestRetryDelay() * 1000)
+                        .connectionTimeout(settings.getHttpRequestCollectTimeout() * 1000)
                         .build(),
                 listener);
     }
@@ -108,6 +109,7 @@ public class NetworkManager {
                         .post(RequestBody.json(payload))
                         .url(buildHashedEndpoint(engageUrl, payload.toString()))
                         .header("Accept", "application/json")
+                        .connectionTimeout(settings.getHttpRequestEngageTimeout() * 1000)
                         .build(),
                 ResponseBodyConverter.JSON,
                 listener);
@@ -120,7 +122,11 @@ public class NetworkManager {
         
         // TODO tweak timeouts as this should come back quickly as well
         return dispatcher.enqueue(
-                new Request.Builder<File>().get().url(url).build(),
+                new Request.Builder<File>()
+                        .get()
+                        .url(url)
+                        .connectionTimeout(settings.getHttpRequestEngageTimeout() * 1000)
+                        .build(),
                 new ResponseBodyConverter<File>() {
                     @Override
                     public File convert(byte[] input) throws Exception {

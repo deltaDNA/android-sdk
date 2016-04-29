@@ -37,8 +37,8 @@ import java.util.concurrent.Callable;
  */
 final class Request<T> implements Callable<Response<T>> {
     
-    private static final int CONNECTION_TIMEOUT = 15000;
-    private static final int READ_TIMEOUT = 10000;
+    private static final int CONNECTION_TIMEOUT = 15 * 1000;
+    private static final int READ_TIMEOUT = 10 * 1000;
     
     private final URL url;
     private final RequestMethod method;

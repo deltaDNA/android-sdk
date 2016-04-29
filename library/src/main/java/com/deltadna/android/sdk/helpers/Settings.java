@@ -40,14 +40,6 @@ public class Settings{
 	 */
 	private boolean mDebugMode = false;
 	/**
-	 * Controls the time in seconds between retrying a failed Http request.
-	 */
-	private float mHttpRequestRetryDelaySeconds = 2;
-	/**
-	 * Controls the number of times we retry an Http request before giving up.
-	 */
-	private int mHttpRequestMaxRetries = 5;
-	/**
 	 * Controls if events are uploaded automatically in the background.
 	 */
 	private boolean mBackgroundEventUpload = true;
@@ -62,6 +54,20 @@ public class Settings{
 	private int mBackgroundEventUploadRepeatRateSeconds = 60;
     
     private int sessionTimeout = 5 * 60 * 1000;
+    
+    private int httpRequestMaxRetries = 0;
+    /**
+     * In seconds.
+     */
+    private int httpRequestRetryDelay = 2;
+    /**
+     * In seconds.
+     */
+    private int httpRequestCollectTimeout = 55;
+    /**
+     * In seconds.
+     */
+    private int httpRequestEngageTimeout = 5;
     
     private boolean useInternalStorageForEvents;
     
@@ -132,41 +138,7 @@ public class Settings{
 	public void setDebugMode(boolean b){
 		mDebugMode = b;
 	}
-
-	/**
-	 * Delay between HTTP request retries.
-	 *
-	 * @return HTTP request retry in seconds.
-	 */
-	public float httpRequestRetryDelaySeconds(){
-		return mHttpRequestRetryDelaySeconds;
-	}
-	/**
-	 * Sets the HTTP retry delay.
-	 *
-	 * @param f The HTTP request delay in seconds.
-	 */
-	public void setHttpRequestRetryDelaySeconds(float f){
-		mHttpRequestRetryDelaySeconds = f;
-	}
-
-	/**
-	 * Max HTTP request retries.
-	 *
-	 * @return Max HTTP request retries.
-	 */
-	public int httpRequestMaxRetries(){
-		return mHttpRequestMaxRetries;
-	}
-	/**
-	 * Sets the max HTTP request retries.
-	 *
-	 * @param i The new max HTTP request retries.
-	 */
-	public void setHttpRequestMaxRetries(int i){
-		mHttpRequestMaxRetries = i;
-	}
-
+    
 	/**
 	 * Test if background event uploading is enabled.
 	 *
@@ -240,6 +212,103 @@ public class Settings{
         Preconditions.checkArg(timeout >= 0, "timeout cannot be negative");
         
         sessionTimeout = timeout;
+    }
+    
+    /**
+     * Gets the number of retries to perform when an HTTP request fails.
+     * <p>
+     * Only applies to Collect requests.
+     *
+     * @return the number of retries
+     */
+    public int getHttpRequestMaxRetries() {
+        return httpRequestMaxRetries;
+    }
+    
+    /**
+     * Sets the number of retries to perform when an HTTP request fails. A
+     * value of {@code 0} means no retries will be performed.
+     * <p>
+     * Only applies to Collect requests.
+     *
+     * @param retries the number of retries
+     *
+     * @throws IllegalArgumentException if the {@code retries} is negative
+     */
+    public void setHttpRequestMaxRetries(int retries) {
+        Preconditions.checkArg(retries >= 0, "retries cannot be negative");
+        
+        httpRequestMaxRetries = retries;
+    }
+    
+    /**
+     * Gets the time to wait in seconds before retrying HTTP requests.
+     * <p>
+     * Only applies to Collect requests.
+     *
+     * @return the time to wait in seconds
+     */
+    public int getHttpRequestRetryDelay() {
+        return httpRequestRetryDelay;
+    }
+    
+    /**
+     * Sets the time to wait in seconds before retrying HTTP requests.
+     * <p>
+     * Only applies to Collect requests.
+     *
+     * @param seconds the time to wait in seconds
+     *
+     * @throws IllegalArgumentException if the {@code seconds} is negative
+     */
+    public void setHttpRequestRetryDelay(int seconds) {
+        Preconditions.checkArg(seconds >= 0, "value cannot be negative");
+        
+        httpRequestRetryDelay = seconds;
+    }
+    
+    /**
+     * Gets the connection timeout in seconds for Collect HTTP requests.
+     *
+     * @return the timeout in seconds
+     */
+    public int getHttpRequestCollectTimeout() {
+        return httpRequestCollectTimeout;
+    }
+
+    /**
+     * Sets the connection timeout in seconds for Collect HTTP requests.
+     *
+     * @param seconds the timeout in seconds
+     *
+     * @throws IllegalArgumentException if the {@code seconds} is negative
+     */
+    public void setHttpRequestCollectTimeout(int seconds) {
+        Preconditions.checkArg(seconds >= 0, "value cannot be negative");
+        
+        httpRequestCollectTimeout = seconds;
+    }
+    
+    /**
+     * Gets the connection timeout in seconds for Engage HTTP requests.
+     *
+     * @return the timeout in seconds
+     */
+    public int getHttpRequestEngageTimeout() {
+        return httpRequestEngageTimeout;
+    }
+    
+    /**
+     * Sets the connection timeout in seconds for Engage HTTP requests.
+     *
+     * @param seconds the timeout in seconds
+     *
+     * @throws IllegalArgumentException if the {@code seconds} is negative
+     */
+    public void setHttpRequestEngageTimeout(int seconds) {
+        Preconditions.checkArg(seconds >= 0, "value cannot be negative");
+        
+        httpRequestEngageTimeout = seconds;
     }
     
     public boolean isUseInternalStorageForEvents() {
