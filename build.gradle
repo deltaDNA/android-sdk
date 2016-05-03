@@ -28,12 +28,14 @@ buildscript {
     
     repositories {
         jcenter()
+        maven { url 'https://plugins.gradle.org/m2/' }
     }
     
     dependencies {
         classpath 'com.android.tools.build:gradle:2.0.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
+        classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.0.8'
     }
 }
 
@@ -52,6 +54,7 @@ subprojects {
         apply plugin: 'jacoco-android'
     } else {
         apply plugin: 'com.android.application'
+        apply plugin: 'com.nimbledroid.profiler'
     }
     
     if (isLibrary) {
@@ -113,6 +116,12 @@ subprojects {
             testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
             testCompile 'org.json:json:20160212'
             testCompile 'org.robolectric:robolectric:3.0'
+        }
+    }
+    
+    if (!isLibrary && project.hasProperty('nimbleDroidApiKey')) {
+        nimbledroid {
+            apiKey nimbleDroidApiKey
         }
     }
     
