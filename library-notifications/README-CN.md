@@ -2,6 +2,7 @@
 
 # deltaDNA Android SDK通知
 [![Build Status](https://travis-ci.org/deltaDNA/android-sdk.svg)](https://travis-ci.org/deltaDNA/android-sdk)
+[![codecov.io](https://codecov.io/github/deltaDNA/android-sdk/coverage.svg)](https://codecov.io/github/deltaDNA/android-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/b5546fd90d3b4b2182961602da6086d8)](https://www.codacy.com/app/deltaDNA/android-sdk)
 [![Apache2 licensed](https://img.shields.io/badge/license-Apache-blue.svg)](./LICENSE)
 [![Download](https://api.bintray.com/packages/deltadna/android/deltadna-sdk/images/download.svg)](https://bintray.com/deltadna/android/deltadna-sdk/_latestVersion)
@@ -22,7 +23,7 @@
 ## 概述
 这是一个deltaDNA Android SDK的附加模块，可以很容易的将推送通知功能整合到一个项目中。
 
-当发送一个推送通知到客户端时，这个程序将展示来自平台的Alert区域的通知消息并将应用的名字作为标题，除非标题密钥下的一个值已经被添加到推送消息的装置中。一旦这个通知被用户触发
+当发送一个推送通知到客户端时，这个程序将展示来自平台的`Alert`区域的通知消息并将应用的名字作为标题，除非`title`密钥下的一个值已经被添加到推送消息的装置中。一旦这个通知被用户触发
 
 更多关于整合和定制的细节可以在这个文档中进一步找到。
 
