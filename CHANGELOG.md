@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.1) (YYYY-MM-DD)
+## [4.1.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.1) (2016-05-06)
 Fixed activity restarting when opening notifications on Unity.  
 Fixed crash when opening notification in-game on Unity.
 
