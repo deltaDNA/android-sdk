@@ -24,7 +24,6 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.DrawableRes;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
@@ -148,20 +147,22 @@ public class NotificationListenerService extends GcmListenerService {
                         .setAutoCancel(true);
         
         if (UnityClasses.PLAYER_ACTIVITY != null) {
-            final Intent intent =
-                    new Intent(this, UnityClasses.PLAYER_ACTIVITY);
-            final TaskStackBuilder stack = TaskStackBuilder.create(this)
-                    .addParentStack(UnityClasses.PLAYER_ACTIVITY)
-                    .addNextIntent(intent);
-            final PendingIntent pending = stack.getPendingIntent(
-                    0, PendingIntent.FLAG_UPDATE_CURRENT);
+            Intent intent = getPackageManager().getLaunchIntentForPackage(
+                    getPackageName());
+            if (intent == null) {
+                intent = new Intent(this, UnityClasses.PLAYER_ACTIVITY);
+            }
             
             /*
              * Unity will make sure to handle the sending of a notification
              * opened event when the player activity is opened, however the
              * dismissed case would need to be handled through reflection.
              */
-            builder.setContentIntent(pending);
+            builder.setContentIntent(PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT));
         } else {
             builder.setContentIntent(PendingIntent.getBroadcast(
                     this,
