@@ -2,6 +2,7 @@
 
 # deltaDNA Android SDK
 [![Build Status](https://travis-ci.org/deltaDNA/android-sdk.svg)](https://travis-ci.org/deltaDNA/android-sdk)
+[![codecov.io](https://codecov.io/github/deltaDNA/android-sdk/coverage.svg)](https://codecov.io/github/deltaDNA/android-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/b5546fd90d3b4b2182961602da6086d8)](https://www.codacy.com/app/deltaDNA/android-sdk)
 [![Apache2 licensed](https://img.shields.io/badge/license-Apache-blue.svg)](./LICENSE)
 [![Download](https://api.bintray.com/packages/deltadna/android/deltadna-sdk/images/download.svg)](https://bintray.com/deltadna/android/deltadna-sdk/_latestVersion)
@@ -12,12 +13,11 @@
 * [初始化](#初始化)
 * [启用和停止](#启用和停止)
 * [记录事件](#记录事件)
- * [事件剖析](#事件剖析)
  * [简单事件](#简单事件)
  * [复杂事件](#复杂事件)
  * [交易（Transaction）](#交易（Transaction）)
 * [吸引（Engage）](#吸引（Engage）)
-* [图片消息](#图片消息)
+ * [图片消息](#图片消息)
 * [推送通知](#推送通知)
 * [设置](#设置)
 * [防反编译（ProGuard）](#防反编译（ProGuard）)
@@ -28,14 +28,8 @@
 ## 概述
 deltaDNA SDK允许你的Android游戏记录游戏中的事件和上传玩家的操作。它包括事件存储、众多辅助工具和一些自动的配置以帮助简化你的整合。
 
-事件被通过JSON对象发送到deltaDNA平台。这些事件通过在线的信息界面被管理和跟踪。
-
-当你的游戏记录事件后，这个SDK将在本地存储这些事件并在网络正常连接时将其定期上传，或者在你选择的某个固定时间上传。无论网络是否正常连接，这个SDK都可收集事件，并且这提供给你上传时间和频率的控制权。
-
-事件的复杂度有所不同，但是所有的事件均采用一个共同的事件结构。本文档和附带的案例应用程序将提供各种复杂度的事件示例。
-
 ## 添加至项目
-deltaDNA SDK可以用于基于第15版和更新版本（Android 4.0.3+）内核SDK的Android项目。
+deltaDNA SDK可以用于基于第9版和更新版本（Android 2.3+）内核SDK的Android项目。
 
 ### Gradle
 在你的顶层构建脚本
@@ -57,7 +51,7 @@ compile 'com.deltadna.android:deltadna-sdk:4.1.0'
 * `Application`实例
 * `environmentKey`，分配给你的应用的一个唯一的32位字符串。你将被分配两个相互分离的应用键值分别对应你的游戏开发测试和产品应用。当你从开发测试转换到产品应用时，你需要改变这个初始化SDK时的环境键值。
 * `collectUrl`，这是收集你的事件的服务器地址。
-* `engageUrl`，这是提供实时A/B测试和命中目标（real-time A/B Testing and Targeting）的服务器地址。只有你的游戏使用这些功能时才需要。
+* `engageUrl`，这是提供实时A/B测试和命中目标（real-time A/B Testing and Targeting）的服务器地址。
 ```java
 public class MyApplication extends Application {
 
@@ -109,22 +103,6 @@ public class MyActivity extends AppCompatActivity {
 这是初始化这个SDK并开始发送事件的最少代码。它将在这个SDK第一次运行时自动发送*新玩家（newPlayer）*事件，并在游戏每次运行时发送*游戏开始（gameStarted）*和*客户端设备（clientDevice）*事件。
 
 ## 记录事件
-### 事件剖析
-所有的事件都使用一个共享的基础结构通过JSON文件记录。JSON文件对于每一个事件类型都是不同的，但是所有的JSON文件都遵循如下的最小结构：
-```json
-{
-    "eventName": "gameEnded",
-    "userID": "a2e92bdd-f59d-498f-9385-2ae6ada432e3",
-    "sessionID": "0bc56224-8939-4639-b5ba-197f84dad4f4",
-    "eventTimestamp":"2014-07-04 11:09:42.491",
-    "eventParams": {
-        "platform": "ANDROID",
-        "sdkVersion": "Android SDK v4.0",
-    }
-}
-```
-这个SDK将自动填充上述的区域。当你添加额外的参数到一个事件中时，它们将会被放置于`eventParams`元素内。
-
 ### 简单事件
 通过使用标准事件结构中的一种，我们可以记录一个事件。例如
 ```java
@@ -197,7 +175,7 @@ recordEvent(new Transaction(
 这个事件可以被设计的更复杂，但结构是合乎逻辑的、灵活的，并为玩家消费或者接收任何货币和装备的组合提供一种机制。
 
 ## 吸引（Engage）
-游戏可以从吸引（Engage）检索对时间响应敏感的信息，从而决定是否在特定时间基于A/B测试（A/B Test）的结果或者命中目标（Targeting）对用户施加一个特别的行为。基本上你的游戏都应该在游戏中预先确定的决策点设置吸引（Engage）请求，同时响应将允许你立刻为用户提供个性化的游戏行为。
+一个吸引（Engage）请求可以通过调用`requestEngagement(Engagement, EngageListener)`实现。提供给你`Engagement`和`EngageListener`来监听是否执行完成或者错误。
 ```java
 requestEngagement(
         new Engagement("outOfCredits")
@@ -206,48 +184,61 @@ requestEngagement(
                 .putParam("missionName", "Diso Volante"),
         new OutOfCreditsListener());
 ```
-上述例子的响应处理程序是
+发送的`Engagement`对象将会返回到监听者的`onCompleted(Engagement)`回调方法。此时其已经填充了来自平台的数据，可以通过在`Engagement`调用`getJson()`来取回。
 ```java
-private class OutOfCreditsListener implements EngageListener {
-
-    public void onSuccess(JSONObject result) {
-        // 基于结果（result）做一些事情
+class OutOfCreditsListener implements EngageListener<Engagement> {
+    
+    public void onCompleted(Engagement engagement) {
+        // 对结果进行操作
+        if (engagement.isSuccessful()) {
+            // 用参数举例
+            JSONObject parameters = engagement.getJson()
+        }
     }
-
-    public void onFailure(Throwable t) {
-        // 失败时执行
+    
+    public void onError(Throwable t) {
+        // 获取错误
     }
 }
 ```
-你将接收到一个JSON响应
-```json
-{
-    "transactionID": 1898710706656641000,
-    "parameters": {
-        "creditPackPrice": 99,
-        "creditPackSize": 1
-    }
-}
-```
-包括含有和玩家在这一时间点相关的任意参数的`transactionID`和`parameters`对象。
+如果你在服务器的吸引（Engage）请求出现错误的进程，那么通过在`Engagement`调用`getError()`将可以获得细节信息。任何非服务器错误，例如由于网络连接不可用，将会传送到`onError(Throwable)`回调方法。在这种情况下`onCompleted(Engagement)`将永远不会被调用。
 
-你可能接收到一个包括`transactionID`的响应，但是没有任何带有个性化值的参数。这表明玩家没能符合任何资质标准或者还没有被分配到一个对照组。
-
-如果你的吸引（Engage）请求服务器时有一个错误进程，这时`onFailure(Throwable)`方法将被使用包括带有状态码的`Response`的`RequestException`调用。这个状态码可能是如下情形之一：
-* 400，如果输入的格式错误、内容不正确，或者你发送的实时参数还没有被添加到你的游戏参数列表。
-* 403，如果哈希密码错误或者吸引（Engage）还没有在你的账号中激活。
-* 404，不正确的路径地址或者未知的环境键值。
-
-## 图片消息
-图片消息请求采用与吸引（Engage）请求相似的方式执行
+### 图片信息
+一个图片信息请求的执行与一个吸引（Engage）请求类似。一个`ImageMessage`实例通过`onCompleted(Engagement)`回调方法返回的`Engagement`被创建。由于决策点可能还没有被设置来显示一个图片信息，`ImageMessage.create(Engagement)`的返回值需要被检查是否为空。
 ```java
-DDNA.instance().requestImageMessage(
+DDNA.instance().requestEngagement(
         new Engagement("missionDifficulty"),
-        new ImageMessageListener(MyActivity.this, MY_REQUEST_CODE));
+        new EngageListener<Engagement>() {
+            @Override
+            public void onComplete(Engagement engagement) {
+                ImageMessage imageMessage = ImageMessage.create(engagement);
+                if (imageMessage != null) {
+                    imageMessage.prepare(MyPrepareListener());
+                }
+            }
+            
+            @Override
+            public void onError(Throwable t) {
+                // 获取错误
+            }
+        });
 ```
-当你的监听程序使用`onPrepared(ImageMessage)`方法被调用时，你可以通过调用`show(ImageMessage)`方法展示`ImageMessage`，或者在这个应用不再处于展示图片消息的状态时不做任何事情。
-
-为了处理图片消息执行的结果，你需要重写`Activity`类中的`onActivityResult(int, int, Intent)`方法
+当你的`ImageMessage.PrepareListener`监听者的`onPrepared(ImageMessage)`被调用，你可以通过在`ImageMessage`实例调用`show(Activity, int)`来显示图片信息，或者如果应用不是显示图片信息的状态时不做任何操作。
+```java
+class MyPrepareListener implements ImageMessage.PrepareListener {
+    
+    @Override
+    public void onPrepared(ImageMessage src) {
+        src.show(MyActivity.this, MY_REQUEST_CODE);
+    }
+    
+    @Override
+    public void onError(Throwable cause) {
+        // 获取错误
+    }
+}
+```
+为了处理执行图片信息行为的结果，你将需要重写你的`Activity`中的`onActivityResult(int, int, Intent)`方法
 ```java
 @Override
 public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -258,12 +249,12 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
                 new ImageMessageResultListener() {
                     @Override
                     public void onAction(String value, String params) {
-                        // 执行值/参数
+                        // 获取值/参数
                     }
 
                     @Override
                     public void onCancelled() {
-                        // 执行取消
+                        // 获取错误
                     }
                 });
     }
@@ -277,7 +268,7 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
-然而你可能还会使用[deltadna-sdk-notifications](library-notifications)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
+然而你可能还会使用[deltadna-notifications](library-notifications)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
 
 如果你想要在接收推送通知时注销客户端，你需要调用
 ```Java
@@ -289,7 +280,7 @@ DDNA.instance().clearRegistrationId();
 ```java
 DDNA.instance().getSettings();
 ```
-Settings类也可以在初始化`Configuration`时被设置。
+Settings类也可以在初始化`Configuration`时被设置，这是被推荐的方法。
 
 ## 防反编译（ProGuard）
 如果你为你的应用设置`minifyEnabled true`，那么没有必要在你的ProGuard配置中添加额外的代码。因为这个库提供了其自己的配置文件，可以在编译过程中被Android编译工具包含进去。
@@ -298,7 +289,8 @@ Settings类也可以在初始化`Configuration`时被设置。
 可以从[这里](CHANGELOG.md)找到。
 
 ## 迁移
-* [第四版](docs/migrations/4.md)
+* [第4.0版](docs/migrations/4.0.md)
+* [第4.1版](docs/migrations/4.1.md)
 
 ## 授权
 
