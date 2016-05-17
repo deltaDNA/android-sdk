@@ -21,8 +21,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.deltadna.android.sdk.DDNA;
-
 /**
  * {@link BroadcastReceiver} which notifies the SDK when the user has
  * interacted with a push notification.
@@ -37,12 +35,18 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "Received " + intent);
         
-        if (intent.getAction() != null) {
-            final String action = intent.getAction();
+        final String action = intent.getAction();
+        if (action != null) {
             if (action.equals(Actions.NOTIFICATION_OPENED)) {
-                Log.d(TAG, "Notifying SDK of notification opening");
-                
-                DDNA.instance().recordNotificationOpened();
+                // to make the behaviour consistent with iOS on Unity
+                if (intent.getBooleanExtra(
+                        DDNANotifications.EXTRA_LAUNCH, false)) {
+                    
+                    Log.d(TAG, "Notifying SDK of notification opening");
+                    DDNANotifications.recordNotificationOpened(
+                            intent.getBundleExtra(DDNANotifications.EXTRA_PAYLOAD),
+                            true);
+                }
                 
                 if (MetaData.get(context).getBoolean(
                         MetaData.START_LAUNCH_INTENT, true)) {
@@ -56,8 +60,7 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
                 }
             } else if (action.equals(Actions.NOTIFICATION_DISMISSED)) {
                 Log.d(TAG, "Notifying SDK of notification dismissal");
-                
-                DDNA.instance().recordNotificationDismissed();
+                DDNANotifications.recordNotificationDismissed();
             } else {
                 Log.w(TAG, "Unexpected action " + action);
             }
