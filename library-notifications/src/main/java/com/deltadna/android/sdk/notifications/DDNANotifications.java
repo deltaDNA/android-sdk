@@ -19,6 +19,7 @@ package com.deltadna.android.sdk.notifications;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
@@ -58,6 +59,9 @@ public final class DDNANotifications {
     
     public static final String EXTRA_REGISTRATION_TOKEN = "token";
     public static final String EXTRA_FAILURE_REASON = "reason";
+    
+    public static final String EXTRA_PAYLOAD = "payload";
+    public static final String EXTRA_LAUNCH = "launch";
     
     /**
      * {@link IntentFilter} to be used when registering a
@@ -105,9 +109,11 @@ public final class DDNANotifications {
      * Unregister the client from push notifications.
      *
      * @see DDNA#clearRegistrationId()
+     *
+     * @throws UnsupportedOperationException if called from Unity
      */
     public static void unregister() {
-        if (UnityClasses.PLAYER != null) {
+        if (Unity.isPresent()) {
             throw new UnsupportedOperationException(
                     "Unity SDK should unregister from its own code");
         }
@@ -115,6 +121,39 @@ public final class DDNANotifications {
         Log.d(TAG, "Unregistering from push notifications");
         
         DDNA.instance().clearRegistrationId();
+    }
+    
+    /**
+     * Notifies the SDK that a push notification has been opened by the user.
+     *
+     * @param payload   the payload of the push notification
+     * @param launch    whether the notification launched the app
+     */
+    public static void recordNotificationOpened(
+            Bundle payload,
+            boolean launch) {
+        
+        if (Unity.isPresent()) {
+            final Bundle copy = new Bundle(payload);
+            copy.putBoolean("_ddLaunch", launch);
+            
+            Unity.sendMessage(
+                    "DeltaDNA.AndroidNotifications",
+                    launch  ? "DidLaunchWithPushNotification"
+                            : "DidReceivePushNotification",
+                    Utils.convert(copy));
+        } else {
+            DDNA.instance().recordNotificationOpened(launch);
+        }
+    }
+    
+    /**
+     * Notifies the SDK that a push notification has been dismissed by the user.
+     */
+    public static void recordNotificationDismissed() {
+        if (!Unity.isPresent()) {
+            DDNA.instance().recordNotificationDismissed();
+        } // `else` Unity doesn't have this method
     }
     
     private DDNANotifications() {}

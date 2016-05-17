@@ -77,7 +77,10 @@ import java.util.Locale;
  * </code></pre>
  */
 public class NotificationListenerService extends GcmListenerService {
-    
+
+    private static final String TAG = BuildConfig.LOG_TAG
+            + ' '
+            + NotificationListenerService.class.getSimpleName();
     private static final String PLATFORM_TITLE = "title";
     private static final String PLATFORM_ALERT = "alert";
     
@@ -101,7 +104,7 @@ public class NotificationListenerService extends GcmListenerService {
     
     @Override
     public void onMessageReceived(String from, Bundle data) {
-        Log.d(  BuildConfig.LOG_TAG, String.format(
+        Log.d(  TAG, String.format(
                 Locale.US,
                 "Received message %s from %s",
                 data,
@@ -110,23 +113,27 @@ public class NotificationListenerService extends GcmListenerService {
         if (data != null && !data.isEmpty()) {
             notify(createNotification(data).build());
         } else {
-            Log.w(BuildConfig.LOG_TAG, "Message data is null or empty");
+            Log.w(TAG, "Message data is null or empty");
         }
     }
     
     /**
      * Creates a {@link android.support.v4.app.NotificationCompat.Builder}
      * whose built result will be posted on the {@link NotificationManager}.
-     * 
+     *
      * Implementations which call
      * {@link NotificationCompat.Builder#setContentIntent(PendingIntent)}
      * or
      * {@link NotificationCompat.Builder#setDeleteIntent(PendingIntent)}
-     * on the {@link NotificationCompat.Builder} should notify the SDK
-     * that the push notification has been opened or dismissed respectively.
-     * 
+     * on the {@link NotificationCompat.Builder} and thus override the default
+     * behaviour should notify the SDK that the push notification has been
+     * opened or dismissed respectively.
+     *
      * @param data  the data from the message
+     *
      * @return      configured notification builder
+     *
+     * @see NotificationInteractionReceiver
      */
     protected NotificationCompat.Builder createNotification(Bundle data) {
         final String title = getTitle(data);
@@ -134,8 +141,7 @@ public class NotificationListenerService extends GcmListenerService {
         if (data.containsKey(PLATFORM_ALERT)) {
             alert = data.getString(PLATFORM_ALERT);
         } else {
-            Log.w(  BuildConfig.LOG_TAG,
-                    "Missing 'alert' key in message");
+            Log.w(TAG, "Missing 'alert' key in message");
             alert = "Missing 'alert' key";
         }
         
@@ -146,35 +152,25 @@ public class NotificationListenerService extends GcmListenerService {
                         .setContentText(alert)
                         .setAutoCancel(true);
         
-        if (UnityClasses.PLAYER_ACTIVITY != null) {
-            Intent intent = getPackageManager().getLaunchIntentForPackage(
-                    getPackageName());
-            if (intent == null) {
-                intent = new Intent(this, UnityClasses.PLAYER_ACTIVITY);
-            }
-            
-            /*
-             * Unity will make sure to handle the sending of a notification
-             * opened event when the player activity is opened, however the
-             * dismissed case would need to be handled through reflection.
-             */
-            builder.setContentIntent(PendingIntent.getActivity(
-                    this,
-                    0,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT));
-        } else {
-            builder.setContentIntent(PendingIntent.getBroadcast(
-                    this,
-                    0,
-                    new Intent(Actions.NOTIFICATION_OPENED),
-                    PendingIntent.FLAG_ONE_SHOT));
-            builder.setDeleteIntent(PendingIntent.getBroadcast(
-                    this,
-                    0,
-                    new Intent(Actions.NOTIFICATION_DISMISSED),
-                    PendingIntent.FLAG_ONE_SHOT));
+        // to make the behaviour consistent with iOS on Unity
+        final boolean backgrounded = !Utils.inForeground(this);
+        if (!backgrounded) {
+            Log.d(TAG, "Notifying SDK of notification opening");
+            DDNANotifications.recordNotificationOpened(data, false);
         }
+        
+        builder.setContentIntent(PendingIntent.getBroadcast(
+                this,
+                0,
+                new Intent(Actions.NOTIFICATION_OPENED)
+                        .putExtra(DDNANotifications.EXTRA_PAYLOAD, data)
+                        .putExtra(DDNANotifications.EXTRA_LAUNCH, backgrounded),
+                PendingIntent.FLAG_ONE_SHOT));
+        builder.setDeleteIntent(PendingIntent.getBroadcast(
+                this,
+                0,
+                new Intent(Actions.NOTIFICATION_DISMISSED),
+                PendingIntent.FLAG_ONE_SHOT));
         
         return builder;
     }
@@ -207,8 +203,8 @@ public class NotificationListenerService extends GcmListenerService {
             } else {
                 throw new RuntimeException(String.format(
                         Locale.US,
-                        "Found %s type for %s, only string or string resource allowed",
-                        value.getClass(),
+                        "Found %s for %s, only string or string resource allowed",
+                        value,
                         MetaData.NOTIFICATION_TITLE));
             }
         } else {

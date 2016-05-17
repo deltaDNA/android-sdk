@@ -2,7 +2,9 @@
 
 ## [4.2.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.0) (YYYY-MM-DD)
 
-## [4.1.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.1) (YYYY-MM-DD)
+## [4.1.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.2) (2016-05-17)
+Fixed event sending on push notifications to match Unity/iOS.  
+Fixed missing push notification events in Unity.
 
 ## [4.1.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.1) (2016-05-06)
 Fixed activity restarting when opening notifications on Unity.  
