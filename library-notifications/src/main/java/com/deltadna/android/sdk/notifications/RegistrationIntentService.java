@@ -28,7 +28,6 @@ import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 
 /**
@@ -95,68 +94,29 @@ public final class RegistrationIntentService extends IntentService {
     }
     
     private void notifySuccess(String token) {
-        if (UnityClasses.PLAYER != null) {
-            notifyUnitySuccess(UnityClasses.PLAYER, token);
+        if (Unity.isPresent()) {
+            Unity.sendMessage(
+                    "DeltaDNA.AndroidNotifications",
+                    "DidRegisterForPushNotifications",
+                    token);
         } else {
-            notifyAndroid(token);
+            DDNA.instance().setRegistrationId(token);
+            broadcasts.sendBroadcast(new Intent(
+                    DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL)
+                    .putExtra(DDNANotifications.EXTRA_REGISTRATION_TOKEN, token));
         }
     }
     
     private void notifyFailure(Throwable t) {
-        if (UnityClasses.PLAYER != null) {
-            notifyUnityFailure(UnityClasses.PLAYER, t.getMessage());
+        if (Unity.isPresent()) {
+            Unity.sendMessage(
+                    "DeltaDNA.AndroidNotifications",
+                    "DidFailToRegisterForPushNotifications",
+                    t.getMessage());
         } else {
             broadcasts.sendBroadcast(new Intent(
                     DDNANotifications.ACTION_TOKEN_RETRIEVAL_FAILED)
                     .putExtra(DDNANotifications.EXTRA_FAILURE_REASON, t));
-        }
-    }
-    
-    private void notifyAndroid(String token) {
-        DDNA.instance().setRegistrationId(token);
-        broadcasts.sendBroadcast(new Intent(
-                DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL)
-                .putExtra(DDNANotifications.EXTRA_REGISTRATION_TOKEN, token));
-    }
-    
-    private void notifyUnitySuccess(Class<?> player, String token) {
-        sendUnityMessage(
-                player,
-                "DeltaDNA.AndroidNotifications",
-                "DidRegisterForPushNotifications",
-                token);
-    }
-    
-    private void notifyUnityFailure(Class<?> player, String msg) {
-        sendUnityMessage(
-                player,
-                "DeltaDNA.AndroidNotifications",
-                "DidFailToRegisterForPushNotifications",
-                msg);
-    }
-    
-    private void sendUnityMessage(
-            Class<?> receiver,
-            String gameObject,
-            String methodName,
-            String message) {
-        
-        try {
-            receiver.getDeclaredMethod(
-                    "UnitySendMessage",
-                    String.class,
-                    String.class,
-                    String.class)
-                    .invoke(receiver,
-                            gameObject,
-                            methodName,
-                            message);
-        } catch (NoSuchMethodException e) {
-            Log.e(TAG, "Failed sending message to Unity", e);
-        } catch (InvocationTargetException e) {
-            Log.e(TAG, "Failed sending message to Unity", e);
-        } catch (IllegalAccessException e) {
-            Log.e(TAG, "Failed sending message to Unity", e);
         }
     }
 }

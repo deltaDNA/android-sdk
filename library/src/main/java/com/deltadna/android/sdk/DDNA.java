@@ -325,10 +325,25 @@ public final class DDNA {
      * Record when a push notification has been opened.
      *
      * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1.2, replaced by
+     *              {@link #recordNotificationOpened(boolean)}
      */
+    @Deprecated
     public DDNA recordNotificationOpened() {
+        return recordNotificationOpened(true);
+    }
+    
+    /**
+     * Record when a push notification has been opened.
+     *
+     * @param launch whether the notification launched the app
+     *
+     * @return this {@link DDNA} instance
+     */
+    public DDNA recordNotificationOpened(boolean launch) {
         return recordEvent(new Event("notificationOpened")
-                .putParam("notificationLaunch", true));
+                .putParam("notificationLaunch", launch));
     }
     
     /**
