@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.2) (YYYY-MM-DD)
+## [4.1.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.2) (2016-05-17)
 Fixed event sending on push notifications to match Unity/iOS.  
 Fixed missing push notification events in Unity.
 
