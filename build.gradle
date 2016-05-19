@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-ext {
-    supportVersion = '23.3.0'
-    
-    logTagName  = 'LOG_TAG'
-    logTagValue = 'deltaDNA'
-}
-
 buildscript {
     ext {
-        kotlinVersion = '1.0.1'
+        kotlinVersion = '1.0.2'
+        supportVersion = '23.4.0'
+        
+        logTagName  = 'LOG_TAG'
+        logTagValue = 'deltaDNA'
     }
     
     repositories {
@@ -32,7 +29,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.0.0'
+        classpath 'com.android.tools.build:gradle:2.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
         classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.0.8'
@@ -108,10 +105,10 @@ subprojects {
     if (isLibrary) {
         dependencies {
             testCompile 'com.google.truth:truth:0.28'
-            testCompile "com.nhaarman:mockito-kotlin:0.3.0"
+            testCompile 'com.nhaarman:mockito-kotlin:0.4.1'
             testCompile 'com.squareup.okhttp:mockwebserver:2.7.5'
             testCompile 'junit:junit:4.12'
-            testCompile 'nl.jqno.equalsverifier:equalsverifier:2.0.1'
+            testCompile 'nl.jqno.equalsverifier:equalsverifier:2.0.2'
             testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
             testCompile 'org.json:json:20160212'
