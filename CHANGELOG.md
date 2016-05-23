@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.1.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.3) (YYYY-MM-DD)
+Fixed network requests not executing on API16.  
+
 ## [4.1.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.2) (2016-05-17)
 Fixed event sending on push notifications to match Unity/iOS.  
 Fixed missing push notification events in Unity.
