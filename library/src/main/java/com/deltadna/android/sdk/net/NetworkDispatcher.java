@@ -89,9 +89,9 @@ final class NetworkDispatcher {
     }
     
     private final class NetworkExecutor extends ScheduledThreadPoolExecutor {
-
+        
         NetworkExecutor(int maxRequests) {
-            super(  0,
+            super(  1,
                     new ThreadFactory() {
                         private final ThreadFactory inner =
                                 Executors.defaultThreadFactory();
