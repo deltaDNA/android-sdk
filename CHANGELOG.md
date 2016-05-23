@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.3) (YYYY-MM-DD)
+## [4.1.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.3) (2016-05-24)
 Fixed network requests not executing on API16.  
 
 ## [4.1.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.2) (2016-05-17)
