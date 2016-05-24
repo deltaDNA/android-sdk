@@ -2,6 +2,9 @@
 
 ## [4.2.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.0) (YYYY-MM-DD)
 
+## [4.1.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.4) (2016-05-24)
+Fixed invalid events due to userLocale formatting error on some devices.  
+
 ## [4.1.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.3) (2016-05-24)
 Fixed network requests not executing on API16.  
 
