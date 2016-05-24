@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+if [ ! $(git branch | sed -n -e 's/^\* \(.*\)/\1/p') == "master" ]; then
+  echo "Javadocs can only be published from the master branch"
+  exit 1
+fi
+
+./gradlew clean :library:androidJavadocs
+
+cd library/build/docs/javadoc
+git init
+git remote add javadoc git@github.com:deltaDNA/android-sdk.git
+git fetch --depth=1 javadoc gh-pages
+git add --all
+git commit -m "javadoc"
+git merge --no-edit -s ours remotes/javadoc/gh-pages
+git push javadoc master:gh-pages
+rm -rf .git
