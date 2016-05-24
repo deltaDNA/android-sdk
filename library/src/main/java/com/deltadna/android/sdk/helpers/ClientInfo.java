@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk.helpers;
 
 import android.os.Build;
+import android.text.TextUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -60,15 +61,18 @@ public final class ClientInfo {
     }
     
     public static String countryCode() {
-        return Locale.getDefault().getCountry();
+        final String value = Locale.getDefault().getCountry();
+        return (TextUtils.isEmpty(value)) ? "ZZ" : value;
     }
     
     public static String languageCode() {
-        return Locale.getDefault().getLanguage();
+        final String value = Locale.getDefault().getLanguage();
+        return (TextUtils.isEmpty(value)) ? "zz" : value;
     }
     
     public static String locale() {
-        return Locale.getDefault().toString();
+        return languageCode() + '_' + countryCode();
     }
+    
+    private ClientInfo() {}
 }
-
