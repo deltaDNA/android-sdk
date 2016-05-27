@@ -56,6 +56,11 @@ class EngagementTest {
         }
     }
     
+    @Test
+    fun getDecisionPoint() {
+        assertThat(KEngagement("point").decisionPoint).isEqualTo("point")
+    }
+    
     private class KEngagement : Engagement<KEngagement> {
         constructor(point: String) : super(point)
         constructor(point: String, flavour: String?) : super(point, flavour)
