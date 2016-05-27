@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.5) (YYYY-MM-DD)
+## [4.1.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.5) (2016-05-27)
 Updates to support new version of SmartAds.  
 
 ## [4.1.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.4) (2016-05-24)
