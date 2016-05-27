@@ -28,6 +28,7 @@ import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageListener;
+import com.deltadna.android.sdk.listeners.SessionListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
 import org.json.JSONException;
@@ -35,10 +36,13 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 /**
  * Singleton class for accessing the deltaDNA SDK.
@@ -90,6 +94,9 @@ public final class DDNA {
     
     private boolean started;
 	private String sessionId = UUID.randomUUID().toString();
+    
+    private Set<SessionListener> sessionListeners = Collections.newSetFromMap(
+            new WeakHashMap<SessionListener, Boolean>(1));
     
     public static synchronized DDNA initialise(Configuration configuration) {
         Preconditions.checkArg(
@@ -227,6 +234,11 @@ public final class DDNA {
         }
         
         sessionId = UUID.randomUUID().toString();
+        
+        for (final SessionListener listener : sessionListeners) {
+            listener.onSessionUpdated();
+        }
+        
         return this;
     }
     
@@ -662,6 +674,16 @@ public final class DDNA {
         return network;
     }
     
+    public DDNA register(SessionListener listener) {
+        sessionListeners.add(listener);
+        return this;
+    }
+    
+    public DDNA unregister(SessionListener listener) {
+        sessionListeners.remove(listener);
+        return this;
+    }
+    
     /**
      * Fires the default events, should only be called from
      * {@link #startSdk(String)}.
@@ -708,8 +730,7 @@ public final class DDNA {
         }
     }
     
-    private DDNA(
-            Application application,
+    DDNA(   Application application,
             String environmentKey,
             String collectUrl,
             String engageUrl,

@@ -132,6 +132,10 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
         return error;
     }
     
+    public String getDecisionPoint() {
+        return name;
+    }
+    
     void setResponse(Response<JSONObject> response) {
         this.response = response;
         // unpack response for easy access
