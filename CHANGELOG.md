@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.6) (YYYY-MM-DD)
+## [4.1.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.6) (2016-08-09)
 Fixed image messages not scaling when using cover resize mode.  
 
 ## [4.1.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.5) (2016-05-27)
