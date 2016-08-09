@@ -408,9 +408,11 @@ public final class ImageMessage implements Serializable {
                     // calculate scales
                     float sw = (screenWidth - (lp + rp)) / (float) imageW;
                     float sh = (screenHeight - (tp + bp)) / (float) imageH;
-
-                    mScale = sw < sh ? sw : sh;
-
+                    
+                    mScale = (sw < sh && mType.equalsIgnoreCase("contain"))
+                            ? sw
+                            : sh;
+                    
                     // calculate the width and height
                     int pWidth = (int)(imageW * mScale);
                     int pHeight = (int)(imageH * mScale);
