@@ -136,7 +136,7 @@ public class ExampleActivity extends AppCompatActivity {
     
     public void onNotificationOpened(View view) {
         // pretend the user opened a push notification
-        DDNA.instance().recordNotificationOpened();
+        DDNA.instance().recordNotificationOpened(false);
     }
     
     public void onStartSdk(View view) {

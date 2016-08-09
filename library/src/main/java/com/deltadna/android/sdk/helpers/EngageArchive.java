@@ -63,10 +63,7 @@ public class EngageArchive{
 	 * @return TRUE if store contains a response, FALSE otherwise.
 	 */
     public boolean contains(String decisionPoint, @Nullable String flavour) {
-        final String key = createKey(decisionPoint, flavour);
-        
-        Log.v(BuildConfig.LOG_TAG, "Does Engage contain " + key);
-        return mTable.containsKey(key);
+        return mTable.containsKey(createKey(decisionPoint, flavour));
 	}
     
 	/**
