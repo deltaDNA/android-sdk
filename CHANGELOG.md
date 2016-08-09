@@ -2,6 +2,11 @@
 
 ## [4.2.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.0) (YYYY-MM-DD)
 
+## [4.1.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.7) (YYYY-MM-DD)
+
+## [4.1.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.6) (2016-08-09)
+Fixed image messages not scaling when using cover resize mode.  
+
 ## [4.1.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.5) (2016-05-27)
 Updates to support new version of SmartAds.  
 
