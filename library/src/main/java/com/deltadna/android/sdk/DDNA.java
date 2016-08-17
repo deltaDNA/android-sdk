@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
+import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
@@ -364,20 +365,74 @@ public final class DDNA {
      * @param launch whether the notification launched the app
      *
      * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1.6, replaced by
+     *              {@link #recordNotificationOpened(boolean, Bundle)}
      */
+    @Deprecated
     public DDNA recordNotificationOpened(boolean launch) {
         return recordEvent(new Event("notificationOpened")
                 .putParam("notificationLaunch", launch));
     }
     
     /**
-     * Record when a push notification has been dismissed.
+     * Record when a push notification has been opened.
+     *
+     * @param launch    whether the notification launched the app
+     * @param payload   the payload of the push notification
      *
      * @return this {@link DDNA} instance
      */
+    public DDNA recordNotificationOpened(boolean launch, Bundle payload) {
+        final Event event = new Event("notificationOpened");
+        
+        if (payload.containsKey("_ddId"))
+            event.putParam("notificationId", payload.getLong("_ddId"));
+        if (payload.containsKey("_ddName"))
+            event.putParam("notificationName", payload.getString("_ddName"));
+        
+        boolean insertCommunicationAttrs = false;
+        if (payload.containsKey("_ddCampaign")) {
+            event.putParam("campaignId", payload.getLong("_ddCampaign"));
+            insertCommunicationAttrs = true;
+        }
+        if (payload.containsKey("_ddCohort")) {
+            event.putParam("cohortId", payload.getLong("_ddCohort"));
+            insertCommunicationAttrs = true;
+        }
+        if (insertCommunicationAttrs) {
+            event.putParam("communicationSender", "GOOGLE_NOTIFICATION");
+            event.putParam("communicationState", "OPEN");
+        }
+        
+        event.putParam("notificationLaunch", launch);
+        
+        return recordEvent(event);
+    }
+    
+    /**
+     * Record when a push notification has been dismissed.
+     *
+     * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1.6, replaced by
+     *              {@link #recordNotificationDismissed(Bundle)}
+     */
+    @Deprecated
     public DDNA recordNotificationDismissed() {
         return recordEvent(new Event("notificationOpened")
                 .putParam("notificationLaunch", false));
+    }
+    
+    /**
+     * Record when a push notification has been dismissed.
+     *
+     * @param payload the payload of the push notification
+     *
+     * @return this {@link DDNA} instance
+     */
+    public DDNA recordNotificationDismissed(Bundle payload) {
+        return recordNotificationOpened(false, payload);
     }
     
     /**

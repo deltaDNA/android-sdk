@@ -135,6 +135,7 @@ public final class DDNANotifications {
         
         if (Unity.isPresent()) {
             final Bundle copy = new Bundle(payload);
+            copy.putString("_ddCommunicationSender", "GOOGLE_NOTIFICATION");
             copy.putBoolean("_ddLaunch", launch);
             
             Unity.sendMessage(
@@ -143,16 +144,31 @@ public final class DDNANotifications {
                             : "DidReceivePushNotification",
                     Utils.convert(copy));
         } else {
-            DDNA.instance().recordNotificationOpened(launch);
+            DDNA.instance().recordNotificationOpened(launch, payload);
         }
     }
     
     /**
      * Notifies the SDK that a push notification has been dismissed by the user.
+     *
+     * @deprecated  as of version 4.1.6, replaced by
+     *              {@link #recordNotificationDismissed(Bundle)}
      */
+    @Deprecated
     public static void recordNotificationDismissed() {
         if (!Unity.isPresent()) {
             DDNA.instance().recordNotificationDismissed();
+        } // `else` Unity doesn't have this method
+    }
+    
+    /**
+     * Notifies the SDK that a push notification has been dismissed by the user.
+     *
+     * @param payload the payload of the push notification
+     */
+    public static void recordNotificationDismissed(Bundle payload) {
+        if (!Unity.isPresent()) {
+            DDNA.instance().recordNotificationDismissed(payload);
         } // `else` Unity doesn't have this method
     }
     
