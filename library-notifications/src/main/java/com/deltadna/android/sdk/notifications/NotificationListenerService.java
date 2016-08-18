@@ -208,7 +208,8 @@ public class NotificationListenerService extends GcmListenerService {
                         MetaData.NOTIFICATION_TITLE));
             }
         } else {
-            return getApplicationInfo().name;
+            return String.valueOf(getPackageManager().getApplicationLabel(
+                    getApplicationInfo()));
         }
     }
     
