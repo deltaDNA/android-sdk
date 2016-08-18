@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.1.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.7) (YYYY-MM-DD)
+## [4.1.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.7) (2016-08-18)
 Fixed empty notification title in Unity.  
 
 ## [4.1.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.6) (2016-08-09)
