@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.2.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.0) (YYYY-MM-DD)
+Updated target/compile API to 24 (Nougat).  
 
 ## [4.1.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.7) (2016-08-18)
 Fixed empty notification title in Unity.  

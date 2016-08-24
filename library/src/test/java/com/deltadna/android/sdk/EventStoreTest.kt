@@ -17,22 +17,18 @@
 package com.deltadna.android.sdk
 
 import android.content.Context
-import android.os.Build
 import android.os.Environment
 import com.deltadna.android.sdk.helpers.Settings
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricGradleTestRunner
+import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowEnvironment
 import java.io.File
 
-@RunWith(RobolectricGradleTestRunner::class)
-@Config(constants = BuildConfig::class,
-        sdk = intArrayOf(Build.VERSION_CODES.LOLLIPOP))
+@RunWith(RobolectricTestRunner::class)
 class EventStoreTest {
     
     private var application: Context? = null
