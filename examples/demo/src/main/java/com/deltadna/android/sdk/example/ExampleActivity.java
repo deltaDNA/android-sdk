@@ -114,7 +114,12 @@ public class ExampleActivity extends AppCompatActivity {
                         .addItem("Mighty Flaming Sword of the First Age", "Legendary Weapon", 1)
                         .addItem("Jewel Encrusted Shield", "Armour", 1)
                         .addVirtualCurrency("Gold", "PREMIUM", 100),
-                new Product().setRealCurrency("USD", 499))
+                new Product().setRealCurrency(
+                        "USD",
+                        Product.convertCurrency(
+                                DDNA.instance(),
+                                "USD",
+                                4.99f))) // $4.99
                 .setId("47891208312996456524019-178.149.115.237:51787")
                 .setProductId("4019")
                 .setTransactorId("62.212.91.84:15116")

@@ -16,6 +16,8 @@
 
 package com.deltadna.android.sdk;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,6 +67,8 @@ public class Product<T extends Product<T>> implements JsonParams {
      * @return this {@link T} instance
      *
      * @throws IllegalArgumentException if the {@code type} is null or empty
+     *
+     * @see #convertCurrency(DDNA, String, float)
      */
     public T setRealCurrency(String type, int amount) {
         realCurrency
@@ -119,5 +123,27 @@ public class Product<T extends Product<T>> implements JsonParams {
                         .put("itemAmount", amount)).json);
         
         return (T) this;
+    }
+    
+    /**
+     * Converts a currency in a floating point format with a decimal point,
+     * such as '1.23' EUR, into an integer representation which can be used
+     * with {@link #setRealCurrency(String, int)}. This method will also work
+     * for currencies which don't use a minor currency unit, for example such
+     * as the Japanese Yen (JPY).
+     *
+     * @param ddna  the SDK instance
+     * @param code  the ISO 4217 currency code
+     * @param value the currency value to convert
+     *
+     * @return the converted integer value
+     */
+    public static int convertCurrency(DDNA ddna, String code, float value) {
+        if (ddna.getIso4217().containsKey(code)) {
+            return (int) (value * Math.pow(10, ddna.getIso4217().get(code)));
+        } else {
+            Log.w(BuildConfig.LOG_TAG, "Failed to find currency for: " + code);
+            return 0;
+        }
     }
 }
