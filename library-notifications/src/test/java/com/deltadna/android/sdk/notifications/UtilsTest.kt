@@ -19,22 +19,17 @@ package com.deltadna.android.sdk.notifications
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
-import android.os.Build
 import android.os.Bundle
-import com.deltadna.android.sdk.BuildConfig
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricGradleTestRunner
-import org.robolectric.annotation.Config
+import org.robolectric.RobolectricTestRunner
 import android.app.ActivityManager.RunningAppProcessInfo as RAPI
 import org.robolectric.RuntimeEnvironment as RE
 
-@RunWith(RobolectricGradleTestRunner::class)
-@Config(constants = BuildConfig::class,
-        sdk = intArrayOf(Build.VERSION_CODES.LOLLIPOP))
+@RunWith(RobolectricTestRunner::class)
 class UtilsTest {
     
     @Test

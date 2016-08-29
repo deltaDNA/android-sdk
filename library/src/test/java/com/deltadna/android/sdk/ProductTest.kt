@@ -17,7 +17,6 @@
 package com.deltadna.android.sdk
 
 import android.os.Build
-import com.deltadna.android.sdk.test.runners.RobolectricIssue1430Runner
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONException
 import org.json.JSONObject
@@ -25,12 +24,13 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
-@RunWith(RobolectricIssue1430Runner::class)
-@Config(constants = BuildConfig::class,
-        sdk = intArrayOf(Build.VERSION_CODES.LOLLIPOP))
+@RunWith(RobolectricTestRunner::class)
+@Config(manifest = "src/main/AndroidManifest.xml",
+        sdk = intArrayOf(Build.VERSION_CODES.M))
 class ProductTest {
     
     private val ddna = DDNA(
