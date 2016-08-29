@@ -17,7 +17,7 @@
 buildscript {
     ext {
         kotlinVersion = '1.0.3'
-        supportVersion = '24.2.0'
+        supportVersion = '23.4.0'
         
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
@@ -61,12 +61,12 @@ subprojects {
     }
     
     android {
-        compileSdkVersion 24
-        buildToolsVersion '24.0.1'
+        compileSdkVersion 23
+        buildToolsVersion '24.0.2'
         
         defaultConfig {
             minSdkVersion 15
-            targetSdkVersion 24
+            targetSdkVersion 23
             
             versionCode 1
             versionName VERSION_NAME
