@@ -16,7 +16,10 @@
 
 package com.deltadna.android.sdk;
 
+import android.text.TextUtils;
 import android.util.Log;
+
+import com.deltadna.android.sdk.helpers.Preconditions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -137,8 +140,18 @@ public class Product<T extends Product<T>> implements JsonParams {
      * @param value the currency value to convert
      *
      * @return the converted integer value
+     *
+     * @throws IllegalArgumentException if {@code ddna} is null
+     * @throws IllegalArgumentException if {@code code} is null or empty
      */
     public static int convertCurrency(DDNA ddna, String code, float value) {
+        Preconditions.checkArg(
+                ddna != null,
+                "ddna connot be null");
+        Preconditions.checkArg(
+                !TextUtils.isEmpty(code),
+                "code cannot be null or empty");
+        
         if (ddna.getIso4217().containsKey(code)) {
             return new Float(value * Math.pow(10, ddna.getIso4217().get(code)))
                     .intValue();

@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk
 
 import android.os.Build
+import com.deltadna.android.sdk.test.assertThrown
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONException
 import org.json.JSONObject
@@ -146,6 +147,19 @@ class ProductTest {
     fun convertCurrencyInvalidCode() {
         assertThat(Product.convertCurrency(ddna, "ZZZ", 1.23f))
                 .isEqualTo(0)
+    }
+    
+    @Test
+    fun convertCurrencyThrowsOnInvalidInputs() {
+        assertThrown<IllegalArgumentException> {
+            Product.convertCurrency(null, "EUR", 1.23f)
+        }
+        assertThrown<IllegalArgumentException> {
+            Product.convertCurrency(ddna, null, 1.23f)
+        }
+        assertThrown<IllegalArgumentException> {
+            Product.convertCurrency(ddna, "", 1.23f)
+        }
     }
     
     private class KProduct : Product<KProduct>()
