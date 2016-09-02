@@ -140,7 +140,8 @@ public class Product<T extends Product<T>> implements JsonParams {
      */
     public static int convertCurrency(DDNA ddna, String code, float value) {
         if (ddna.getIso4217().containsKey(code)) {
-            return (int) (value * Math.pow(10, ddna.getIso4217().get(code)));
+            return new Float(value * Math.pow(10, ddna.getIso4217().get(code)))
+                    .intValue();
         } else {
             Log.w(BuildConfig.LOG_TAG, "Failed to find currency for: " + code);
             return 0;

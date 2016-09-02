@@ -126,6 +126,8 @@ class ProductTest {
                 .isEqualTo(123)
         assertThat(Product.convertCurrency(ddna, "JPY", 123f))
                 .isEqualTo(123)
+        assertThat(Product.convertCurrency(ddna, "KWD", 1.234f))
+                .isEqualTo(1234)
     }
     
     @Test
