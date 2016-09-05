@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk.net;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -56,11 +57,10 @@ final class NetworkDispatcher {
     private final Map<Request, Cancelable> requests =
             new ConcurrentHashMap<>(MAX_REQUESTS);
     
-    private final Handler handler;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     private final ScheduledExecutorService executor;
     
-    NetworkDispatcher(Handler handler) {
-        this.handler = handler;
+    NetworkDispatcher() {
         this.executor = new NetworkExecutor(MAX_REQUESTS);
     }
     

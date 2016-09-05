@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
+import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
@@ -33,16 +34,26 @@ import com.deltadna.android.sdk.net.NetworkManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.WeakHashMap;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 /**
  * Singleton class for accessing the deltaDNA SDK.
@@ -90,12 +101,14 @@ public final class DDNA {
     private final SessionRefreshHandler sessionHandler;
     private final EventHandler eventHandler;
     
+    private final Map<String, Integer> iso4217;
+    
     private final String engageStoragePath;
     
     private boolean started;
 	private String sessionId = UUID.randomUUID().toString();
     
-    private Set<SessionListener> sessionListeners = Collections.newSetFromMap(
+    private final Set<SessionListener> sessionListeners = Collections.newSetFromMap(
             new WeakHashMap<SessionListener, Boolean>(1));
     
     public static synchronized DDNA initialise(Configuration configuration) {
@@ -352,20 +365,74 @@ public final class DDNA {
      * @param launch whether the notification launched the app
      *
      * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1.6, replaced by
+     *              {@link #recordNotificationOpened(boolean, Bundle)}
      */
+    @Deprecated
     public DDNA recordNotificationOpened(boolean launch) {
         return recordEvent(new Event("notificationOpened")
                 .putParam("notificationLaunch", launch));
     }
     
     /**
-     * Record when a push notification has been dismissed.
+     * Record when a push notification has been opened.
+     *
+     * @param launch    whether the notification launched the app
+     * @param payload   the payload of the push notification
      *
      * @return this {@link DDNA} instance
      */
+    public DDNA recordNotificationOpened(boolean launch, Bundle payload) {
+        final Event event = new Event("notificationOpened");
+        
+        if (payload.containsKey("_ddId"))
+            event.putParam("notificationId", payload.getLong("_ddId"));
+        if (payload.containsKey("_ddName"))
+            event.putParam("notificationName", payload.getString("_ddName"));
+        
+        boolean insertCommunicationAttrs = false;
+        if (payload.containsKey("_ddCampaign")) {
+            event.putParam("campaignId", payload.getLong("_ddCampaign"));
+            insertCommunicationAttrs = true;
+        }
+        if (payload.containsKey("_ddCohort")) {
+            event.putParam("cohortId", payload.getLong("_ddCohort"));
+            insertCommunicationAttrs = true;
+        }
+        if (insertCommunicationAttrs) {
+            event.putParam("communicationSender", "GOOGLE_NOTIFICATION");
+            event.putParam("communicationState", "OPEN");
+        }
+        
+        event.putParam("notificationLaunch", launch);
+        
+        return recordEvent(event);
+    }
+    
+    /**
+     * Record when a push notification has been dismissed.
+     *
+     * @return this {@link DDNA} instance
+     *
+     * @deprecated  as of version 4.1.6, replaced by
+     *              {@link #recordNotificationDismissed(Bundle)}
+     */
+    @Deprecated
     public DDNA recordNotificationDismissed() {
         return recordEvent(new Event("notificationOpened")
                 .putParam("notificationLaunch", false));
+    }
+    
+    /**
+     * Record when a push notification has been dismissed.
+     *
+     * @param payload the payload of the push notification
+     *
+     * @return this {@link DDNA} instance
+     */
+    public DDNA recordNotificationDismissed(Bundle payload) {
+        return recordNotificationOpened(false, payload);
     }
     
     /**
@@ -684,6 +751,10 @@ public final class DDNA {
         return this;
     }
     
+    Map<String, Integer> getIso4217() {
+        return iso4217;
+    }
+    
     /**
      * Fires the default events, should only be called from
      * {@link #startSdk(String)}.
@@ -773,6 +844,35 @@ public final class DDNA {
                         engageUrl,
                         settings,
                         hashSecret));
+        
+        final XPath xpath = XPathFactory.newInstance().newXPath();
+        Map<String, Integer> temp = new HashMap<>(0);
+        try {
+            final NodeList nodes = (NodeList) xpath.evaluate(
+                    "/ISO_4217/CcyTbl/CcyNtry",
+                    new InputSource(application.getResources().openRawResource(R.raw.iso_4217)),
+                    XPathConstants.NODESET);
+            temp = new HashMap<>(nodes.getLength());
+            
+            for (int i = 0; i < nodes.getLength(); i++) {
+                final Element el = (Element) nodes.item(i);
+                if (el.getElementsByTagName("Ccy") == null) continue;
+                
+                final String key = xpath.evaluate("Ccy", el);
+                int value;
+                try {
+                    value = Integer.parseInt(xpath.evaluate("CcyMnrUnts", el));
+                } catch (NumberFormatException e) {
+                    value = 0;
+                }
+                
+                temp.put(key, value);
+            }
+        } catch (XPathExpressionException e) {
+            Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
+        } finally {
+            iso4217 = Collections.unmodifiableMap(temp);
+        }
         
         setUserId(userId);
     }

@@ -169,7 +169,8 @@ public class NotificationListenerService extends GcmListenerService {
         builder.setDeleteIntent(PendingIntent.getBroadcast(
                 this,
                 0,
-                new Intent(Actions.NOTIFICATION_DISMISSED),
+                new Intent(Actions.NOTIFICATION_DISMISSED)
+                        .putExtra(DDNANotifications.EXTRA_PAYLOAD, data),
                 PendingIntent.FLAG_ONE_SHOT));
         
         return builder;

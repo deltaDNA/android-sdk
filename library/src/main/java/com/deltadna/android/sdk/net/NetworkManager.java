@@ -16,8 +16,6 @@
 
 package com.deltadna.android.sdk.net;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -77,8 +75,7 @@ public class NetworkManager {
         }
         md5 = md;
         
-        dispatcher = new NetworkDispatcher(
-                new Handler(Looper.getMainLooper()));
+        dispatcher = new NetworkDispatcher();
     }
     
     public CancelableRequest collect(

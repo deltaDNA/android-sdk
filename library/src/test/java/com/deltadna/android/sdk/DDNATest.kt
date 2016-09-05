@@ -16,21 +16,20 @@
 
 package com.deltadna.android.sdk
 
-import android.os.Build
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.SessionListener
+import com.google.common.truth.Truth.assertThat
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.times
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricGradleTestRunner
+import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
-import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockito_kotlin.*
 
-@RunWith(RobolectricGradleTestRunner::class)
-@Config(constants = BuildConfig::class,
-        sdk = intArrayOf(Build.VERSION_CODES.LOLLIPOP))
+@RunWith(RobolectricTestRunner::class)
 class DDNATest {
     
     private var uut = createUut()

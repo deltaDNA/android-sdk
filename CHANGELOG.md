@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.2.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.0) (2016-09-05)
+Added helper in Product for converting currencies from a floating point representation.  
+
 ## [4.1.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.1.7) (2016-08-18)
 Fixed empty notification title in Unity.  
 

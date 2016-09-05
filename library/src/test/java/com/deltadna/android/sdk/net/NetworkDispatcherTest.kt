@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk.net
 
-import android.os.Handler
 import com.deltadna.android.sdk.listeners.RequestListener
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
@@ -27,11 +26,12 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.runners.MockitoJUnitRunner
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(RobolectricTestRunner::class)
 class NetworkDispatcherTest {
     
     private var uut: NetworkDispatcher? = null
@@ -39,12 +39,7 @@ class NetworkDispatcherTest {
     
     @Before
     fun before() {
-        val handler = mock<Handler>()
-        whenever(handler.post(any())).then {
-            (it.arguments[0] as Runnable).run()
-        }
-        
-        uut = NetworkDispatcher(handler)
+        uut = NetworkDispatcher()
         
         server = MockWebServer()
         server!!.start()
@@ -77,6 +72,7 @@ class NetworkDispatcherTest {
         
         server!!.takeRequest()
         Thread.sleep(100)
+        RuntimeEnvironment.getMasterScheduler().advanceToNextPostedRunnable()
         
         assertThat(server!!.requestCount).isEqualTo(1)
         verify(listener).onCompleted(eq(Response(
@@ -112,6 +108,7 @@ class NetworkDispatcherTest {
             server!!.takeRequest()
         }
         Thread.sleep(100)
+        RuntimeEnvironment.getMasterScheduler().advanceToLastPostedRunnable()
         
         assertThat(server!!.requestCount).isEqualTo(MAX_RETRIES + 1)
         verify(listener).onError(isA<IOException>())
@@ -143,6 +140,7 @@ class NetworkDispatcherTest {
         server!!.takeRequest()
         val second = System.currentTimeMillis()
         Thread.sleep(100)
+        RuntimeEnvironment.getMasterScheduler().advanceToLastPostedRunnable()
         
         assertThat(second - first).isGreaterThan(900L)
         assertThat(second - first).isAtMost(1100L)
@@ -169,6 +167,8 @@ class NetworkDispatcherTest {
         Thread.sleep(500)
         
         assertThat(server!!.requestCount).isEqualTo(1)
+        assertThat(RuntimeEnvironment.getMasterScheduler().areAnyRunnable())
+                .isFalse()
         verifyZeroInteractions(listener)
     }
     

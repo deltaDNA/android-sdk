@@ -16,6 +16,11 @@
 
 package com.deltadna.android.sdk;
 
+import android.text.TextUtils;
+import android.util.Log;
+
+import com.deltadna.android.sdk.helpers.Preconditions;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,6 +70,8 @@ public class Product<T extends Product<T>> implements JsonParams {
      * @return this {@link T} instance
      *
      * @throws IllegalArgumentException if the {@code type} is null or empty
+     *
+     * @see #convertCurrency(DDNA, String, float)
      */
     public T setRealCurrency(String type, int amount) {
         realCurrency
@@ -119,5 +126,38 @@ public class Product<T extends Product<T>> implements JsonParams {
                         .put("itemAmount", amount)).json);
         
         return (T) this;
+    }
+    
+    /**
+     * Converts a currency in a floating point format with a decimal point,
+     * such as '1.23' EUR, into an integer representation which can be used
+     * with {@link #setRealCurrency(String, int)}. This method will also work
+     * for currencies which don't use a minor currency unit, for example such
+     * as the Japanese Yen (JPY).
+     *
+     * @param ddna  the SDK instance
+     * @param code  the ISO 4217 currency code
+     * @param value the currency value to convert
+     *
+     * @return the converted integer value
+     *
+     * @throws IllegalArgumentException if {@code ddna} is null
+     * @throws IllegalArgumentException if {@code code} is null or empty
+     */
+    public static int convertCurrency(DDNA ddna, String code, float value) {
+        Preconditions.checkArg(
+                ddna != null,
+                "ddna connot be null");
+        Preconditions.checkArg(
+                !TextUtils.isEmpty(code),
+                "code cannot be null or empty");
+        
+        if (ddna.getIso4217().containsKey(code)) {
+            return new Float(value * Math.pow(10, ddna.getIso4217().get(code)))
+                    .intValue();
+        } else {
+            Log.w(BuildConfig.LOG_TAG, "Failed to find currency for: " + code);
+            return 0;
+        }
     }
 }

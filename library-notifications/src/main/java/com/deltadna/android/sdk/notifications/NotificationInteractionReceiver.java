@@ -60,7 +60,8 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
                 }
             } else if (action.equals(Actions.NOTIFICATION_DISMISSED)) {
                 Log.d(TAG, "Notifying SDK of notification dismissal");
-                DDNANotifications.recordNotificationDismissed();
+                DDNANotifications.recordNotificationDismissed(
+                        intent.getBundleExtra(DDNANotifications.EXTRA_PAYLOAD));
             } else {
                 Log.w(TAG, "Unexpected action " + action);
             }
