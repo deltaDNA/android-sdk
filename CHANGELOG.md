@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.2.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.1) (YYYY-MM-DD)
+Fixed handling of push notifications from other senders.  
 
 ## [4.2.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.0) (2016-09-05)
 Added helper in Product for converting currencies from a floating point representation.  
