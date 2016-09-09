@@ -26,6 +26,7 @@ import android.support.annotation.DrawableRes;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.deltadna.android.sdk.helpers.Objects;
 import com.google.android.gms.gcm.GcmListenerService;
 
 import java.util.Locale;
@@ -110,10 +111,14 @@ public class NotificationListenerService extends GcmListenerService {
                 data,
                 from));
         
-        if (data != null && !data.isEmpty()) {
-            notify(createNotification(data).build());
-        } else {
+        if (!Objects.equals(
+                from,
+                getString(metaData.getInt(MetaData.SENDER_ID)))) {
+            Log.d(TAG, "Not handling message due to sender ID mismatch");
+        } else if (data == null || data.isEmpty()) {
             Log.w(TAG, "Message data is null or empty");
+        } else {
+            notify(createNotification(data).build());
         }
     }
     
