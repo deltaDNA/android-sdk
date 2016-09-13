@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.2.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.2) (YYYY-MM-DD)
+Fixed crash when notification received on Unity.  
+
 ## [4.2.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.1) (2016-09-09)
 Fixed handling of push notifications from other senders.  
 
