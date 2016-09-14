@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.2.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.3) (YYYY-MM-DD)
+Fixed notification callbacks not triggered consistently on Unity.  
+
 ## [4.2.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.2) (2016-09-13)
 Fixed crash when notification received on Unity.  
 

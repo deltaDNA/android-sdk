@@ -94,8 +94,8 @@ public final class RegistrationIntentService extends IntentService {
     }
     
     private void notifySuccess(String token) {
-        if (Unity.isPresent()) {
-            Unity.sendMessage(
+        if (UnityForwarder.isPresent()) {
+            UnityForwarder.getInstance().forward(
                     "DeltaDNA.AndroidNotifications",
                     "DidRegisterForPushNotifications",
                     token);
@@ -108,8 +108,8 @@ public final class RegistrationIntentService extends IntentService {
     }
     
     private void notifyFailure(Throwable t) {
-        if (Unity.isPresent()) {
-            Unity.sendMessage(
+        if (UnityForwarder.isPresent()) {
+            UnityForwarder.getInstance().forward(
                     "DeltaDNA.AndroidNotifications",
                     "DidFailToRegisterForPushNotifications",
                     t.getMessage());
