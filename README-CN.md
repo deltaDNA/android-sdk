@@ -43,7 +43,7 @@ allprojects {
 ```
 在你APP的构建脚本
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.2.3'
+compile 'com.deltadna.android:deltadna-sdk:4.2.4-SNAPSHOT'
 ```
 
 ## 初始化
@@ -114,7 +114,7 @@ DDNA.instance().recordEvent(new Event("options")
 ```json
 {
     "eventName": "options",
-    "userID": "a2e92bdd-f59d-498f-9385-2ae6ada432e3",
+    "userID": "a2e92bdd-f59d-498f-9385-2ae6ada4.2.4-SNAPSHOT",
     "sessionID": "0bc56224-8939-4639-b5ba-197f84dad4f4",
     "eventTimestamp":"2014-07-04 11:09:42.491",
     "eventParams": {
