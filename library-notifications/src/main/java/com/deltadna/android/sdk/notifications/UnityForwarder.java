@@ -19,17 +19,14 @@ package com.deltadna.android.sdk.notifications;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.LinkedList;
+import java.util.Queue;
 
-/**
- * Contains statically loaded Unity classes, may be null if the library is not
- * running as part of the Unity SDK. Check through {@link #isPresent()} before
- * access.
- */
-final class Unity {
+final class UnityForwarder {
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
-            + RegistrationIntentService.class.getSimpleName();
+            + UnityForwarder.class.getSimpleName();
     
     private static final Class<?> PLAYER_ACTIVITY;
     static {
@@ -56,11 +53,49 @@ final class Unity {
         PLAYER = player;
     }
     
+    private static UnityForwarder instance;
+    
     static boolean isPresent() {
         return PLAYER_ACTIVITY != null;
     }
     
-    static void sendMessage(
+    static synchronized UnityForwarder getInstance() {
+        if (instance == null) {
+            instance = new UnityForwarder();
+        }
+        
+        return instance;
+    }
+    
+    private final Queue<Message> deferred = new LinkedList<>();
+    private boolean loaded;
+    
+    private UnityForwarder() {}
+    
+    void markLoaded() {
+        Log.d(TAG, "Marked as loaded");
+        
+        loaded = true;
+        
+        if (!deferred.isEmpty()) {
+            final Message message = deferred.remove();
+            sendMessage(
+                    message.gameObject,
+                    message.methodName,
+                    message.message);
+        }
+    }
+    
+    void forward(String gameObject, String methodName, String message) {
+        if (loaded) {
+            sendMessage(gameObject, methodName, message);
+        } else {
+            Log.d(TAG, "Deferring message due to not loaded");
+            deferred.add(new Message(gameObject, methodName, message));
+        }
+    }
+    
+    private static void sendMessage(
             String gameObject,
             String methodName,
             String message) {
@@ -84,5 +119,16 @@ final class Unity {
         }
     }
     
-    private Unity() {}
+    private static final class Message {
+        
+        final String gameObject;
+        final String methodName;
+        final String message;
+        
+        Message(String gameObject, String methodName, String message) {
+            this.gameObject = gameObject;
+            this.methodName = methodName;
+            this.message = message;
+        }
+    }
 }

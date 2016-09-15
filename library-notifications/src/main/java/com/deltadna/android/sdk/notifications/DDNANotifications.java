@@ -113,7 +113,7 @@ public final class DDNANotifications {
      * @throws UnsupportedOperationException if called from Unity
      */
     public static void unregister() {
-        if (Unity.isPresent()) {
+        if (UnityForwarder.isPresent()) {
             throw new UnsupportedOperationException(
                     "Unity SDK should unregister from its own code");
         }
@@ -133,12 +133,12 @@ public final class DDNANotifications {
             Bundle payload,
             boolean launch) {
         
-        if (Unity.isPresent()) {
+        if (UnityForwarder.isPresent()) {
             final Bundle copy = new Bundle(payload);
             copy.putString("_ddCommunicationSender", "GOOGLE_NOTIFICATION");
             copy.putBoolean("_ddLaunch", launch);
             
-            Unity.sendMessage(
+            UnityForwarder.getInstance().forward(
                     "DeltaDNA.AndroidNotifications",
                     launch  ? "DidLaunchWithPushNotification"
                             : "DidReceivePushNotification",
@@ -156,7 +156,7 @@ public final class DDNANotifications {
      */
     @Deprecated
     public static void recordNotificationDismissed() {
-        if (!Unity.isPresent()) {
+        if (!UnityForwarder.isPresent()) {
             DDNA.instance().recordNotificationDismissed();
         } // `else` Unity doesn't have this method
     }
@@ -167,9 +167,13 @@ public final class DDNANotifications {
      * @param payload the payload of the push notification
      */
     public static void recordNotificationDismissed(Bundle payload) {
-        if (!Unity.isPresent()) {
+        if (!UnityForwarder.isPresent()) {
             DDNA.instance().recordNotificationDismissed(payload);
         } // `else` Unity doesn't have this method
+    }
+    
+    public static void markUnityLoaded() {
+        UnityForwarder.getInstance().markLoaded();
     }
     
     private DDNANotifications() {}
