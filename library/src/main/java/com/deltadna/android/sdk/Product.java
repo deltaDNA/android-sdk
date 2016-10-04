@@ -151,7 +151,11 @@ public class Product<T extends Product<T>> implements JsonParams {
         Preconditions.checkArg(
                 !TextUtils.isEmpty(code),
                 "code cannot be null or empty");
-        
+
+        if (ddna.getIso4217() == null) {
+            ddna.readIso4217();
+        }
+
         if (ddna.getIso4217().containsKey(code)) {
             return new Float(value * Math.pow(10, ddna.getIso4217().get(code)))
                     .intValue();
