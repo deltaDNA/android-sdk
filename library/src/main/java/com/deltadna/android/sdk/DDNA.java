@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -39,6 +40,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import java.io.File;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -101,7 +103,7 @@ public final class DDNA {
     private final SessionRefreshHandler sessionHandler;
     private final EventHandler eventHandler;
     
-    private final Map<String, Integer> iso4217;
+    private Map<String, Integer> iso4217;
     
     private final String engageStoragePath;
     
@@ -110,7 +112,8 @@ public final class DDNA {
     
     private final Set<SessionListener> sessionListeners = Collections.newSetFromMap(
             new WeakHashMap<SessionListener, Boolean>(1));
-    
+    private final InputStream inputSourceIso4217;
+
     public static synchronized DDNA initialise(Configuration configuration) {
         Preconditions.checkArg(
                 configuration != null,
@@ -844,36 +847,25 @@ public final class DDNA {
                         engageUrl,
                         settings,
                         hashSecret));
-        
-        final XPath xpath = XPathFactory.newInstance().newXPath();
-        Map<String, Integer> temp = new HashMap<>(0);
-        try {
-            final NodeList nodes = (NodeList) xpath.evaluate(
-                    "/ISO_4217/CcyTbl/CcyNtry",
-                    new InputSource(application.getResources().openRawResource(R.raw.iso_4217)),
-                    XPathConstants.NODESET);
-            temp = new HashMap<>(nodes.getLength());
-            
-            for (int i = 0; i < nodes.getLength(); i++) {
-                final Element el = (Element) nodes.item(i);
-                if (el.getElementsByTagName("Ccy") == null) continue;
-                
-                final String key = xpath.evaluate("Ccy", el);
-                int value;
+
+        /* Async read of currency xml files */
+        inputSourceIso4217 = application.getResources().openRawResource(R.raw.iso_4217);
+        new AsyncTask<Object, Boolean, Object>() {
+            @Override
+            protected Object doInBackground(Object... params) {
+                Log.w(BuildConfig.LOG_TAG, "Reading ISO 4217 resource file asynchronously");
+
                 try {
-                    value = Integer.parseInt(xpath.evaluate("CcyMnrUnts", el));
-                } catch (NumberFormatException e) {
-                    value = 0;
+                    readIso4217();
+                    Log.w(BuildConfig.LOG_TAG, "Successfull read of ISO 4217 resource file");
+                } catch (Exception e) {
+                    //e.printStackTrace();
+                    return false;
                 }
-                
-                temp.put(key, value);
+                return true;
             }
-        } catch (XPathExpressionException e) {
-            Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
-        } finally {
-            iso4217 = Collections.unmodifiableMap(temp);
-        }
-        
+        }.execute();
+
         setUserId(userId);
     }
     
@@ -890,7 +882,45 @@ public final class DDNA {
     private static String getCurrentTimestamp() {
         return TIMESTAMP_FORMAT.format(new Date());
     }
-    
+
+    public void readIso4217() {
+        if (iso4217 != null ) return;
+
+        if (inputSourceIso4217 ==null ) {
+            Log.w(BuildConfig.LOG_TAG, "Cannot read ISO 4217 resource file");
+        }
+
+        final XPath xpath = XPathFactory.newInstance().newXPath();
+        Map<String, Integer> temp = new HashMap<>(0);
+        try {
+            final NodeList nodes = (NodeList) xpath.evaluate(
+                    "/ISO_4217/CcyTbl/CcyNtry",
+                    new InputSource(inputSourceIso4217),
+                    XPathConstants.NODESET);
+            temp = new HashMap<>(nodes.getLength());
+
+            for (int i = 0; i < nodes.getLength(); i++) {
+                final Element el = (Element) nodes.item(i);
+                if (el.getElementsByTagName("Ccy") == null) continue;
+
+                final String key = xpath.evaluate("Ccy", el);
+                int value;
+                try {
+                    value = Integer.parseInt(xpath.evaluate("CcyMnrUnts", el));
+                } catch (NumberFormatException e) {
+                    value = 0;
+                }
+
+                temp.put(key, value);
+            }
+        } catch (XPathExpressionException e) {
+            Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
+        } finally {
+            iso4217 = Collections.unmodifiableMap(temp);
+        }
+
+    }
+
     /**
      * Class for providing a configuration when initialising the
      * SDK through {@link DDNA#initialise(Configuration)} inside of an
