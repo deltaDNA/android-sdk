@@ -34,11 +34,13 @@ import com.deltadna.android.sdk.net.NetworkManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -49,11 +51,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.WeakHashMap;
-
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 /**
  * Singleton class for accessing the deltaDNA SDK.
@@ -845,30 +842,73 @@ public final class DDNA {
                         settings,
                         hashSecret));
         
-        final XPath xpath = XPathFactory.newInstance().newXPath();
-        Map<String, Integer> temp = new HashMap<>(0);
+        final Map<String, Integer> temp = new HashMap<>();
         try {
-            final NodeList nodes = (NodeList) xpath.evaluate(
-                    "/ISO_4217/CcyTbl/CcyNtry",
-                    new InputSource(application.getResources().openRawResource(R.raw.iso_4217)),
-                    XPathConstants.NODESET);
-            temp = new HashMap<>(nodes.getLength());
+            final XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+            final XmlPullParser xpp = factory.newPullParser();
+            xpp.setInput(new InputStreamReader(
+                    application.getResources().openRawResource(R.raw.iso_4217)));
             
-            for (int i = 0; i < nodes.getLength(); i++) {
-                final Element el = (Element) nodes.item(i);
-                if (el.getElementsByTagName("Ccy") == null) continue;
-                
-                final String key = xpath.evaluate("Ccy", el);
-                int value;
-                try {
-                    value = Integer.parseInt(xpath.evaluate("CcyMnrUnts", el));
-                } catch (NumberFormatException e) {
-                    value = 0;
+            boolean expectingCode = false;
+            boolean expectingValue = false;
+            String pulledCode = null;
+            String pulledValue = null;
+            
+            int eventType;
+            while ((eventType = xpp.next()) != XmlPullParser.END_DOCUMENT) {
+                switch (eventType) {
+                    case XmlPullParser.START_TAG:
+                        switch (xpp.getName()) {
+                            case "Ccy":
+                                expectingCode = true;
+                                break;
+                            
+                            case "CcyMnrUnts":
+                                expectingValue = true;
+                                break;
+                        }
+                        break;
+                    
+                    case XmlPullParser.TEXT:
+                        if (expectingCode) {
+                            pulledCode = xpp.getText();
+                        } else if (expectingValue) {
+                            pulledValue = xpp.getText();
+                        }
+                        break;
+                    
+                    case XmlPullParser.END_TAG:
+                        switch (xpp.getName()) {
+                            case "Ccy":
+                                expectingCode = false;
+                                break;
+                            
+                            case "CcyMnrUnts":
+                                expectingValue = false;
+                                break;
+                            
+                            case "CcyNtry":
+                                if (    !TextUtils.isEmpty(pulledCode)
+                                        && !TextUtils.isEmpty(pulledValue)) {
+                                    int value;
+                                    try {
+                                        value = Integer.parseInt(pulledValue);
+                                    } catch (NumberFormatException ignored) {
+                                        value = 0;
+                                    }
+                                    
+                                    temp.put(pulledCode, value);
+                                }
+                                
+                                expectingCode = false;
+                                expectingValue = false;
+                                pulledCode = null;
+                                pulledValue = null;
+                                break;
+                        }
                 }
-                
-                temp.put(key, value);
             }
-        } catch (XPathExpressionException e) {
+        } catch (XmlPullParserException | IOException e) {
             Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
         } finally {
             iso4217 = Collections.unmodifiableMap(temp);
