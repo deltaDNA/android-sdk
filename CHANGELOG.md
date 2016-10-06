@@ -2,6 +2,9 @@
 
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (YYYY-MM-DD)
 
+## [4.2.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.4) (2016-10-06)
+Fixed slow initialisation.  
+
 ## [4.2.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.3) (2016-09-14)
 Fixed notification callbacks not triggered consistently on Unity.  
 
