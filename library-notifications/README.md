@@ -149,6 +149,6 @@ There is no need to add additional directives in your ProGuard configuration if 
     }
     compile 'com.google.android.gms:play-services-gcm:8.4.0'
     ```
-    We have verified so far that versions 8 and 9 can be used instead.
+    We have verified so far that versions 8, 9, and 10 can be used instead.
 
     If using Unity then you will need to replace the Play Service AARs in the `Assets/DeltaDNA/Plugins/Android` folder with newer versions from `<android-sdk-dir>/extras/google/m2repository`. Please note that newer versions of Play Services may use different dependencies, as such you may need to start with the `play-services-gcm` AAR and look at the POM file to work out which dependencies will also need to be added into the directory (you will also need to do the same for any transitive dependencies). `support-annotations` should not be removed as it is required by the deltaDNA notifications library.
