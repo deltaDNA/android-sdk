@@ -4,10 +4,11 @@ sudo : true
 
 android:
   components:
+    - tools:
     - platform-tools
     - tools
-    - build-tools-24.0.2
     - android-23
+    - build-tools-24.0.2
     - extra-android-m2repository
     - extra-google-m2repository
 
