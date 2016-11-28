@@ -4,7 +4,7 @@ sudo : true
 
 android:
   components:
-    - tools:
+    - tools
     - platform-tools
     - tools
     - android-23
