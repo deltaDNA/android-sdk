@@ -15,7 +15,7 @@
 * [高级](#高级)
  * [通知](#通知)
  * [Token检索](#Token检索)
- * [防反编译（ProGuard）](#防反编译（ProGuard）)
+ * [防反编译](#防反编译)
 * [常见问题解答](#常见问题解答)
 * [更新日志](#更新日志)
 * [授权](#授权)
@@ -34,7 +34,7 @@
 allprojects {
     repositories {
         maven { url 'http://deltadna.bintray.com/android' }
-        // repositories为你其他的dependencies...
+        // 存放你的其他依赖...
     }
 }
 ```
@@ -90,12 +90,12 @@ compile 'com.deltadna.android:deltadna-sdk-notifications:4.3.0-SNAPSHOT'
     android:resource="@string/sender_id"/>
 ```
 
-你可以随时参考[这里](../examples/notifications)的案例项目。
+你可以随时参考[这里的](../examples/notifications)案例项目。
 
 ## 注册
 为了通过这个平台给推送通知注册客户端，`register()`方法需要被从[`DDNANotifications`](src/main/java/com/deltadna/android/sdk/notifications/DDNANotifications.java)调用。这将初始化一个请求来从GCM搜索一个注册Token，并将其发送到deltaDNA的服务器。请注意后者将只在`DDNA.startSdk()`被调用时发生。例如如果应用程序运行时这个注册Token被搜索到，当这个应用程序将再次开始时这个新的Token将被发送到服务器，因此发送通知到客户端将不会发生直至上述事件发生以后。
 
-例如，一个调用`register()`的好的时机将是当用户为其应用程序在设置中启用通知或者一个之前的尝试搜索Token失败时（更多的细节可以从[这里](#Token检索)找到）。
+例如，一个调用`register()`的好的时机将是当用户为其应用程序在设置中启用通知或者一个之前的尝试搜索Token失败时（更多的细节可以从[这里](#token-retrieval)找到）。
 
 也可以通过从`DDNANotifications`调用`unregister()`注销推送通知到客户端。
 
@@ -136,17 +136,19 @@ compile 'com.deltadna.android:deltadna-sdk-notifications:4.3.0-SNAPSHOT'
 
 一个[`BroadcastReceiver`](http://developer.android.com/reference/android/content/BroadcastReceiver.html)的应用实例可以从[这里](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java)找到。
 
-### 防反编译（ProGuard）
+### 防反编译
 如果你为你的应用设置`minifyEnabled true`，那么没有必要在你的ProGuard配置中添加额外的代码。因为这个库提供了其自己的配置文件，可以在编译过程中被Android编译工具包含进去。
 
 ## 常见问题解答
-1.  我的项目有一个Dependency在较新版本的Google Play Services，我是否可以使用一个不同于文档中GCM版本的其他版本？
+1.  我的项目有一个在较新版本Google Play Services的依赖，我是否可以使用一个不同于文档中GCM版本的其他版本？
     
-    是的，通过从通知Dependency中移除GCM并分别抓取它。
+    是的，通过从通知依赖中移除GCM并分别抓取它。
     ```java
     compile('com.deltadna.android:deltadna-sdk-notifications:VERSION') {
         exclude module: 'play-services-gcm'
     }
     compile 'com.google.android.gms:play-services-gcm:8.4.0'
     ```
-    到目前为止，我们已经确认8.*版本可以替代7.8版本。
+    我们已经确认到目前为止，版本8、9和10可以被替代使用。
+
+   如果使用Unity，那么你将需要使用`<android-sdk-dir>/extras/google/m2repository`中的最新版本替代`Assets/DeltaDNA/Plugins/Android`文件夹下的Play Service AARs。请注意最新版本的Play Services可能使用不同的依赖，因此你可能需要使用`play-services-gcm` AAR开始并查看POM文件以确定哪些依赖也将需要被添加到路径（你还需要对任何需转换的依赖做相同的操作）。`support-annotations`不应被删除，因为它是deltaDNA通知库所需要的。
