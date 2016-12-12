@@ -2,6 +2,9 @@
 
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (YYYY-MM-DD)
 
+## [4.2.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.5) (2016-12-12)
+Fixed engagement status code propagation consistency wrt other SDKs.  
+
 ## [4.2.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.4) (2016-10-06)
 Fixed slow initialisation.  
 

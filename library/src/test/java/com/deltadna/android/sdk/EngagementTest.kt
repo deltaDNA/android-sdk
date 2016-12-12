@@ -53,6 +53,13 @@ class EngagementTest {
             assertThat(isSuccessful).isFalse()
             assertThat(json).isNull()
             assertThat(error).isNotNull()
+            
+            // cached response
+            setResponse(Response(300, null, JSONObject(), "error"))
+            assertThat(statusCode).isEqualTo(300)
+            assertThat(isSuccessful).isTrue()
+            assertThat(json).isNotNull()
+            assertThat(error).isNotNull()
         }
     }
     
