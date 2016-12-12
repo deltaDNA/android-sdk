@@ -90,6 +90,10 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     /**
      * Gets the status code of the response after the Engage request has
      * completed.
+     * <p>
+     * The status code may be outside of the successful HTTP range of 2xx in
+     * the case where the request has failed, but a previous response was
+     * successfully retrieved from the cache.
      *
      * @return  the status code of the response, or {@code 0} if the request
      *          hasn't completed yet
@@ -105,7 +109,7 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
      * @return {@code true} if the response was a success, else {@code false}
      */
     public boolean isSuccessful() {
-        return (statusCode >= 200 && statusCode < 300);
+        return (json != null);
     }
     
     /**
