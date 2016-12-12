@@ -15,21 +15,21 @@
 * [记录事件](#记录事件)
  * [简单事件](#简单事件)
  * [复杂事件](#复杂事件)
- * [交易（Transaction）](#交易（Transaction）)
-* [吸引（Engage）](#吸引（Engage）)
+ * [交易](#交易)
+* [吸引](#吸引)
  * [图片消息](#图片消息)
 * [推送通知](#推送通知)
 * [设置](#设置)
-* [防反编译（ProGuard）](#防反编译（ProGuard）)
+* [防反编译](#防反编译)
 * [更新日志](#更新日志)
 * [迁移](#迁移)
 * [授权](#授权)
 
 ## 概述
-deltaDNA SDK允许你的Android游戏记录游戏中的事件和上传玩家的操作。它包括事件存储、众多辅助工具和一些自动的配置以帮助简化你的整合。
+deltaDNA SDK允许你的Android游戏记录游戏中的事件和上传玩家的操作。它包括事件存储、众多辅助工具和一些自动的行为以帮助简化你的整合。
 
 ## 添加至项目
-deltaDNA SDK可以用于基于第9版和更新版本（Android 2.3+）内核SDK的Android项目。
+deltaDNA SDK可以用于基于第15版和更新版本（Android 4.0.3+）内核SDK的Android项目。
 
 ### Gradle
 在你的顶层构建脚本
@@ -37,7 +37,7 @@ deltaDNA SDK可以用于基于第9版和更新版本（Android 2.3+）内核SDK�
 allprojects {
     repositories {
         maven { url 'http://deltadna.bintray.com/android' }
-        // repositories为你其他的dependencies...
+        // 存放你的其他依赖...
     }
 }
 ```
@@ -100,7 +100,7 @@ public class MyActivity extends AppCompatActivity {
     }
 }
 ```
-这是初始化这个SDK并开始发送事件的最少代码。它将在这个SDK第一次运行时自动发送*新玩家（newPlayer）*事件，并在游戏每次运行时发送*游戏开始（gameStarted）*和*客户端设备（clientDevice）*事件。
+这是初始化这个SDK并开始发送事件的最少代码。它将在这个SDK第一次运行时自动发送*newPlayer*事件，并在游戏每次运行时发送*gameStarted*和*clientDevice*事件。
 
 ## 记录事件
 ### 简单事件
@@ -155,7 +155,7 @@ DDNA.instance().recordEvent(new MissionStartedEvent(
         "EASY"));
 ```
 
-### 交易（Transaction）
+### 交易
 交易（Transaction）是一个复杂事件，可以在当你遇到玩家从游戏提供商或其他玩家那里购买、交易、赢得或交换游戏币和装备时提供嵌套、数组和一些特殊对象。为了帮助实现这些功能我们提供了`Transaction`方法，这是一个拥有额外属性的`Event`类的方法
 ```java
 recordEvent(new Transaction(
@@ -174,8 +174,8 @@ recordEvent(new Transaction(
 
 这个事件可以被设计的更复杂，但结构是合乎逻辑的、灵活的，并为玩家消费或者接收任何货币和装备的组合提供一种机制。
 
-## 吸引（Engage）
-一个吸引（Engage）请求可以通过调用`requestEngagement(Engagement, EngageListener)`实现。提供给你`Engagement`和`EngageListener`来监听是否执行完成或者错误。
+## 吸引
+一个吸引（Engage）请求可以通过调用`requestEngagement(Engagement, EngageListener)`实现。提供给你`Engagement`和`EngageListener`来监听是否执行完成或者出现错误。
 ```java
 requestEngagement(
         new Engagement("outOfCredits")
@@ -254,7 +254,7 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
                     @Override
                     public void onCancelled() {
-                        // 获取错误
+                        // 执行取消
                     }
                 });
     }
@@ -264,11 +264,11 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 ## 推送通知
 这个SDK可以存储设备的Android注册ID并将其发送到deltaDNA的服务器，所以你可以向玩家发送有针对性的推送通知消息。
 
-如果你的应用已经检索了ID，那么你可以在SDK通过调用如下代码中设置
+如果你的应用已经检索了ID，那么你可以在SDK通过调用如下代码来设置
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
-然而你可能还会使用[deltadna-notifications](library-notifications)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token.
+然而你可能还会使用[deltadna-sdk-notifications](library-notifications)插件，这要求在你开发中的一点儿工作来刷新GCM ID或token。
 
 如果你想要在接收推送通知时注销客户端，你需要调用
 ```Java
@@ -276,22 +276,21 @@ DDNA.instance().clearRegistrationId();
 ```
 
 ## 设置
-如果你需要进一步的关于这个SDK如何工作的自定义设置，例如禁用事件自动上传或者改变在请求失败时重试的次数，你可能需要通过设置`Settings`类来实现。这可以通过如下源码实现
+如果你需要进一步的关于这个SDK如何工作的自定义设置，例如禁用事件自动上传或者改变在请求失败时重试的次数，你可能需要通过`Settings`类来实现。这可以通过如下源码实现
 ```java
 DDNA.instance().getSettings();
 ```
 Settings类也可以在初始化`Configuration`时被设置，这是被推荐的方法。
 
-## 防反编译（ProGuard）
+## 防反编译
 如果你为你的应用设置`minifyEnabled true`，那么没有必要在你的ProGuard配置中添加额外的代码。因为这个库提供了其自己的配置文件，可以在编译过程中被Android编译工具包含进去。
 
 ## 更新日志
 可以从[这里](CHANGELOG.md)找到。
 
 ## 迁移
-* [第4.0版](docs/migrations/4.0.md)
-* [第4.1版](docs/migrations/4.1.md)
+* [版本4.0](docs/migrations/4.0.md)
+* [版本4.1](docs/migrations/4.1.md)
 
 ## 授权
-
 该资源适用于Apache 2.0授权。
