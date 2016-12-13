@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.2.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.6) (YYYY-MM-DD)
+Added ability to set the platform field during initialisation.  
 Fixed session expiry handling when using multiple activities.  
 
 ## [4.2.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.5) (2016-12-12)
