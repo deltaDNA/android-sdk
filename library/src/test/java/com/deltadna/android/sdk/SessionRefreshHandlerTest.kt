@@ -37,7 +37,8 @@ class SessionRefreshHandlerTest {
         this
     }
     private val listener = mock<SessionRefreshHandler.Listener>()
-    private val activity = Robolectric.buildActivity(Activity::class.java)
+    private val activity1 = Robolectric.buildActivity(Activity::class.java)
+    private val activity2 = Robolectric.buildActivity(Activity::class.java)
     
     private var uut = SessionRefreshHandler(
             RuntimeEnvironment.application,
@@ -46,7 +47,7 @@ class SessionRefreshHandlerTest {
     
     @Before
     fun before() {
-        activity.create()
+        activity1.create()
         uut = SessionRefreshHandler(
                 RuntimeEnvironment.application,
                 settings,
@@ -55,15 +56,15 @@ class SessionRefreshHandlerTest {
     
     @After
     fun after() {
-        activity.destroy()
+        activity1.destroy()
         reset(listener)
     }
     
     @Test
     fun expiresAfterStop() {
         uut.register()
-        activity.start()
-        activity.stop()
+        activity1.start()
+        activity1.stop()
         
         Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
         
@@ -73,8 +74,8 @@ class SessionRefreshHandlerTest {
     @Test
     fun doesNotExpireOnRestart() {
         uut.register()
-        activity.stop()
-        activity.restart()
+        activity1.stop()
+        activity1.restart()
         
         Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
         
@@ -84,11 +85,55 @@ class SessionRefreshHandlerTest {
     @Test
     fun doesNotExpireAfterUnregister() {
         uut.register()
-        activity.stop()
+        activity1.stop()
         uut.unregister()
         
         Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
         
         verify(listener, never()).onExpired()
+    }
+    
+    @Test
+    fun doesNotExpireAfterActivityTransition() {
+        uut.register()
+        
+        // start a1
+        activity1.start()
+        activity1.resume()
+        
+        // transition a1 -> a2
+        activity1.pause()
+        activity2.create()
+        activity2.start()
+        activity2.resume()
+        activity1.stop()
+        
+        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        
+        verify(listener, never()).onExpired()
+    }
+    
+    @Test
+    fun expiresAfterTransitionedActivityStops() {
+        uut.register()
+        
+        // start a1
+        activity1.start()
+        activity1.resume()
+        
+        // transition a1 -> a2
+        activity1.pause()
+        activity2.create()
+        activity2.start()
+        activity2.resume()
+        activity1.stop()
+        
+        // stop a2
+        activity2.pause()
+        activity2.stop()
+        
+        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        
+        verify(listener).onExpired()
     }
 }

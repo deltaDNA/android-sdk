@@ -42,6 +42,7 @@ class ProductTest {
             null,
             null,
             null,
+            null,
             null)
     
     private var uut: Product<*>? = null

@@ -77,5 +77,6 @@ class DDNATest {
             Settings(),
             null,
             null,
+            null,
             null)
 }

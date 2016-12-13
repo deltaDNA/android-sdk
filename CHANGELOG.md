@@ -2,6 +2,10 @@
 
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (YYYY-MM-DD)
 
+## [4.2.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.6) (2016-12-13)
+Added ability to set the platform field during initialisation.  
+Fixed session expiry handling when using multiple activities.  
+
 ## [4.2.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.5) (2016-12-12)
 Fixed engagement status code propagation consistency wrt other SDKs.  
 

@@ -38,6 +38,8 @@ class SessionRefreshHandler implements Application.ActivityLifecycleCallbacks {
     private final Settings settings;
     private final Listener listener;
     
+    private int started;
+    
     SessionRefreshHandler(
             Application app,
             Settings settings,
@@ -63,6 +65,7 @@ class SessionRefreshHandler implements Application.ActivityLifecycleCallbacks {
     
     @Override
     public void onActivityStarted(Activity activity) {
+        started++;
         handler.removeCallbacks(refresher);
     }
     
@@ -74,9 +77,10 @@ class SessionRefreshHandler implements Application.ActivityLifecycleCallbacks {
     
     @Override
     public void onActivityStopped(Activity activity) {
+        started--;
         handler.removeCallbacks(refresher);
         
-        if (settings.getSessionTimeout() > 0) {
+        if (started == 0 && settings.getSessionTimeout() > 0) {
             handler.postDelayed(refresher, settings.getSessionTimeout());
         }
     }

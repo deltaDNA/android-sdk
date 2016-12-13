@@ -89,6 +89,7 @@ public final class DDNA {
     private final Settings settings;
     @Nullable
     private final String clientVersion;
+    private final String platform;
     
     private final Preferences preferences;
     private final EventStore store;
@@ -122,7 +123,8 @@ public final class DDNA {
                     configuration.settings,
                     configuration.hashSecret,
                     configuration.clientVersion,
-                    configuration.userId);
+                    configuration.userId,
+                    configuration.platform);
         } else {
             Log.w(BuildConfig.LOG_TAG, "SDK has already been initialised");
         }
@@ -291,7 +293,7 @@ public final class DDNA {
             
             JSONObject params =
                     new JSONObject(event.params.toJson().toString());
-            params.put("platform", ClientInfo.platform());
+            params.put("platform", platform);
             params.put("sdkVersion", SDK_VERSION);
             
             jsonEvent.put("eventParams", params);
@@ -805,10 +807,14 @@ public final class DDNA {
             Settings settings,
             @Nullable String hashSecret,
             @Nullable String clientVersion,
-            @Nullable String userId) {
+            @Nullable String userId,
+            @Nullable String platform) {
         
         this.settings = settings;
         this.clientVersion = clientVersion;
+        this.platform = TextUtils.isEmpty(platform)
+                ? ClientInfo.platform()
+                : platform;
         
         // FIXME event archive
         final File dir = application.getExternalFilesDir(null);
@@ -949,6 +955,8 @@ public final class DDNA {
         private String clientVersion;
         @Nullable
         private String userId;
+        @Nullable
+        private String platform;
         
         private final Settings settings;
         
@@ -1019,6 +1027,20 @@ public final class DDNA {
          */
         public Configuration userId(@Nullable String userId) {
             this.userId = userId;
+            return this;
+        }
+        
+        /**
+         * Sets the value for the platform field.
+         * <p>
+         * If not set the value will default to {@link ClientInfo#platform()}.
+         *
+         * @param platform the platform
+         *
+         * @return this {@link Configuration} instance
+         */
+        public Configuration platform(@Nullable String platform) {
+            this.platform = platform;
             return this;
         }
         
