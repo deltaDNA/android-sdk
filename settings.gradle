@@ -2,5 +2,7 @@ include ':library'
 include ':library-notifications'
 include ':example-demo'
 include ':example-notifications'
+include ':example-notifications-style'
 project(':example-demo').projectDir = file('examples/demo')
 project(':example-notifications').projectDir = file('examples/notifications')
+project(':example-notifications-style').projectDir = file('examples/notifications-style')
