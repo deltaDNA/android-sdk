@@ -15,6 +15,7 @@
 * [Advanced](#advanced)
  * [Notification](#notification)
  * [Token retrieval](#token-retrieval)
+ * [Notification style](#notification-style)
  * [ProGuard](#proguard)
 * [FAQs](#faqs)
 * [Changelog](#changelog)
@@ -125,7 +126,7 @@ Finally, by default the notification will start the activity defined as the appl
     android:value="false"/>
 ```
 
-If the properties of the notification need to be changed in a more dynamic way at runtime then the `NotificationListenerService` can be extended and either of the `createNotification` or `notify` method implementations overridden. In this case you will need to change the `service` definition in the manifest file to point to your own class.
+If the properties of the notification need to be changed in a more dynamic way at runtime then the `NotificationListenerService` can be extended and either of the `createNotification` or `notify` method implementations overridden. More details can be found [here](#notification-style).
 
 ### Token retrieval
 While the retrieval of the GCM registration token is done by the library under the hood, it may be useful to know when this succeeds or fails. For this reason the library will send a broadcast over the [`LocalBroadcastManager`](http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html) with the action `DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL` and the token will be contained in the `Intent` under the `DDNANotifications.EXTRA_REGISTRATION_TOKEN` `String` extra.
@@ -136,6 +137,11 @@ We provide an [`IntentFilter`](http://developer.android.com/reference/android/co
 
 An example implementation of a [`BroadcastReceiver`](http://developer.android.com/reference/android/content/BroadcastReceiver.html) can be found [here](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java).
 
+### Notification style
+If you would like to change the style of the notification, for example to use expandable text, the [`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java) can be extended in order to modify the default behaviour.
+
+An example can be found [here](examples/notifications-style/src/main/java/com/deltadna/android/sdk/notifications/example/StyledNotificationListenerService.java). You will also need to change the `service` definition in the manifest file to point to the new class.
+
 ### ProGuard
 There is no need to add additional directives in your ProGuard configuration if you are setting `minifyEnabled true` for your application as the library provides its own configuration file which gets included by the Android build tools during the build process.
 
@@ -143,7 +149,7 @@ There is no need to add additional directives in your ProGuard configuration if 
 1.  My project has a dependency on a newer version of Google Play Services, can I use a different version of GCM than what is documented?
     
     Yes, by excluding the GCM module from the Notifications dependency and grabbing it separately.
-    ```java
+    ```groovy
     compile('com.deltadna.android:deltadna-sdk-notifications:VERSION') {
         exclude module: 'play-services-gcm'
     }

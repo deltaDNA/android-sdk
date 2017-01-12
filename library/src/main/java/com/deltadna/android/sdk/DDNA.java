@@ -392,11 +392,15 @@ public final class DDNA {
         
         boolean insertCommunicationAttrs = false;
         if (payload.containsKey("_ddCampaign")) {
-            event.putParam("campaignId", payload.getLong("_ddCampaign"));
+            event.putParam(
+                    "campaignId",
+                    Long.parseLong(payload.getString("_ddCampaign")));
             insertCommunicationAttrs = true;
         }
         if (payload.containsKey("_ddCohort")) {
-            event.putParam("cohortId", payload.getLong("_ddCohort"));
+            event.putParam(
+                    "cohortId",
+                    Long.parseLong(payload.getString("_ddCohort")));
             insertCommunicationAttrs = true;
         }
         if (insertCommunicationAttrs) {

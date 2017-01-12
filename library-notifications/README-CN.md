@@ -143,7 +143,7 @@ compile 'com.deltadna.android:deltadna-sdk-notifications:4.3.0-SNAPSHOT'
 1.  我的项目有一个在较新版本Google Play Services的依赖，我是否可以使用一个不同于文档中GCM版本的其他版本？
     
     是的，通过从通知依赖中移除GCM并分别抓取它。
-    ```java
+    ```groovy
     compile('com.deltadna.android:deltadna-sdk-notifications:VERSION') {
         exclude module: 'play-services-gcm'
     }
