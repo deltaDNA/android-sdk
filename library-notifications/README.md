@@ -16,6 +16,7 @@
  * [Notification](#notification)
  * [Token retrieval](#token-retrieval)
  * [Notification style](#notification-style)
+  * [Unity](#unity)
  * [ProGuard](#proguard)
 * [FAQs](#faqs)
 * [Changelog](#changelog)
@@ -141,6 +142,13 @@ An example implementation of a [`BroadcastReceiver`](http://developer.android.co
 If you would like to change the style of the notification, for example to use expandable text, the [`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java) can be extended in order to modify the default behaviour.
 
 An example can be found [here](examples/notifications-style/src/main/java/com/deltadna/android/sdk/notifications/example/StyledNotificationListenerService.java). You will also need to change the `service` definition in the manifest file to point to the new class.
+
+#### Unity
+Changing the style on Unity is a bit more involved, but the steps below describe how to achieve this;
+1.  You will need to checkout the [android-sdk](https://github.com/deltaDNA/android-sdk) project and open it in Android studio. Make sure that you've got all the neccessary dependencies downloaded in order to be able to build the project.
+2.  Checkout the version of the project which you need in order to match the version used in the deltaDNA Unity SDK. You can find this out by navigating under `Assets/DeltaDNA/Plugins/Android` and finding the version of the `deltadna-sdk-notifications-*.aar` file. For example, if the file in the directory was named `deltadna-sdk-notifications-4.2.3.aar` you would run `git checkout 4.2.3` in the `android-sdk` project.
+3.  Now you can make changes to the [`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java) class, either directly or by creating a new class extending from it and overriding the appropriate method.
+4.  After you have made the changes you can build the SDK by running `./gradlew clean build check` from the root directory of the project. Once successfully built the new ARR can be copied from `library-notifications/build/outputs/aar` (make sure to use the release version) to `Assets/DeltaDNA/Plugins/Android` in order to replace the stock AAR. If you have made the changes in a new class then you will also need to change the `service` entry in the manifest file for your Unity project to use your new class instead.
 
 ### ProGuard
 There is no need to add additional directives in your ProGuard configuration if you are setting `minifyEnabled true` for your application as the library provides its own configuration file which gets included by the Android build tools during the build process.
