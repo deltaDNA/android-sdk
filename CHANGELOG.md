@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.2.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.7) (YYYY-MM-DD)
+## [4.2.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.7) (2017-01-16)
 Fixed campaign and cohort ids not being picked up from a notification.  
 
 ## [4.2.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.6) (2016-12-13)

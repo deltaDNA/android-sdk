@@ -42,8 +42,8 @@ allprojects {
 ```
 In your app's build script
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.2.7-SNAPSHOT'
-compile 'com.deltadna.android:deltadna-sdk-notifications:4.2.7-SNAPSHOT'
+compile 'com.deltadna.android:deltadna-sdk:4.2.7'
+compile 'com.deltadna.android:deltadna-sdk-notifications:4.2.7'
 ```
 
 ## Integration
