@@ -16,8 +16,9 @@
 
 buildscript {
     ext {
-        kotlinVersion = '1.0.3'
-        supportVersion = '23.4.0'
+        kotlinVersion = '1.0.4'
+        supportVersion = '25.1.0'
+        firebaseVersion = '10.0.1'
         
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
@@ -29,16 +30,18 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath 'com.android.tools.build:gradle:2.2.3'
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
+        classpath 'com.google.gms:google-services:3.0.0'
         classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.0.8'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
 allprojects {
     repositories {
         jcenter()
+        mavenLocal()
     }
 }
 
@@ -61,12 +64,12 @@ subprojects {
     }
     
     android {
-        compileSdkVersion 23
-        buildToolsVersion '24.0.2'
+        compileSdkVersion 25
+        buildToolsVersion '25.0.2'
         
         defaultConfig {
             minSdkVersion 15
-            targetSdkVersion 23
+            targetSdkVersion 25
             
             versionCode 1
             versionName VERSION_NAME
@@ -128,7 +131,7 @@ subprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.14.1'
+    gradleVersion = '3.3'
 }
 
 task clean(type: Delete) {

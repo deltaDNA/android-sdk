@@ -710,7 +710,11 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA clearRegistrationId() {
-        return setRegistrationId(null);
+        if (!TextUtils.isEmpty(getRegistrationId())) {
+            setRegistrationId(null);
+        }
+        
+        return this;
     }
     
     /**

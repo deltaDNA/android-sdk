@@ -35,10 +35,10 @@ android {
         // https://code.google.com/p/android/issues/detail?id=187483
         // none of the suggested workarounds work so will need to wait for a fix
         //releaseOptimized {
-        //    minifyEnabled true
-        //    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
-        //    
-        //    signingConfig signingConfigs.release
+            // minifyEnabled true
+            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
+            //    
+            //signingConfig signingConfigs.release
         //}
     }
 }
@@ -48,4 +48,7 @@ dependencies {
     compile project(':library-notifications')
     
     compile "com.android.support:appcompat-v7:$supportVersion"
+    compile "com.google.firebase:firebase-messaging:$firebaseVersion"
 }
+
+apply plugin: 'com.google.gms.google-services'

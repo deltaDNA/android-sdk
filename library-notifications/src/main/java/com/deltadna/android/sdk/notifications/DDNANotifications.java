@@ -16,13 +16,14 @@
 
 package com.deltadna.android.sdk.notifications;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 /**
  * Helper class for easily registering/un-registering for/from push
@@ -43,39 +44,22 @@ public final class DDNANotifications {
     public static final String ACTION_TOKEN_RETRIEVAL_SUCCESSFUL =
             "com.deltadna.android.sdk.notifications.TOKEN_RETRIEVAL_SUCCESSFUL";
     
-    /**
-     * Action which will be broadcast over the
-     * {@link android.support.v4.content.LocalBroadcastManager}
-     * when retrieving a registration token from GCM fails.
-     * <p>
-     * The reason for the failure will be included in the {@link Intent} under
-     * the {@link #EXTRA_FAILURE_REASON} key as a serialized {@link Throwable}
-     * value.
-     *
-     * @see #EXTRA_FAILURE_REASON
-     */
-    public static final String ACTION_TOKEN_RETRIEVAL_FAILED =
-            "com.deltadna.android.sdk.notifications.TOKEN_RETRIEVAL_FAILED";
-    
     public static final String EXTRA_REGISTRATION_TOKEN = "token";
-    public static final String EXTRA_FAILURE_REASON = "reason";
     
     public static final String EXTRA_PAYLOAD = "payload";
     public static final String EXTRA_LAUNCH = "launch";
     
     /**
      * {@link IntentFilter} to be used when registering a
-     * {@link android.content.BroadcastReceiver} for listening to both token
-     * retrieval successes and failures.
+     * {@link android.content.BroadcastReceiver} for listening to a token
+     * retrieval success.
      *
      * @see #ACTION_TOKEN_RETRIEVAL_SUCCESSFUL
-     * @see #ACTION_TOKEN_RETRIEVAL_FAILED
      */
     public static final IntentFilter FILTER_TOKEN_RETRIEVAL;
     static {
         final IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_TOKEN_RETRIEVAL_SUCCESSFUL);
-        filter.addAction(ACTION_TOKEN_RETRIEVAL_FAILED);
         
         FILTER_TOKEN_RETRIEVAL = filter;
     }
@@ -86,23 +70,25 @@ public final class DDNANotifications {
     
     /**
      * Register the client for push notifications.
-     * <p>
-     * A good time to perform this would be for example when the user enables
-     * push notifications from the game's settings, or when a previous
-     * registration attempt fails as notified by
-     * {@link #ACTION_TOKEN_RETRIEVAL_FAILED}.
-     * <p>
-     * Method can be safely called from the Unity SDK, but local broadcasts
-     * will not be sent.
      *
      * @see DDNA#setRegistrationId(String)
+     *
+     * @throws UnsupportedOperationException if called from Unity
      */
-    public static void register(Context context) {
+    public static void register() {
+        if (UnityForwarder.isPresent()) {
+            throw new UnsupportedOperationException(
+                    "Unity SDK should unregister from its own code");
+        }
+        
         Log.d(TAG, "Registering for push notifications");
         
-        context.startService(new Intent(
-                context,
-                RegistrationIntentService.class));
+        final String token = FirebaseInstanceId.getInstance().getToken();
+        if (TextUtils.isEmpty(token)) {
+            Log.w(TAG, "Registration token is not available");
+        } else {
+            DDNA.instance().setRegistrationId(token);
+        }
     }
     
     /**
@@ -146,19 +132,6 @@ public final class DDNANotifications {
         } else {
             DDNA.instance().recordNotificationOpened(launch, payload);
         }
-    }
-    
-    /**
-     * Notifies the SDK that a push notification has been dismissed by the user.
-     *
-     * @deprecated  as of version 4.1.6, replaced by
-     *              {@link #recordNotificationDismissed(Bundle)}
-     */
-    @Deprecated
-    public static void recordNotificationDismissed() {
-        if (!UnityForwarder.isPresent()) {
-            DDNA.instance().recordNotificationDismissed();
-        } // `else` Unity doesn't have this method
     }
     
     /**

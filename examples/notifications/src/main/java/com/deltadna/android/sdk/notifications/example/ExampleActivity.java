@@ -20,12 +20,14 @@ import android.content.BroadcastReceiver;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
 import com.deltadna.android.sdk.notifications.DDNANotifications;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 public class ExampleActivity extends AppCompatActivity {
     
@@ -40,9 +42,17 @@ public class ExampleActivity extends AppCompatActivity {
         
         DDNA.instance().startSdk();
         
+        final String id = DDNA.instance().getUserId();
+        Log.d(BuildConfig.LOG_TAG, "User id: " + id);
         ((TextView) findViewById(R.id.user_id)).setText(getString(
                 R.string.user_id,
-                DDNA.instance().getUserId()));
+                id));
+        
+        final String token = FirebaseInstanceId.getInstance().getToken();
+        Log.d(BuildConfig.LOG_TAG, "Registration token: " + token);
+        ((TextView) findViewById(R.id.registration_token)).setText(getString(
+                R.string.registration_token,
+                token));
         
         broadcasts = LocalBroadcastManager.getInstance(this);
         
@@ -76,17 +86,6 @@ public class ExampleActivity extends AppCompatActivity {
     }
     
     /**
-     * Register for push notifications.
-     * <p>
-     * If you would like to handle the retrieval of the GCM registration token
-     * manually then you can call {@link DDNA#setRegistrationId(String)}
-     * instead.
-     */
-    public void onRegister(View view) {
-        DDNANotifications.register(this);
-    }
-    
-    /**
      * Unregister from push notifications.
      * <p>
      * If you would like to handle the retrieval of the GCM registration token
@@ -98,12 +97,12 @@ public class ExampleActivity extends AppCompatActivity {
     
     public void onNotificationOpened(View view) {
         // pretend the user opened a push notification
-        DDNA.instance().recordNotificationOpened();
+        DDNA.instance().recordNotificationOpened(false, Bundle.EMPTY);
     }
     
     public void onNotificationDismissed(View view) {
         // pretend the user dismissed a push notification
-        DDNA.instance().recordNotificationDismissed();
+        DDNA.instance().recordNotificationDismissed(Bundle.EMPTY);
     }
     
     public void onStopSdk(View view) {

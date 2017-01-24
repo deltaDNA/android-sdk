@@ -63,14 +63,6 @@ limitations under the License.
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/register"
-                android:onClick="onRegister"/>
-            
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="8dp"
                 android:text="@string/unregister"
                 android:onClick="onUnregister"/>
             

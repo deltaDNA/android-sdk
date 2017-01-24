@@ -21,15 +21,6 @@ limitations under the License.
     
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    
-    <!-- add under the 'manifest' element:
-    <permission
-        android:name="<your-package-name>.permission.C2D_MESSAGE"
-        android:protectionLevel="signature"/>
-    <uses-permission
-        android:name="<your-package-name>.permission.C2D_MESSAGE"/>
-    !-->
     
     <application>
         <service
@@ -37,14 +28,10 @@ limitations under the License.
             android:exported="false">
             
             <intent-filter>
-                <action android:name="com.google.android.gms.iid.InstanceID"/>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
             </intent-filter>
         </service>
-        
-        <service
-            android:name="com.deltadna.android.sdk.notifications.RegistrationIntentService"
-            android:exported="false"/>
-        
+
         <receiver
             android:name=".NotificationInteractionReceiver"
             android:exported="false">
@@ -56,28 +43,14 @@ limitations under the License.
             </intent-filter>
         </receiver>
         
-        <!-- add under the 'application' element:
-        <receiver
-            android:name="com.google.android.gms.gcm.GcmReceiver"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.SEND">
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
-                <category android:name="<your-package-name>"/>
-            </intent-filter>
-        </receiver>
-        
+        <!--
         <service
             android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
-        
-        <meta-data
-            android:name="ddna_sender_id"
-            android:resource="@string/<your-sender-id-resource>"/>
         !-->
     </application>
 </manifest>

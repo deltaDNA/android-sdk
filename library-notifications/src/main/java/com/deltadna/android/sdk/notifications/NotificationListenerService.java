@@ -26,13 +26,15 @@ import android.support.annotation.DrawableRes;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.android.gms.gcm.GcmListenerService;
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * {@link GcmListenerService} which listens to incoming downstream messages
- * from GCM.
+ * {@link FirebaseMessagingService} which listens to incoming downstream
+ * messages.
  * <p>
  * The default implementation posts a notification on the
  * {@link NotificationManager} with id {@link #NOTIFICATION_ID}, using 'title'
@@ -49,12 +51,12 @@ import java.util.Locale;
  *     android:exported="false"{@literal>}
  *     
  *     {@literal<}intent-filter{@literal>}
- *         {@literal<}action android:name="com.google.android.c2dm.intent.RECEIVE"/{@literal>}
+ *         {@literal<}action android:name="com.google.firebase.MESSAGING_EVENT"/{@literal>}
  *     {@literal<}/intent-filter{@literal>}
  * {@literal<}/service{@literal>}
  * </code></pre>
  * <p>
- * Behaviour can be customized by overriding {@link #createNotification(Bundle)}
+ * Behaviour can be customized by overriding {@link #createNotification(Map)}
  * and/or {@link #notify(Notification)} at runtime using your own subclass, or
  * by setting either of the following {@code meta-data} attributes inside the
  * {@code application} tag of your manifest file:
@@ -76,7 +78,7 @@ import java.util.Locale;
  *     android:value="false"/{@literal>}
  * </code></pre>
  */
-public class NotificationListenerService extends GcmListenerService {
+public class NotificationListenerService extends FirebaseMessagingService {
 
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
@@ -103,7 +105,10 @@ public class NotificationListenerService extends GcmListenerService {
     }
     
     @Override
-    public void onMessageReceived(String from, Bundle data) {
+    public void onMessageReceived(RemoteMessage message) {
+        final String from = message.getFrom();
+        final Map<String, String> data = message.getData();
+        
         Log.d(  TAG, String.format(
                 Locale.US,
                 "Received message %s from %s",
@@ -112,8 +117,9 @@ public class NotificationListenerService extends GcmListenerService {
         
         if (from == null) {
             Log.w(TAG, "Message sender is unknown");
-        } else if (!from.equals(getString(metaData.getInt(MetaData.SENDER_ID)))) {
-            Log.d(TAG, "Not handling message due to sender ID mismatch");
+        // TODO PTL-2693: do we still need it? can we still do it?
+        //} else if (!from.equals(getString(metaData.getInt(MetaData.SENDER_ID)))) {
+        //    Log.d(TAG, "Not handling message due to sender ID mismatch");
         } else if (data == null || data.isEmpty()) {
             Log.w(TAG, "Message data is null or empty");
         } else {
@@ -139,11 +145,13 @@ public class NotificationListenerService extends GcmListenerService {
      *
      * @see NotificationInteractionReceiver
      */
-    protected NotificationCompat.Builder createNotification(Bundle data) {
+    protected NotificationCompat.Builder createNotification(
+            Map<String, String> data) {
+        
         final String title = getTitle(data);
         final String alert;
         if (data.containsKey(PLATFORM_ALERT)) {
-            alert = data.getString(PLATFORM_ALERT);
+            alert = data.get(PLATFORM_ALERT);
         } else {
             Log.w(TAG, "Missing 'alert' key in message");
             alert = "Missing 'alert' key";
@@ -160,21 +168,21 @@ public class NotificationListenerService extends GcmListenerService {
         final boolean backgrounded = !Utils.inForeground(this);
         if (!backgrounded) {
             Log.d(TAG, "Notifying SDK of notification opening");
-            DDNANotifications.recordNotificationOpened(data, false);
+            //DDNANotifications.recordNotificationOpened(data, false);
         }
         
         builder.setContentIntent(PendingIntent.getBroadcast(
                 this,
                 0,
                 new Intent(Actions.NOTIFICATION_OPENED)
-                        .putExtra(DDNANotifications.EXTRA_PAYLOAD, data)
+                        //.putExtra(DDNANotifications.EXTRA_PAYLOAD, data)
                         .putExtra(DDNANotifications.EXTRA_LAUNCH, backgrounded),
                 PendingIntent.FLAG_ONE_SHOT));
         builder.setDeleteIntent(PendingIntent.getBroadcast(
                 this,
                 0,
-                new Intent(Actions.NOTIFICATION_DISMISSED)
-                        .putExtra(DDNANotifications.EXTRA_PAYLOAD, data),
+                new Intent(Actions.NOTIFICATION_DISMISSED),
+                        //.putExtra(DDNANotifications.EXTRA_PAYLOAD, data),
                 PendingIntent.FLAG_ONE_SHOT));
         
         return builder;
@@ -189,9 +197,9 @@ public class NotificationListenerService extends GcmListenerService {
         manager.notify(NOTIFICATION_ID, notification);
     }
     
-    private String getTitle(Bundle data) {
+    private String getTitle(Map<String, String> data) {
         if (data.containsKey(PLATFORM_TITLE)) {
-            return data.getString(PLATFORM_TITLE);
+            return data.get(PLATFORM_TITLE);
         } else if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
             final Object value = metaData.get(MetaData.NOTIFICATION_TITLE);
             if (value instanceof String) {
