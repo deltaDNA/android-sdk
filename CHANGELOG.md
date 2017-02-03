@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (YYYY-MM-DD)
+Fixed notifications from campaigns overwriting other notifications.  
 
 ## [4.2.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.7) (YYYY-MM-DD)
 Fixed campaign and cohort ids not being picked up from a notification.  

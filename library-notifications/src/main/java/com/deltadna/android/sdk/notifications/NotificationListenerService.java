@@ -37,7 +37,7 @@ import java.util.Map;
  * messages.
  * <p>
  * The default implementation posts a notification on the
- * {@link NotificationManager} with id {@link #NOTIFICATION_ID}, using 'title'
+ * {@link NotificationManager} with the id of the campaign, using 'title'
  * and 'alert' values from the downstream message as the notification's title
  * and message. If the title has not been defined in the message then the
  * application's name will be used instead. Upon selection the notification
@@ -56,8 +56,8 @@ import java.util.Map;
  * </code></pre>
  * <p>
  * Behaviour can be customized by overriding {@link #createNotification(Map)}
- * and/or {@link #notify(Notification)} at runtime using your own subclass, or
- * by setting either of the following {@code meta-data} attributes inside the
+ * and/or {@link #notify(long, Notification)} at runtime using your own subclass,
+ * or by setting either of the following {@code meta-data} attributes inside the
  * {@code application} tag of your manifest file:
  * <pre><code>
  * {@literal<}meta-data
@@ -78,18 +78,15 @@ import java.util.Map;
  * </code></pre>
  */
 public class NotificationListenerService extends FirebaseMessagingService {
-
+    
+    protected static final String NOTIFICATION_TAG =
+            "com.deltadna.android.sdk.notifications";
+    
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + NotificationListenerService.class.getSimpleName();
     private static final String PLATFORM_TITLE = "title";
     private static final String PLATFORM_ALERT = "alert";
-    
-    /**
-     * Default id used by the service for posting notifications on the
-     * {@link NotificationManager}.
-     */
-    protected static final int NOTIFICATION_ID = 0;
     
     protected NotificationManager manager;
     protected Bundle metaData;
@@ -122,7 +119,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
         } else if (data == null || data.isEmpty()) {
             Log.w(TAG, "Message data is null or empty");
         } else {
-            notify(createNotification(data).build());
+            notify(getId(data), createNotification(data).build());
         }
     }
     
@@ -190,10 +187,32 @@ public class NotificationListenerService extends FirebaseMessagingService {
     /**
      * Posts a {@link Notification} on the {@link NotificationManager}.
      *
-     * @param notification the notification
+     * @param id            the id
+     * @param notification  the notification
      */
-    protected void notify(Notification notification) {
-        manager.notify(NOTIFICATION_ID, notification);
+    protected void notify(long id, Notification notification) {
+        manager.notify(NOTIFICATION_TAG, (int) id, notification);
+    }
+    
+    /**
+     * Extracts the id from a push payload to be used for posting a
+     * notification.
+     *
+     * @param data  the notification payload
+     *
+     * @return      notification id
+     */
+    protected long getId(Map<String, String> data) {
+        if (data.containsKey("_ddCampaign")) {
+            final String value = data.get("_ddCampaign");
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "Failed parsing _ddCampaign to a long", e);
+            }
+        }
+        
+        return -1;
     }
     
     private String getTitle(Map<String, String> data) {
