@@ -44,18 +44,6 @@ class ExampleReceiver extends BroadcastReceiver {
                     R.string.registration_token,
                     intent.getStringExtra(
                             DDNANotifications.EXTRA_REGISTRATION_TOKEN)));
-        } else if (intent.getAction().equals(
-                DDNANotifications.ACTION_TOKEN_RETRIEVAL_FAILED)) {
-            
-            view.setText(context.getString(
-                    R.string.registration_token,
-                    intent.getSerializableExtra(
-                            DDNANotifications.EXTRA_FAILURE_REASON)));
-            
-            /*
-             * We may do something more here, such as set an alarm for a later
-             * time to retry the registration.
-             */
         }
     }
 }

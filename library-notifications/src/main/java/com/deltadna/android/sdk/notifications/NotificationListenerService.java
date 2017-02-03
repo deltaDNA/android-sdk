@@ -47,8 +47,7 @@ import java.util.Map;
  * The following entry will also need to be added to the manifest file:
  * <pre><code>
  * {@literal<}service
- *     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"
- *     android:exported="false"{@literal>}
+ *     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"{@literal>}
  *     
  *     {@literal<}intent-filter{@literal>}
  *         {@literal<}action android:name="com.google.firebase.MESSAGING_EVENT"/{@literal>}

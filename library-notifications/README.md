@@ -44,6 +44,7 @@ In your app's build script
 ```groovy
 compile 'com.deltadna.android:deltadna-sdk:4.3.0-SNAPSHOT'
 compile 'com.deltadna.android:deltadna-sdk-notifications:4.3.0-SNAPSHOT'
+compile 'com.google.firebase:firebase-messaging:10.0.+'
 ```
 
 ## Integration
@@ -117,17 +118,3 @@ Changing the style on Unity is a bit more involved, but the steps below describe
 
 ### ProGuard
 There is no need to add additional directives in your ProGuard configuration if you are setting `minifyEnabled true` for your application as the library provides its own configuration file which gets included by the Android build tools during the build process.
-
-## FAQs
-1.  My project has a dependency on a newer version of Google Play Services, can I use a different version of GCM than what is documented?
-    
-    Yes, by excluding the GCM module from the Notifications dependency and grabbing it separately.
-    ```groovy
-    compile('com.deltadna.android:deltadna-sdk-notifications:VERSION') {
-        exclude module: 'play-services-gcm'
-    }
-    compile 'com.google.android.gms:play-services-gcm:8.4.0'
-    ```
-    We have verified so far that versions 8, 9, and 10 can be used instead.
-
-    If using Unity then you will need to replace the Play Service AARs in the `Assets/DeltaDNA/Plugins/Android` folder with newer versions from `<android-sdk-dir>/extras/google/m2repository`. Please note that newer versions of Play Services may use different dependencies, as such you may need to start with the `play-services-gcm` AAR and look at the POM file to work out which dependencies will also need to be added into the directory (you will also need to do the same for any transitive dependencies). `support-annotations` should not be removed as it is required by the deltaDNA notifications library.
