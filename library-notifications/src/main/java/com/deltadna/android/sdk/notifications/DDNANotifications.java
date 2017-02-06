@@ -16,8 +16,6 @@
 
 package com.deltadna.android.sdk.notifications;
 
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,39 +28,6 @@ import com.google.firebase.iid.FirebaseInstanceId;
  * notifications.
  */
 public final class DDNANotifications {
-    
-    /**
-     * Action which will be broadcast over the
-     * {@link android.support.v4.content.LocalBroadcastManager}
-     * when retrieving a registration token from GCM succeeds.
-     * <p>
-     * The token will be included in the {@link Intent} under the
-     * {@link #EXTRA_REGISTRATION_TOKEN} key as a {@link String} value.
-     *
-     * @see #EXTRA_REGISTRATION_TOKEN
-     */
-    public static final String ACTION_TOKEN_RETRIEVAL_SUCCESSFUL =
-            "com.deltadna.android.sdk.notifications.TOKEN_RETRIEVAL_SUCCESSFUL";
-    
-    public static final String EXTRA_REGISTRATION_TOKEN = "token";
-    
-    public static final String EXTRA_PAYLOAD = "payload";
-    public static final String EXTRA_LAUNCH = "launch";
-    
-    /**
-     * {@link IntentFilter} to be used when registering a
-     * {@link android.content.BroadcastReceiver} for listening to a token
-     * retrieval success.
-     *
-     * @see #ACTION_TOKEN_RETRIEVAL_SUCCESSFUL
-     */
-    public static final IntentFilter FILTER_TOKEN_RETRIEVAL;
-    static {
-        final IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_TOKEN_RETRIEVAL_SUCCESSFUL);
-        
-        FILTER_TOKEN_RETRIEVAL = filter;
-    }
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '

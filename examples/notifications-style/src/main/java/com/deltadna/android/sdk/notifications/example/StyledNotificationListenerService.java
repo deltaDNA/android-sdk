@@ -2,9 +2,8 @@ package com.deltadna.android.sdk.notifications.example;
 
 import android.support.v4.app.NotificationCompat;
 
+import com.deltadna.android.sdk.notifications.NotificationInfo;
 import com.deltadna.android.sdk.notifications.NotificationListenerService;
-
-import java.util.Map;
 
 /**
  * Example of a {@link NotificationListenerService} which changes the style
@@ -14,10 +13,10 @@ public class StyledNotificationListenerService extends NotificationListenerServi
     
     @Override
     protected NotificationCompat.Builder createNotification(
-            Map<String, String> data) {
+            NotificationInfo info) {
         
-        return super.createNotification(data)
+        return super.createNotification(info)
                 .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText(data.get("alert")));
+                        .bigText(info.message.message));
     }
 }

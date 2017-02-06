@@ -43,10 +43,11 @@ limitations under the License.
             </intent-filter>
         </receiver>
         
-        <!--
+        <!-- to be added by the application
         <service
             android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"
             android:exported="false">
+            
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>

@@ -48,6 +48,20 @@ limitations under the License.
             </intent-filter>
         </service>
         
+        <!-- manually added optional event receiver -->
+        <receiver
+            android:name=".ExampleReceiver"
+            android:exported="false">
+            
+            <intent-filter>
+                <action android:name="com.deltadna.android.sdk.notifications.REGISTERED"/>
+                <action android:name="com.deltadna.android.sdk.notifications.MESSAGE_RECEIVED"/>
+                <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_POSTED"/>
+                <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED"/>
+                <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED"/>
+            </intent-filter>
+        </receiver>
+        
         <!-- manually added -->
         <meta-data
             android:name="ddna_notification_icon"

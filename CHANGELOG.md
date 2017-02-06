@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (YYYY-MM-DD)
+Added broadcast receiver for listening to notification events.  
 Fixed notifications from campaigns overwriting other notifications.  
 
 ## [4.2.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.7) (YYYY-MM-DD)

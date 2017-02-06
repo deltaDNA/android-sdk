@@ -20,9 +20,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.annotation.DrawableRes;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -39,43 +37,43 @@ import java.util.Map;
  * The default implementation posts a notification on the
  * {@link NotificationManager} with the id of the campaign, using 'title'
  * and 'alert' values from the downstream message as the notification's title
- * and message. If the title has not been defined in the message then the
- * application's name will be used instead. Upon selection the notification
- * will open the launch {@code Intent} of your game. Default behaviour can be
- * customized, with more details further on.
+ * and message respectively. If the title has not been defined in the message
+ * then the application's name will be used instead. Upon selection the
+ * notification will open the launch {@code Intent} of your game. Default
+ * behaviour can be customized, with more details further on.
  * <p>
  * The following entry will also need to be added to the manifest file:
- * <pre><code>
- * {@literal<}service
- *     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"{@literal>}
+ * <pre>{@code
+ * <service
+ *     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService">
  *     
- *     {@literal<}intent-filter{@literal>}
- *         {@literal<}action android:name="com.google.firebase.MESSAGING_EVENT"/{@literal>}
- *     {@literal<}/intent-filter{@literal>}
- * {@literal<}/service{@literal>}
- * </code></pre>
- * <p>
- * Behaviour can be customized by overriding {@link #createNotification(Map)}
- * and/or {@link #notify(long, Notification)} at runtime using your own subclass,
- * or by setting either of the following {@code meta-data} attributes inside the
+ *     <intent-filter>
+ *         <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+ *     </intent-filter>
+ * </service>
+ * }</pre>
+ * Behaviour can be customized by overriding
+ * {@link #createNotification(NotificationInfo)} and/or
+ * {@link #notify(long, Notification)} at runtime using your own subclass, or
+ * by setting either of the following {@code meta-data} attributes inside the
  * {@code application} tag of your manifest file:
- * <pre><code>
- * {@literal<}meta-data
+ * <pre>{@code
+ * <meta-data
  *     android:name="ddna_notification_title"
- *     android:resource="@string/your_title_resource"/{@literal>}
+ *     android:resource="@string/your_title_resource"/>
  * 
- * {@literal<}meta-data
+ * <meta-data
  *     android:name="ddna_notification_title"
- *     android:value="your-literal-title"/{@literal>}
+ *     android:value="your-literal-title"/>
  * 
- * {@literal<}meta-data
+ * <meta-data
  *     android:name="ddna_notification_icon"
- *     android:value="your_icon_resource_name"/{@literal>}
+ *     android:value="your_icon_resource_name"/>
  * 
- * {@literal<}meta-data
+ * <meta-data
  *     android:name="ddna_start_launch_intent"
- *     android:value="false"/{@literal>}
- * </code></pre>
+ *     android:value="false"/>
+ * }</pre>
  */
 public class NotificationListenerService extends FirebaseMessagingService {
     
@@ -85,8 +83,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + NotificationListenerService.class.getSimpleName();
-    private static final String PLATFORM_TITLE = "title";
-    private static final String PLATFORM_ALERT = "alert";
+    
     
     protected NotificationManager manager;
     protected Bundle metaData;
@@ -119,7 +116,21 @@ public class NotificationListenerService extends FirebaseMessagingService {
         } else if (data == null || data.isEmpty()) {
             Log.w(TAG, "Message data is null or empty");
         } else {
-            notify(getId(data), createNotification(data).build());
+            final PushMessage pushMessage = new PushMessage(
+                    this,
+                    message.getFrom(),
+                    message.getData());
+            sendBroadcast(new Intent(Actions.MESSAGE_RECEIVED).putExtra(
+                    Actions.PUSH_MESSAGE,
+                    pushMessage));
+            
+            final int id = (int) pushMessage.id;
+            final NotificationInfo info = new NotificationInfo(id, pushMessage);
+            
+            notify(id, createNotification(info).build());
+            sendBroadcast(new Intent(Actions.NOTIFICATION_POSTED).putExtra(
+                    Actions.NOTIFICATION_INFO,
+                    info));
         }
     }
     
@@ -135,51 +146,45 @@ public class NotificationListenerService extends FirebaseMessagingService {
      * behaviour should notify the SDK that the push notification has been
      * opened or dismissed respectively.
      *
-     * @param data  the data from the message
+     * @param info  the information for the notification to be posted
      *
      * @return      configured notification builder
      *
      * @see NotificationInteractionReceiver
+     * @see EventReceiver
      */
     protected NotificationCompat.Builder createNotification(
-            Map<String, String> data) {
-        
-        final String title = getTitle(data);
-        final String alert;
-        if (data.containsKey(PLATFORM_ALERT)) {
-            alert = data.get(PLATFORM_ALERT);
-        } else {
-            Log.w(TAG, "Missing 'alert' key in message");
-            alert = "Missing 'alert' key";
-        }
+            NotificationInfo info) {
         
         final NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this)
-                        .setSmallIcon(getIcon())
-                        .setContentTitle(title)
-                        .setContentText(alert)
+                        .setSmallIcon(info.message.icon)
+                        .setContentTitle(info.message.title)
+                        .setContentText(info.message.message)
                         .setAutoCancel(true);
         
         // to make the behaviour consistent with iOS on Unity
         final boolean backgrounded = !Utils.inForeground(this);
         if (!backgrounded) {
             Log.d(TAG, "Notifying SDK of notification opening");
-            //DDNANotifications.recordNotificationOpened(data, false);
+            DDNANotifications.recordNotificationOpened(
+                    Utils.convert(info.message.data),
+                    false);
         }
         
         builder.setContentIntent(PendingIntent.getBroadcast(
                 this,
                 0,
                 new Intent(Actions.NOTIFICATION_OPENED)
-                        //.putExtra(DDNANotifications.EXTRA_PAYLOAD, data)
-                        .putExtra(DDNANotifications.EXTRA_LAUNCH, backgrounded),
-                PendingIntent.FLAG_ONE_SHOT));
+                        .putExtra(Actions.NOTIFICATION_INFO, info)
+                        .putExtra(Actions.LAUNCH, backgrounded),
+                PendingIntent.FLAG_UPDATE_CURRENT));
         builder.setDeleteIntent(PendingIntent.getBroadcast(
                 this,
                 0,
-                new Intent(Actions.NOTIFICATION_DISMISSED),
-                        //.putExtra(DDNANotifications.EXTRA_PAYLOAD, data),
-                PendingIntent.FLAG_ONE_SHOT));
+                new Intent(Actions.NOTIFICATION_DISMISSED)
+                        .putExtra(Actions.NOTIFICATION_INFO, info),
+                PendingIntent.FLAG_UPDATE_CURRENT));
         
         return builder;
     }
@@ -192,80 +197,5 @@ public class NotificationListenerService extends FirebaseMessagingService {
      */
     protected void notify(long id, Notification notification) {
         manager.notify(NOTIFICATION_TAG, (int) id, notification);
-    }
-    
-    /**
-     * Extracts the id from a push payload to be used for posting a
-     * notification.
-     *
-     * @param data  the notification payload
-     *
-     * @return      notification id
-     */
-    protected long getId(Map<String, String> data) {
-        if (data.containsKey("_ddCampaign")) {
-            final String value = data.get("_ddCampaign");
-            try {
-                return Long.parseLong(value);
-            } catch (NumberFormatException e) {
-                Log.w(TAG, "Failed parsing _ddCampaign to a long", e);
-            }
-        }
-        
-        return -1;
-    }
-    
-    private String getTitle(Map<String, String> data) {
-        if (data.containsKey(PLATFORM_TITLE)) {
-            return data.get(PLATFORM_TITLE);
-        } else if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
-            final Object value = metaData.get(MetaData.NOTIFICATION_TITLE);
-            if (value instanceof String) {
-                return (String) value;
-            } else if (value instanceof Integer) {
-                try {
-                    return getString((Integer) value);
-                } catch (Resources.NotFoundException e) {
-                    throw new RuntimeException(
-                            "Failed to find string resource for "
-                                    + MetaData.NOTIFICATION_TITLE,
-                            e);
-                }
-            } else {
-                throw new RuntimeException(String.format(
-                        Locale.US,
-                        "Found %s for %s, only string or string resource allowed",
-                        value,
-                        MetaData.NOTIFICATION_TITLE));
-            }
-        } else {
-            return String.valueOf(getPackageManager().getApplicationLabel(
-                    getApplicationInfo()));
-        }
-    }
-    
-    @DrawableRes
-    private int getIcon() {
-        if (metaData.containsKey(MetaData.NOTIFICATION_ICON)) {
-            try {
-                final int value = getResources().getIdentifier(
-                        metaData.getString(MetaData.NOTIFICATION_ICON),
-                        "drawable",
-                        getPackageName());
-                
-                if (value == 0) {
-                    throw new Resources.NotFoundException();
-                } else {
-                    return value;
-                }
-            } catch (Resources.NotFoundException e) {
-                throw new RuntimeException(
-                        "Failed to find drawable resource for "
-                                + MetaData.NOTIFICATION_ICON,
-                        e);
-            }
-        } else {
-            return R.drawable.ddna_ic_stat_logo;
-        }
     }
 }

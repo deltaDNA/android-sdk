@@ -24,8 +24,6 @@ class MetaData {
     
     static Bundle values;
     
-    static final String SENDER_ID = "ddna_sender_id";
-    
     static final String NOTIFICATION_ICON = "ddna_notification_icon";
     static final String NOTIFICATION_TITLE = "ddna_notification_title";
     
@@ -40,6 +38,10 @@ class MetaData {
                                 context.getPackageName(),
                                 PackageManager.GET_META_DATA)
                         .metaData;
+                
+                if (values == null) {
+                    values = Bundle.EMPTY;
+                }
             } catch (PackageManager.NameNotFoundException e) {
                 // will never happen
                 throw new RuntimeException(e);

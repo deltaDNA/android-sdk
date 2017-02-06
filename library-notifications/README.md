@@ -14,7 +14,7 @@
 * [Registering](#registering)
 * [Advanced](#advanced)
  * [Notification](#notification)
- * [Token retrieval](#token-retrieval)
+ * [Events](#events)
  * [Notification style](#notification-style)
   * [Unity](#unity)
  * [ProGuard](#proguard)
@@ -25,7 +25,7 @@
 ## Overview
 This is an add-on module for the deltaDNA Android SDK which allows for easy integration of push notifications into a project.
 
-When sending a push notification to clients the implementation will show the message of the notification from the `Alert` field in the Platform and the application's name as the title, unless a value under the `title` key has been added to the push notification's payload. When the notification is tapped by the user the module sends the appropriate events through the SDK.
+When sending a push notification to clients the implementation will show the message of the notification from the `alert` field in the Platform and the application's name as the title, unless a value under the `title` key has been added to the push notification's payload. When the notification is tapped by the user the module sends the appropriate events through the SDK.
 
 More details on integration and customization can be found further on in this document.
 
@@ -97,12 +97,26 @@ Finally, by default the notification will start the activity defined as the appl
 
 If the properties of the notification need to be changed in a more dynamic way at runtime then the `NotificationListenerService` can be extended and either of the `createNotification` or `notify` method implementations overridden. More details can be found [here](#notification-style).
 
-### Token retrieval
-While the retrieval of the GCM registration token is done by the library under the hood, it may be useful to know when this succeeds. For this reason the library will send a broadcast over the [`LocalBroadcastManager`](http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html) with the action `DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL` and the token will be contained in the `Intent` under the `DDNANotifications.EXTRA_REGISTRATION_TOKEN` `String` extra.
+### Events
+The module sends a number of events relating to registering for push notifications, posting them on the UI, and listening for user interactions on them. You can listen to these events by extending [`EventReceiver`](src/main/java/com/deltadna/android/sdk/notifications/EventReceiver.java) and overriding the required methods.
 
-We provide an [`IntentFilter`](http://developer.android.com/reference/android/content/IntentFilter.html) which is set to listen to both of the above actions in `DDNANotifications.FILTER_TOKEN_RETRIEVAL` for ease of use.
+You will need to register your receiver in the manifest file of your application, for example:
+```xml
+<receiver
+    android:name="your.package.name.YourClassName"
+    android:exported="false">
+    
+    <intent-filter>
+        <action android:name="com.deltadna.android.sdk.notifications.REGISTERED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.MESSAGE_RECEIVED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_POSTED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED"/>
+    </intent-filter>
+</receiver>
+```
 
-An example implementation of a [`BroadcastReceiver`](http://developer.android.com/reference/android/content/BroadcastReceiver.html) can be found [here](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java).
+An example implementation of an [`EventReceiver`] can be found [here](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java).
 
 ### Notification style
 If you would like to change the style of the notification, for example to use expandable text, the [`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java) can be extended in order to modify the default behaviour.

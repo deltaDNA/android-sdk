@@ -16,13 +16,10 @@
 
 package com.deltadna.android.sdk.notifications.example;
 
-import android.content.BroadcastReceiver;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
@@ -30,9 +27,6 @@ import com.deltadna.android.sdk.notifications.DDNANotifications;
 import com.google.firebase.iid.FirebaseInstanceId;
 
 public class ExampleActivity extends AppCompatActivity {
-    
-    private LocalBroadcastManager broadcasts;
-    private BroadcastReceiver receiver;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,29 +47,10 @@ public class ExampleActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.registration_token)).setText(getString(
                 R.string.registration_token,
                 token));
-        
-        broadcasts = LocalBroadcastManager.getInstance(this);
-        
-        /*
-         * Create the receiver and register it so that we can get notifications
-         * when the token changes.
-         */
-        receiver = new ExampleReceiver(
-                (TextView) findViewById(R.id.registration_token));
-        broadcasts.registerReceiver(
-                receiver,
-                DDNANotifications.FILTER_TOKEN_RETRIEVAL);
     }
     
     @Override
     public void onDestroy() {
-        /**
-         * This activity will no longer be doing anything useful with the
-         * token, however you may want to have a receiver that stays registered
-         * for the entire lifecycle of the game.
-         */
-        broadcasts.unregisterReceiver(receiver);
-        
         DDNA.instance().stopSdk();
         
         super.onDestroy();

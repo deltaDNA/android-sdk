@@ -19,6 +19,7 @@ package com.deltadna.android.sdk.notifications;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 
 /**
@@ -37,33 +38,49 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
         
         final String action = intent.getAction();
         if (action != null) {
-            if (action.equals(Actions.NOTIFICATION_OPENED)) {
-                // to make the behaviour consistent with iOS on Unity
-                if (intent.getBooleanExtra(
-                        DDNANotifications.EXTRA_LAUNCH, false)) {
+            final NotificationInfo info = (NotificationInfo)
+                    intent.getSerializableExtra(Actions.NOTIFICATION_INFO);
+            
+            switch (action) {
+                case Actions.NOTIFICATION_OPENED:
+                    if (info == null) {
+                        Log.w(TAG, "Failed to find or deserialise notification info");
+                    }
                     
-                    Log.d(TAG, "Notifying SDK of notification opening");
-                    DDNANotifications.recordNotificationOpened(
-                            intent.getBundleExtra(DDNANotifications.EXTRA_PAYLOAD),
-                            true);
-                }
+                    // to make the behaviour consistent with iOS on Unity
+                    if (    intent.getBooleanExtra(Actions.LAUNCH, false)
+                            && info != null) {
+                        
+                        Log.d(TAG, "Notifying SDK of notification opening");
+                        DDNANotifications.recordNotificationOpened(
+                                Utils.convert(info.message.data),
+                                true);
+                    }
+                    
+                    if (MetaData.get(context).getBoolean(
+                            MetaData.START_LAUNCH_INTENT, true)) {
+                        
+                        Log.d(TAG, "Starting activity with launch intent");
+                        context.startActivity(context
+                                .getPackageManager()
+                                .getLaunchIntentForPackage(
+                                        context.getPackageName()));
+                    }
+                    break;
                 
-                if (MetaData.get(context).getBoolean(
-                        MetaData.START_LAUNCH_INTENT, true)) {
+                case Actions.NOTIFICATION_DISMISSED:
+                    if (info == null) {
+                        Log.w(TAG, "Failed to find or deserialise notification info");
+                    }
                     
-                    Log.d(TAG, "Starting activity with launch intent");
-                    
-                    context.startActivity(context
-                            .getPackageManager()
-                            .getLaunchIntentForPackage(
-                                    context.getPackageName()));
-                }
-            } else if (action.equals(Actions.NOTIFICATION_DISMISSED)) {
-                Log.d(TAG, "Notifying SDK of notification dismissal");
-                DDNANotifications.recordNotificationDismissed(
-                        intent.getBundleExtra(DDNANotifications.EXTRA_PAYLOAD));
-            } else {
-                Log.w(TAG, "Unexpected action " + action);
+                    Log.d(TAG, "Notifying SDK of notification dismissal");
+                    DDNANotifications.recordNotificationDismissed((info == null)
+                            ? Bundle.EMPTY
+                            : Utils.convert(info.message.data));
+                    break;
+                
+                default:
+                    Log.w(TAG, "Unexpected action " + action);
             }
         } else {
             Log.w(TAG, "Null action");

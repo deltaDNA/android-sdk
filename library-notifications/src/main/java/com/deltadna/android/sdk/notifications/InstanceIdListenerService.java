@@ -17,7 +17,6 @@
 package com.deltadna.android.sdk.notifications;
 
 import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
@@ -25,23 +24,14 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 
 /**
- * {@link FirebaseInstanceIdService} which gets notified when the token has
- * been updated.
+ * {@link FirebaseInstanceIdService} which gets notified when the registration
+ * token has been updated.
  */
 public final class InstanceIdListenerService extends FirebaseInstanceIdService {
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + InstanceIdListenerService.class.getSimpleName();
-    
-    private LocalBroadcastManager broadcasts;
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        
-        broadcasts = LocalBroadcastManager.getInstance(this);
-    }
     
     @Override
     public void onTokenRefresh() {
@@ -59,9 +49,10 @@ public final class InstanceIdListenerService extends FirebaseInstanceIdService {
                     token);
         } else {
             DDNA.instance().setRegistrationId(token);
-            broadcasts.sendBroadcast(new Intent(
-                    DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL)
-                    .putExtra(DDNANotifications.EXTRA_REGISTRATION_TOKEN, token));
+            
+            sendBroadcast(new Intent(Actions.REGISTERED).putExtra(
+                    Actions.REGISTRATION_TOKEN,
+                    token));
         }
     }
 }

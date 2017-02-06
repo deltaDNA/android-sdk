@@ -16,34 +16,41 @@
 
 package com.deltadna.android.sdk.notifications.example;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.widget.TextView;
+import android.util.Log;
 
-import com.deltadna.android.sdk.notifications.DDNANotifications;
+import com.deltadna.android.sdk.notifications.EventReceiver;
+import com.deltadna.android.sdk.notifications.NotificationInfo;
+import com.deltadna.android.sdk.notifications.PushMessage;
 
 /**
- * Example {@link BroadcastReceiver} demonstrating how to listen for broadcast
- * notifications of changes to the GCM registration token retrieval.
+ * Example {@link com.deltadna.android.sdk.notifications.EventReceiver}
+ * demonstrating how to listen for events related to push notifications.
  */
-class ExampleReceiver extends BroadcastReceiver {
+public class ExampleReceiver extends EventReceiver {
     
-    private TextView view;
-    
-    ExampleReceiver(TextView view) {
-        this.view = view;
+    @Override
+    protected void onRegistered(Context context, String registrationId) {
+        Log.d(BuildConfig.LOG_TAG, "onRegistered with: " + registrationId);
     }
     
     @Override
-    public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(
-                DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL)) {
-            
-            view.setText(context.getString(
-                    R.string.registration_token,
-                    intent.getStringExtra(
-                            DDNANotifications.EXTRA_REGISTRATION_TOKEN)));
-        }
+    protected void onMessageReceived(Context context, PushMessage message) {
+        Log.d(BuildConfig.LOG_TAG, "onMessageReceived with: " + message);
+    }
+    
+    @Override
+    protected void onNotificationPosted(Context context, NotificationInfo info) {
+        Log.d(BuildConfig.LOG_TAG, "onNotificationPosted with: " + info);
+    }
+    
+    @Override
+    protected void onNotificationOpened(Context context, NotificationInfo info) {
+        Log.d(BuildConfig.LOG_TAG, "onNotificationOpened with: " + info);
+    }
+    
+    @Override
+    protected void onNotificationDismissed(Context context, NotificationInfo info) {
+        Log.d(BuildConfig.LOG_TAG, "onNotificationDismissed with: " + info);
     }
 }

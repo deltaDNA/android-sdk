@@ -27,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
+import java.util.Map;
 
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 
@@ -47,6 +48,15 @@ class Utils {
         }
         
         return false;
+    }
+    
+    static Bundle convert(Map<String, String> payload) {
+        final Bundle result = new Bundle(payload.size());
+        for (Map.Entry<String, String> entry : payload.entrySet()) {
+            result.putString(entry.getKey(), entry.getValue());
+        }
+        
+        return result;
     }
     
     static String convert(Bundle payload) {
