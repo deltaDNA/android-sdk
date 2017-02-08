@@ -57,6 +57,11 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
                                 true);
                     }
                     
+                    if (MetaData.get(context).containsKey(
+                            MetaData.START_LAUNCH_INTENT)) {
+                        
+                        Log.w(TAG, "Use of ddna_start_launch_intent in the manifest has been deprecated");
+                    }
                     if (MetaData.get(context).getBoolean(
                             MetaData.START_LAUNCH_INTENT, true)) {
                         

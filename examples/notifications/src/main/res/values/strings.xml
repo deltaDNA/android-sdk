@@ -30,6 +30,4 @@ limitations under the License.
     
     <string name="start_sdk">Start SDK</string>
     <string name="stop_sdk">Stop SDK</string>
-    
-    <string name="notification_title">Overridden title</string>
 </resources>

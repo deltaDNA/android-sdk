@@ -61,16 +61,5 @@ limitations under the License.
                 <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED"/>
             </intent-filter>
         </receiver>
-        
-        <!-- manually added -->
-        <meta-data
-            android:name="ddna_notification_icon"
-            android:value="ic_stat_logo"/>
-        <meta-data
-            android:name="ddna_notification_title"
-            android:resource="@string/notification_title"/>
-        <meta-data
-            android:name="ddna_start_launch_intent"
-            android:value="true"/>
     </application>
 </manifest>

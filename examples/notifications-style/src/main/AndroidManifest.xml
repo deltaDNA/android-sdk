@@ -47,13 +47,5 @@ limitations under the License.
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
-        
-        <!-- manually added -->
-        <meta-data
-            android:name="ddna_notification_icon"
-            android:value="ic_stat_logo"/>
-        <meta-data
-            android:name="ddna_start_launch_intent"
-            android:value="true"/>
     </application>
 </manifest>

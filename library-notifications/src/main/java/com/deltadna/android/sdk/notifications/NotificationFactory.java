@@ -38,27 +38,6 @@ import android.util.Log;
  * {@link #configure(NotificationCompat.Builder, PushMessage)}. The
  * {@link NotificationListenerService} will then need to be extended in order
  * to define the new factory to be used for creating notifications.
- * <p>
- * Customisation can be also performed by setting either of the following
- * {@code meta-data} attributes inside the {@code application} tag of your
- * manifest file:
- * <pre>{@code
- * <meta-data
- *     android:name="ddna_notification_title"
- *     android:resource="@string/your_title_resource"/>
- *
- * <meta-data
- *     android:name="ddna_notification_title"
- *     android:value="your-literal-title"/>
- *
- * <meta-data
- *     android:name="ddna_notification_icon"
- *     android:value="your_icon_resource_name"/>
- *
- * <meta-data
- *     android:name="ddna_start_launch_intent"
- *     android:value="false"/>
- * }</pre>
  */
 public class NotificationFactory {
     

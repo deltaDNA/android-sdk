@@ -24,9 +24,12 @@ class MetaData {
     
     static Bundle values;
     
+    @Deprecated
     static final String NOTIFICATION_ICON = "ddna_notification_icon";
+    @Deprecated
     static final String NOTIFICATION_TITLE = "ddna_notification_title";
     
+    @Deprecated
     static final String START_LAUNCH_INTENT = "ddna_start_launch_intent";
     
     static synchronized Bundle get(Context context) {

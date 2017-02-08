@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk.notifications;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.DrawableRes;
@@ -117,6 +118,8 @@ public class PushMessage implements Serializable {
         final Bundle metaData = MetaData.get(context);
         
         if (metaData.containsKey(MetaData.NOTIFICATION_ICON)) {
+            Log.w(TAG, "Use of ddna_notification_icon in the manifest has been deprecated");
+            
             try {
                 final int value = context.getResources().getIdentifier(
                         metaData.getString(MetaData.NOTIFICATION_ICON),
@@ -124,18 +127,33 @@ public class PushMessage implements Serializable {
                         context.getPackageName());
                 
                 if (value == 0) {
-                    throw new Resources.NotFoundException();
+                    throw new RuntimeException(
+                            "Failed to find drawable resource for ddna_notification_icon");
                 } else {
                     return value;
                 }
             } catch (Resources.NotFoundException e) {
                 throw new RuntimeException(
-                        "Failed to find drawable resource for "
-                                + MetaData.NOTIFICATION_ICON,
+                        "Failed to find drawable resource for ddna_notification_icon",
                         e);
             }
         } else {
-            return R.drawable.ddna_ic_stat_logo;
+            try {
+                final int res = context.getPackageManager()
+                        .getApplicationInfo(
+                                context.getPackageName(),
+                                PackageManager.GET_META_DATA).icon;
+                
+                if (res == 0) {
+                    Log.w(TAG, "Failed to find application's icon");
+                    return R.drawable.ddna_ic_stat_logo;
+                } else {
+                    return res;
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                Log.w(TAG, "Failed to find application's icon", e);
+                return R.drawable.ddna_ic_stat_logo;
+            }
         }
     }
     
@@ -153,6 +171,8 @@ public class PushMessage implements Serializable {
         if (data.containsKey(TITLE)) {
             return data.get(TITLE);
         } else if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
+            Log.w(TAG, "Use of ddna_notification_title in the manifest has been deprecated");
+            
             final Object value = metaData.get(MetaData.NOTIFICATION_TITLE);
             if (value instanceof String) {
                 return (String) value;
@@ -161,14 +181,13 @@ public class PushMessage implements Serializable {
                     return context.getString((Integer) value);
                 } catch (Resources.NotFoundException e) {
                     throw new RuntimeException(
-                            "Failed to find string resource for "
-                                    + MetaData.NOTIFICATION_TITLE,
+                            "Failed to find string resource for ddna_notification_title",
                             e);
                 }
             } else {
                 throw new RuntimeException(String.format(
                         Locale.US,
-                        "Found %s for %s, only string or string resource allowed",
+                        "Found %s for %s, only string literals or string resources allowed",
                         value,
                         MetaData.NOTIFICATION_TITLE));
             }
