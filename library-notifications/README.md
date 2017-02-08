@@ -71,9 +71,7 @@ It is possible to unregister the client from push notifications by calling `unre
 
 ## Advanced
 ### Notification
-By default the `NotificationListenerService` will search the payload of the pushed message for a value under the `title` key. If not found, then the application's name will be used instead for the title of the notification.
-
-The easiest way to customise this behavior is to set the `ddna_notification_title` `meta-data` property in your manifest file inside of the `application` section
+The easiest way to customise the notification title is to set the `ddna_notification_title` `meta-data` property in your manifest file inside of the `application` section
 ```xml
 <meta-data
     android:name="ddna_notification_title"
@@ -95,7 +93,7 @@ Finally, by default the notification will start the activity defined as the appl
     android:value="false"/>
 ```
 
-If the properties of the notification need to be changed in a more dynamic way at runtime then the `NotificationListenerService` can be extended and either of the `createNotification` or `notify` method implementations overridden. More details can be found [here](#notification-style).
+If the properties of the notification need to be changed in a more dynamic way at runtime then the `NotificationListenerService` can be extended and `createFactory(Context)` overridden as detailed further [here](#notification-style).
 
 ### Events
 The module sends a number of events relating to registering for push notifications, posting them on the UI, and listening for user interactions on them. You can listen to these events by extending [`EventReceiver`](src/main/java/com/deltadna/android/sdk/notifications/EventReceiver.java) and overriding the required methods.

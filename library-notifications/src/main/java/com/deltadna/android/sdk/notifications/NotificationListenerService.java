@@ -18,9 +18,8 @@ package com.deltadna.android.sdk.notifications;
 
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -32,7 +31,7 @@ import java.util.Map;
 
 /**
  * {@link FirebaseMessagingService} which listens to incoming downstream
- * messages.
+ * messages and posts them on the UI.
  * <p>
  * The default implementation posts a notification on the
  * {@link NotificationManager} with the id of the campaign, using 'title'
@@ -52,28 +51,9 @@ import java.util.Map;
  *     </intent-filter>
  * </service>
  * }</pre>
- * Behaviour can be customized by overriding
- * {@link #createNotification(NotificationInfo)} and/or
- * {@link #notify(long, Notification)} at runtime using your own subclass, or
- * by setting either of the following {@code meta-data} attributes inside the
- * {@code application} tag of your manifest file:
- * <pre>{@code
- * <meta-data
- *     android:name="ddna_notification_title"
- *     android:resource="@string/your_title_resource"/>
- * 
- * <meta-data
- *     android:name="ddna_notification_title"
- *     android:value="your-literal-title"/>
- * 
- * <meta-data
- *     android:name="ddna_notification_icon"
- *     android:value="your_icon_resource_name"/>
- * 
- * <meta-data
- *     android:name="ddna_start_launch_intent"
- *     android:value="false"/>
- * }</pre>
+ * The look of the notification can be customised by overriding
+ * {@link #createFactory(Context)} and extending the {@link NotificationFactory}
+ * to change the default behaviour.
  */
 public class NotificationListenerService extends FirebaseMessagingService {
     
@@ -84,9 +64,8 @@ public class NotificationListenerService extends FirebaseMessagingService {
             + ' '
             + NotificationListenerService.class.getSimpleName();
     
-    
     protected NotificationManager manager;
-    protected Bundle metaData;
+    protected NotificationFactory factory;
     
     @Override
     public void onCreate() {
@@ -94,7 +73,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
         
         manager = (NotificationManager) getSystemService(
                 NOTIFICATION_SERVICE);
-        metaData = MetaData.get(this);
+        factory = createFactory(this);
     }
     
     @Override
@@ -127,66 +106,22 @@ public class NotificationListenerService extends FirebaseMessagingService {
             final int id = (int) pushMessage.id;
             final NotificationInfo info = new NotificationInfo(id, pushMessage);
             
-            notify(id, createNotification(info).build());
-            sendBroadcast(new Intent(Actions.NOTIFICATION_POSTED).putExtra(
-                    Actions.NOTIFICATION_INFO,
-                    info));
+            final Notification notification = factory.create(
+                    factory.configure(
+                            new NotificationCompat.Builder(this),
+                            pushMessage),
+                    info);
+            if (notification != null) {
+                notify(id, notification);
+                sendBroadcast(new Intent(Actions.NOTIFICATION_POSTED).putExtra(
+                        Actions.NOTIFICATION_INFO,
+                        info));
+            }
         }
     }
     
-    /**
-     * Creates a {@link android.support.v4.app.NotificationCompat.Builder}
-     * whose built result will be posted on the {@link NotificationManager}.
-     *
-     * Implementations which call
-     * {@link NotificationCompat.Builder#setContentIntent(PendingIntent)}
-     * or
-     * {@link NotificationCompat.Builder#setDeleteIntent(PendingIntent)}
-     * on the {@link NotificationCompat.Builder} and thus override the default
-     * behaviour should notify the SDK that the push notification has been
-     * opened or dismissed respectively.
-     *
-     * @param info  the information for the notification to be posted
-     *
-     * @return      configured notification builder
-     *
-     * @see NotificationInteractionReceiver
-     * @see EventReceiver
-     */
-    protected NotificationCompat.Builder createNotification(
-            NotificationInfo info) {
-        
-        final NotificationCompat.Builder builder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(info.message.icon)
-                        .setContentTitle(info.message.title)
-                        .setContentText(info.message.message)
-                        .setAutoCancel(true);
-        
-        // to make the behaviour consistent with iOS on Unity
-        final boolean backgrounded = !Utils.inForeground(this);
-        if (!backgrounded) {
-            Log.d(TAG, "Notifying SDK of notification opening");
-            DDNANotifications.recordNotificationOpened(
-                    Utils.convert(info.message.data),
-                    false);
-        }
-        
-        builder.setContentIntent(PendingIntent.getBroadcast(
-                this,
-                0,
-                new Intent(Actions.NOTIFICATION_OPENED)
-                        .putExtra(Actions.NOTIFICATION_INFO, info)
-                        .putExtra(Actions.LAUNCH, backgrounded),
-                PendingIntent.FLAG_UPDATE_CURRENT));
-        builder.setDeleteIntent(PendingIntent.getBroadcast(
-                this,
-                0,
-                new Intent(Actions.NOTIFICATION_DISMISSED)
-                        .putExtra(Actions.NOTIFICATION_INFO, info),
-                PendingIntent.FLAG_UPDATE_CURRENT));
-        
-        return builder;
+    protected NotificationFactory createFactory(Context context) {
+        return new NotificationFactory(context);
     }
     
     /**
