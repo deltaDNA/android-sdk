@@ -120,6 +120,14 @@ public class NotificationListenerService extends FirebaseMessagingService {
         }
     }
     
+    /**
+     * Creates the notification factory to be used for creating notifications
+     * when a push message is received.
+     *
+     * @param context   the context
+     *
+     * @return          notification factory
+     */
     protected NotificationFactory createFactory(Context context) {
         return new NotificationFactory(context);
     }

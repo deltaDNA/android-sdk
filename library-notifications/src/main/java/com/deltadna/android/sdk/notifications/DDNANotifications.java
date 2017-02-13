@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk.notifications;
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -27,6 +28,7 @@ import com.google.firebase.iid.FirebaseInstanceId;
  * Helper class for easily registering/un-registering for/from push
  * notifications.
  */
+@UnityInterOp
 public final class DDNANotifications {
     
     private static final String TAG = BuildConfig.LOG_TAG
@@ -37,8 +39,6 @@ public final class DDNANotifications {
      * Register the client for push notifications.
      *
      * @see DDNA#setRegistrationId(String)
-     *
-     * @throws UnsupportedOperationException if called from Unity
      */
     public static void register() {
         if (UnityForwarder.isPresent()) {
@@ -48,7 +48,7 @@ public final class DDNANotifications {
         
         Log.d(TAG, "Registering for push notifications");
         
-        final String token = FirebaseInstanceId.getInstance().getToken();
+        final String token = getRegistrationToken();
         if (TextUtils.isEmpty(token)) {
             Log.w(TAG, "Registration token is not available");
         } else {
@@ -112,6 +112,11 @@ public final class DDNANotifications {
     
     public static void markUnityLoaded() {
         UnityForwarder.getInstance().markLoaded();
+    }
+    
+    @Nullable
+    public static String getRegistrationToken() {
+        return FirebaseInstanceId.getInstance().getToken();
     }
     
     private DDNANotifications() {}
