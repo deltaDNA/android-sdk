@@ -17,8 +17,8 @@
 buildscript {
     ext {
         kotlinVersion = '1.0.6'
-        supportVersion = '25.1.0'
-        firebaseVersion = '10.0.1'
+        supportVersion = '25.1.1'
+        firebaseVersion = '10.2.0'
         
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
