@@ -64,14 +64,6 @@ class PushMessageTest {
         assertThat(msg().icon).isEqualTo(R.drawable.ddna_ic_stat_logo)
     }
     
-    @Test(expected = RuntimeException::class)
-    fun iconMissing() {
-        injectMetaData(Bundle(1).apply {
-            putString(MetaData.NOTIFICATION_ICON, "missing_icon")
-        })
-        msg()
-    }
-    
     @Test()
     fun title() {
         assertThat(msg(data = mapOf(PushMessage.TITLE to "1")).title).isEqualTo("1")
@@ -85,14 +77,6 @@ class PushMessageTest {
             putInt(MetaData.NOTIFICATION_TITLE, android.R.string.ok)
         })
         assertThat(msg().title).isEqualTo(app.getString(android.R.string.ok))
-    }
-    
-    @Test(expected = RuntimeException::class)
-    fun titleMissing() {
-        injectMetaData(Bundle(1).apply {
-            putInt(MetaData.NOTIFICATION_TITLE, Int.MAX_VALUE)
-        })
-        msg()
     }
     
     @Test

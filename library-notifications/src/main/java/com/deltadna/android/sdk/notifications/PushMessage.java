@@ -33,6 +33,7 @@ import java.util.Map;
  */
 public class PushMessage implements Serializable {
     
+    protected static final String ICON = "icon";
     protected static final String TITLE = "title";
     protected static final String MESSAGE = "alert";
     
@@ -79,7 +80,7 @@ public class PushMessage implements Serializable {
         this.data = new HashMap<>(data);
         
         id = getId(data);
-        icon = getIcon(context);
+        icon = getIcon(context, data);
         title = getTitle(context, data);
         message = getMessage(data);
     }
@@ -107,16 +108,34 @@ public class PushMessage implements Serializable {
     
     /**
      * Extracts the icon from a push payload to be used for posting a
-     * notification.
+     * notification, falls back to looking for the meta data in the manifest,
+     * finally using the application's icon.
      *
      * @param context   the context
+     * @param data      the notification payload
      *
      * @return          icon resource
      */
     @DrawableRes
-    protected int getIcon(Context context) {
-        final Bundle metaData = MetaData.get(context);
+    protected int getIcon(Context context, Map<String, String> data) {
+        if (data.containsKey(ICON)) {
+            try {
+                final int value = context.getResources().getIdentifier(
+                        data.get(ICON),
+                        "drawable",
+                        context.getPackageName());
+                
+                if (value == 0) {
+                    Log.w(TAG, "Failed to find drawable resource for icon");
+                } else {
+                    return value;
+                }
+            } catch (Resources.NotFoundException e) {
+                Log.w(TAG, "Failed to find drawable resource for icon");
+            }
+        }
         
+        final Bundle metaData = MetaData.get(context);
         if (metaData.containsKey(MetaData.NOTIFICATION_ICON)) {
             Log.w(TAG, "Use of ddna_notification_icon in the manifest has been deprecated");
             
@@ -127,50 +146,53 @@ public class PushMessage implements Serializable {
                         context.getPackageName());
                 
                 if (value == 0) {
-                    throw new RuntimeException(
+                    Log.w(  TAG,
                             "Failed to find drawable resource for ddna_notification_icon");
                 } else {
                     return value;
                 }
             } catch (Resources.NotFoundException e) {
-                throw new RuntimeException(
+                Log.w(  TAG,
                         "Failed to find drawable resource for ddna_notification_icon",
                         e);
             }
-        } else {
-            try {
-                final int res = context.getPackageManager()
-                        .getApplicationInfo(
-                                context.getPackageName(),
-                                PackageManager.GET_META_DATA).icon;
-                
-                if (res == 0) {
-                    Log.w(TAG, "Failed to find application's icon");
-                    return R.drawable.ddna_ic_stat_logo;
-                } else {
-                    return res;
-                }
-            } catch (PackageManager.NameNotFoundException e) {
-                Log.w(TAG, "Failed to find application's icon", e);
-                return R.drawable.ddna_ic_stat_logo;
-            }
         }
+        
+        try {
+            final int res = context.getPackageManager()
+                    .getApplicationInfo(
+                            context.getPackageName(),
+                            PackageManager.GET_META_DATA).icon;
+            
+            if (res == 0) {
+                Log.w(TAG, "Failed to find application's icon");
+            } else {
+                return res;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.w(TAG, "Failed to find application's icon", e);
+        }
+        
+        return R.drawable.ddna_ic_stat_logo;
     }
     
     /**
      * Extracts the title from a push payload to be used for posting a
-     * notification.
+     * notification, falls back to looking for the meta data in the manifest,
+     * finally using the application's icon.
      *
+     * @param context   the context
      * @param data  the notification payload
      *
      * @return      notification title
      */
     protected String getTitle(Context context, Map<String, String> data) {
-        final Bundle metaData = MetaData.get(context);
-        
         if (data.containsKey(TITLE)) {
             return data.get(TITLE);
-        } else if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
+        }
+        
+        final Bundle metaData = MetaData.get(context);
+        if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
             Log.w(TAG, "Use of ddna_notification_title in the manifest has been deprecated");
             
             final Object value = metaData.get(MetaData.NOTIFICATION_TITLE);
@@ -180,21 +202,21 @@ public class PushMessage implements Serializable {
                 try {
                     return context.getString((Integer) value);
                 } catch (Resources.NotFoundException e) {
-                    throw new RuntimeException(
+                    Log.w(  TAG,
                             "Failed to find string resource for ddna_notification_title",
                             e);
                 }
             } else {
-                throw new RuntimeException(String.format(
+                Log.w(TAG, String.format(
                         Locale.US,
                         "Found %s for %s, only string literals or string resources allowed",
                         value,
                         MetaData.NOTIFICATION_TITLE));
             }
-        } else {
-            return String.valueOf(context.getPackageManager()
-                    .getApplicationLabel(context.getApplicationInfo()));
         }
+        
+        return String.valueOf(context.getPackageManager().getApplicationLabel(
+                context.getApplicationInfo()));
     }
     
     /**
@@ -207,7 +229,7 @@ public class PushMessage implements Serializable {
      */
     protected String getMessage(Map<String, String> data) {
         if (!data.containsKey(MESSAGE)) {
-            Log.w(TAG, "Missing 'message' key in push message");
+            Log.w(TAG, "Failed to find notification message in playload");
             return "";
         } else {
             return data.get(MESSAGE);
