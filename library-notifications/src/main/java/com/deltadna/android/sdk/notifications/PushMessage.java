@@ -33,7 +33,6 @@ import java.util.Map;
  */
 public class PushMessage implements Serializable {
     
-    protected static final String ICON = "icon";
     protected static final String TITLE = "title";
     protected static final String MESSAGE = "alert";
     
@@ -80,7 +79,7 @@ public class PushMessage implements Serializable {
         this.data = new HashMap<>(data);
         
         id = getId(data);
-        icon = getIcon(context, data);
+        icon = getIcon(context);
         title = getTitle(context, data);
         message = getMessage(data);
     }
@@ -107,38 +106,17 @@ public class PushMessage implements Serializable {
     }
     
     /**
-     * Extracts the icon from a push payload to be used for posting a
-     * notification, falls back to looking for the meta data in the manifest,
-     * finally using the application's icon.
+     * Extracts the icon from the meta data in the manifest, falling back to
+     * using the application's icon.
      *
      * @param context   the context
-     * @param data      the notification payload
      *
      * @return          icon resource
      */
     @DrawableRes
-    protected int getIcon(Context context, Map<String, String> data) {
-        if (data.containsKey(ICON)) {
-            try {
-                final int value = context.getResources().getIdentifier(
-                        data.get(ICON),
-                        "drawable",
-                        context.getPackageName());
-                
-                if (value == 0) {
-                    Log.w(TAG, "Failed to find drawable resource for icon");
-                } else {
-                    return value;
-                }
-            } catch (Resources.NotFoundException e) {
-                Log.w(TAG, "Failed to find drawable resource for icon");
-            }
-        }
-        
+    protected int getIcon(Context context) {
         final Bundle metaData = MetaData.get(context);
         if (metaData.containsKey(MetaData.NOTIFICATION_ICON)) {
-            Log.w(TAG, "Use of ddna_notification_icon in the manifest has been deprecated");
-            
             try {
                 final int value = context.getResources().getIdentifier(
                         metaData.getString(MetaData.NOTIFICATION_ICON),
@@ -193,8 +171,6 @@ public class PushMessage implements Serializable {
         
         final Bundle metaData = MetaData.get(context);
         if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
-            Log.w(TAG, "Use of ddna_notification_title in the manifest has been deprecated");
-            
             final Object value = metaData.get(MetaData.NOTIFICATION_TITLE);
             if (value instanceof String) {
                 return (String) value;

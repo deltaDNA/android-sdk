@@ -24,9 +24,7 @@ class MetaData {
     
     static Bundle values;
     
-    @Deprecated
     static final String NOTIFICATION_ICON = "ddna_notification_icon";
-    @Deprecated
     static final String NOTIFICATION_TITLE = "ddna_notification_title";
     
     @Deprecated
