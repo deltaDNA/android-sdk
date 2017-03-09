@@ -25,6 +25,7 @@ import android.util.Log;
 import com.deltadna.android.sdk.exceptions.NotInitialisedException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.EngageArchive;
+import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
@@ -697,10 +698,14 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA setRegistrationId(@Nullable String registrationId) {
-        preferences.setRegistrationId(registrationId);
-        return recordEvent(new Event("notificationServices").putParam(
-                "androidRegistrationID",
-                (registrationId == null) ? "" : registrationId));
+        if (!Objects.equals(registrationId, preferences.getRegistrationId())) {
+            preferences.setRegistrationId(registrationId);
+            return recordEvent(new Event("notificationServices").putParam(
+                    "androidRegistrationID",
+                    (registrationId == null) ? "" : registrationId));
+        } else {
+            return this;
+        }
     }
     
     /**

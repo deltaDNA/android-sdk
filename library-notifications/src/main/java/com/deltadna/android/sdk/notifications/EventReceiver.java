@@ -36,6 +36,7 @@ import android.util.Log;
  *     
  *     <intent-filter>
  *         <action android:name="com.deltadna.android.sdk.notifications.REGISTERED"/>
+ *         <action android:name="com.deltadna.android.sdk.notifications.REGISTRATION_FAILED"/>
  *         <action android:name="com.deltadna.android.sdk.notifications.MESSAGE_RECEIVED"/>
  *         <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_POSTED"/>
  *         <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED"/>
@@ -66,6 +67,16 @@ public abstract class EventReceiver extends BroadcastReceiver {
                         Log.w(TAG, "Registration token is null or empty");
                     } else {
                         onRegistered(context, token);
+                    }
+                    break;
+                
+                case Actions.REGISTRATION_FAILED:
+                    final Throwable reason = (Throwable) intent.getSerializableExtra(
+                            Actions.REGISTRATION_FAILURE_REASON);
+                    if (reason == null) {
+                        Log.w(TAG, "Failed to deserialise registration failure reason");
+                    } else {
+                        onRegistrationFailed(context, reason);
                     }
                     break;
                 
@@ -117,6 +128,14 @@ public abstract class EventReceiver extends BroadcastReceiver {
      * @param registrationId    the registration token/id
      */
     protected void onRegistered(Context context, String registrationId) {}
+    
+    /**
+     * Will be called when the SDK fails to register for push notifications.
+     *
+     * @param context           the context of the receiver
+     * @param reason            the reason for the failure
+     */
+    protected void onRegistrationFailed(Context context, Throwable reason) {}
     
     /**
      * Will be called when the SDK constructs a push message from a remote

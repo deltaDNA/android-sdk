@@ -24,6 +24,9 @@ class MetaData {
     
     static Bundle values;
     
+    static final String APPLICATION_ID = "ddna_application_id";
+    static final String SENDER_ID = "ddna_sender_id";
+    
     static final String NOTIFICATION_ICON = "ddna_notification_icon";
     static final String NOTIFICATION_TITLE = "ddna_notification_title";
     

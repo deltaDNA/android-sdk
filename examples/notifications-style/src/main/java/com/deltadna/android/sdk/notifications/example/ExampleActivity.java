@@ -42,11 +42,7 @@ public class ExampleActivity extends AppCompatActivity {
                 R.string.user_id,
                 id));
         
-        final String token = FirebaseInstanceId.getInstance().getToken();
-        Log.d(BuildConfig.LOG_TAG, "Registration token: " + token);
-        ((TextView) findViewById(R.id.registration_token)).setText(getString(
-                R.string.registration_token,
-                token));
+        showRegistrationToken();
     }
     
     @Override
@@ -58,6 +54,19 @@ public class ExampleActivity extends AppCompatActivity {
     
     public void onUploadEvents(View view) {
         DDNA.instance().upload();
+    }
+    
+    /**
+     * Register for push notifications.
+     * <p>
+     * If you would like to handle the retrieval of the GCM registration token
+     * manually then you can call {@link DDNA#setRegistrationId(String)}
+     * instead.
+     */
+    public void onRegister(View view) {
+        DDNANotifications.register(this);
+
+        showRegistrationToken();
     }
     
     /**
@@ -86,5 +95,13 @@ public class ExampleActivity extends AppCompatActivity {
     
     public void onStartSdk(View view) {
         DDNA.instance().startSdk();
+    }
+    
+    private void showRegistrationToken() {
+        final String token = DDNA.instance().getRegistrationId();
+        Log.d(BuildConfig.LOG_TAG, "Registration token: " + token);
+        ((TextView) findViewById(R.id.registration_token)).setText(getString(
+                R.string.registration_token,
+                token));
     }
 }

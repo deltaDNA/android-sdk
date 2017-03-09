@@ -48,7 +48,4 @@ dependencies {
     compile project(':library-notifications')
     
     compile "com.android.support:appcompat-v7:$supportVersion"
-    compile "com.google.firebase:firebase-messaging:$firebaseVersion"
 }
-
-apply plugin: 'com.google.gms.google-services'

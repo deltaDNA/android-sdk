@@ -20,6 +20,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -64,6 +65,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
             + ' '
             + NotificationListenerService.class.getSimpleName();
     
+    protected Bundle metaData;
     protected NotificationManager manager;
     protected NotificationFactory factory;
     
@@ -71,6 +73,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
     public void onCreate() {
         super.onCreate();
         
+        metaData = MetaData.get(this);
         manager = (NotificationManager) getSystemService(
                 NOTIFICATION_SERVICE);
         factory = createFactory(this);
@@ -89,9 +92,8 @@ public class NotificationListenerService extends FirebaseMessagingService {
         
         if (from == null) {
             Log.w(TAG, "Message sender is unknown");
-        // TODO PTL-2693: do we still need it? can we still do it?
-        //} else if (!from.equals(getString(metaData.getInt(MetaData.SENDER_ID)))) {
-        //    Log.d(TAG, "Not handling message due to sender ID mismatch");
+        } else if (!from.equals(getString(metaData.getInt(MetaData.SENDER_ID)))) {
+            Log.d(TAG, "Not handling message due to sender ID mismatch");
         } else if (data == null || data.isEmpty()) {
             Log.w(TAG, "Message data is null or empty");
         } else {

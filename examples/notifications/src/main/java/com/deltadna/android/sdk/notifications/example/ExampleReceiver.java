@@ -35,6 +35,11 @@ public class ExampleReceiver extends EventReceiver {
     }
     
     @Override
+    protected void onRegistrationFailed(Context context, Throwable reason) {
+        Log.w(BuildConfig.LOG_TAG, "onRegistrationFailed with: " + reason);
+    }
+    
+    @Override
     protected void onMessageReceived(Context context, PushMessage message) {
         Log.d(BuildConfig.LOG_TAG, "onMessageReceived with: " + message);
     }

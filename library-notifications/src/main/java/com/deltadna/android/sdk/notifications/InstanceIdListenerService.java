@@ -16,11 +16,8 @@
 
 package com.deltadna.android.sdk.notifications;
 
-import android.content.Intent;
 import android.util.Log;
 
-import com.deltadna.android.sdk.DDNA;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 
 /**
@@ -35,24 +32,7 @@ public final class InstanceIdListenerService extends FirebaseInstanceIdService {
     
     @Override
     public void onTokenRefresh() {
-        final String token = FirebaseInstanceId.getInstance().getToken();
-        Log.d(TAG, "Registration token has been refreshed: " + token);
-        
-        notifySuccess(token);
-    }
-    
-    private void notifySuccess(String token) {
-        if (UnityForwarder.isPresent()) {
-            UnityForwarder.getInstance().forward(
-                    "DeltaDNA.AndroidNotifications",
-                    "DidRegisterForPushNotifications",
-                    token);
-        } else {
-            DDNA.instance().setRegistrationId(token);
-            
-            sendBroadcast(new Intent(Actions.REGISTERED).putExtra(
-                    Actions.REGISTRATION_TOKEN,
-                    token));
-        }
+        Log.d(TAG, "Registration token has been refreshed");
+        RegistrationTokenFetcher.fetch(this);
     }
 }

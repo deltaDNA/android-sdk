@@ -43,11 +43,6 @@ In your app's build script
 ```groovy
 compile 'com.deltadna.android:deltadna-sdk:4.3.0-SNAPSHOT'
 compile 'com.deltadna.android:deltadna-sdk-notifications:4.3.0-SNAPSHOT'
-compile 'com.google.firebase:firebase-messaging:10.0.+'
-```
-And at the bottom of your app's build script
-```groovy
-apply plugin: 'com.google.gms.google-services'
 ```
 
 ## Integration
@@ -63,12 +58,26 @@ Once you have the SDK and the Notifications addon in your project you will need 
 ```
 While the above definition could have been provided by the library this service is quite important as it takes care of showing a notification on the UI when a push message is sent from the Platform, as such we are allowing for customization on how it behaves.
 
-The last step is to download the *google-services.json* configuration file from the Firebase or Google Developer Console into the directory where your application module is found (for example `app/`).
+The last step is to add your Application and Sender IDs from the the Firebase Console into the manifest file. If your application has been setup using the Google Developer Console then you can easily migrate the project to Firebase by following the instructions [here](https://firebase.google.com/support/guides/google-android#migrate_your_console_project).
+```xml
+<application ...>
+    ...
+    
+    <meta-data
+        android:name="ddna_application_id"
+        android:resource="@string/application_id"/>
+    <meta-data
+        android:name="ddna_sender_id"
+        android:resource="@string/sender_id"/>
+</application>
+```
 
 You can always refer to the example implementation [here](../examples/notifications).
 
 ## Registering
-Registration, and retries in case of a failure, are performed automatically once the library is included in your application.
+In order to register the client for push notifications with the Platform the `register()` method needs to be called from [`DDNANotifications`](src/main/java/com/deltadna/android/sdk/notifications/DDNANotifications.java). This will initiate a request for retrieving a registration token from GCM, and send it to the deltaDNA servers.
+
+A good time to call `register()` would be, for example, when the user enables notifications for the application in the settings or when a previous attempt to retrieve the token fails.
 
 It is possible to unregister the client from push notifications by calling `unregister()` from `DDNANotifications`. If you wish to register later on then `register()` should be called.
 
@@ -83,7 +92,7 @@ Changing the style on Unity is a bit more involved, but the steps below describe
 1.  You will need to checkout the [android-sdk](https://github.com/deltaDNA/android-sdk) project and open it in Android studio. Make sure that you've got all the neccessary dependencies downloaded in order to be able to build the project.
 2.  Checkout the version of the project which you need in order to match the version used in the deltaDNA Unity SDK. You can find this out by navigating under `Assets/DeltaDNA/Plugins/Android` and finding the version of the `deltadna-sdk-notifications-*.aar` file. For example, if the file in the directory was named `deltadna-sdk-notifications-4.2.3.aar` you would run `git checkout 4.2.3` in the `android-sdk` project.
 3.  Now you can make changes to the [`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java) class, either directly or by creating a new class extending from it and overriding the appropriate method.
-4.  After you have made the changes you can build the SDK by running `./gradlew clean build check` from the root directory of the project. Once successfully built the new ARR can be copied from `library-notifications/build/outputs/aar` (make sure to use the release version) to `Assets/DeltaDNA/Plugins/Android` in order to replace the stock AAR. If you have made the changes in a new class then you will also need to change the *Listener Service* entry in the notifications cofiguration UI for your Unity project to use your new class instead.
+4.  After you have made the changes you can build the SDK by running `./gradlew clean build check` from the root directory of the project. Once successfully built the new ARR can be copied from `library-notifications/build/outputs/aar` (make sure to use the release version) to `Assets/DeltaDNA/Plugins/Android` in order to replace the stock AAR. If you have made the changes in a new class then you will also need to change the *Listener Service* entry in the notifications configuration UI for your Unity project to use your new class instead.
 
 ### Events
 The module sends a number of events related to registering for push notifications, posting them on the UI, and listening for user interactions on them. You can listen to these events by extending [`EventReceiver`](src/main/java/com/deltadna/android/sdk/notifications/EventReceiver.java) and overriding the required methods.
@@ -96,6 +105,7 @@ You will need to register your receiver in the manifest file of your application
     
     <intent-filter>
         <action android:name="com.deltadna.android.sdk.notifications.REGISTERED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.REGISTRATION_FAILED"/>
         <action android:name="com.deltadna.android.sdk.notifications.MESSAGE_RECEIVED"/>
         <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_POSTED"/>
         <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED"/>

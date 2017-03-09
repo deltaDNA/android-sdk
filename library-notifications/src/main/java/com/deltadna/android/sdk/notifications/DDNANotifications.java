@@ -16,13 +16,18 @@
 
 package com.deltadna.android.sdk.notifications;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+
+import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Helper class for easily registering/un-registering for/from push
@@ -34,25 +39,108 @@ public final class DDNANotifications {
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + DDNANotifications.class.getSimpleName();
+    private static final String NAME = "deltadna-sdk-notifications";
+    private static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
     
     /**
      * Register the client for push notifications.
+     * <p>
+     * A good time to perform this would be for example when the user enables
+     * push notifications from the game's settings, or when a previous
+     * registration attempt fails as notified by an {@link EventReceiver}.
+     * <p>
+     * This method registers the Firebase Cloud Messaging used by deltaDNA as
+     * the main one.
+     *
+     * @param context   the context
+     *
+     * @throws IllegalStateException    if the configuration meta-data entries
+     *                                  are missing from the manifest
+     *
+     * @see #register(Context, boolean)
+     * @see DDNA#setRegistrationId(String)
+     */
+    public static void register(Context context) {
+        register(context, false);
+    }
+    
+    /**
+     * Register the client for push notifications.
+     * <p>
+     * A good time to perform this would be for example when the user enables
+     * push notifications from the game's settings, or when a previous
+     * registration attempt fails as notified by an {@link EventReceiver}.
+     * <p>
+     * If you have multiple Firebase Cloud Messaging senders in your project
+     * then you can use the deltaDNA sender either as a main one or as a
+     * secondary one by setting the {@code secondary} parameter. If you set
+     * {@code secondary} to {@code true} then the default FCM sender will need
+     * to have been initialised beforehand.
+     *
+     * @param context   the context
+     * @param secondary whether the {@link FirebaseApp} instance used for
+     *                  deltaDNA notifications should be registered as a
+     *                  secondary (non-main) instance
+     *
+     * @throws IllegalStateException    if the configuration meta-data entries
+     *                                  are missing from the manifest
      *
      * @see DDNA#setRegistrationId(String)
      */
-    public static void register() {
-        if (UnityForwarder.isPresent()) {
-            throw new UnsupportedOperationException(
-                    "Unity SDK should unregister from its own code");
-        }
-        
+    public static void register(final Context context, boolean secondary) {
         Log.d(TAG, "Registering for push notifications");
         
-        final String token = getRegistrationToken();
-        if (TextUtils.isEmpty(token)) {
-            Log.w(TAG, "Registration token is not available");
-        } else {
-            DDNA.instance().setRegistrationId(token);
+        final String applicationId;
+        final String senderId;
+        try {
+            final Bundle metaData = MetaData.get(context);
+            
+            applicationId = context.getString(
+                    metaData.getInt(MetaData.APPLICATION_ID));
+            senderId = context.getString(
+                    metaData.getInt(MetaData.SENDER_ID));
+        } catch (final Resources.NotFoundException e) {
+            throw new IllegalStateException(
+                    String.format(
+                            Locale.US,
+                            "Failed to find configuration meta-data, have %s and %s been defined in the manifest?",
+                            MetaData.APPLICATION_ID,
+                            MetaData.SENDER_ID),
+                    e);
+        }
+        
+        synchronized (DDNANotifications.class) {
+            final String name = secondary ? NAME : FirebaseApp.DEFAULT_APP_NAME;
+            
+            boolean found = false;
+            for (FirebaseApp app : FirebaseApp.getApps(context)) {
+                if (app.getName().equals(name)) {
+                    found = true;
+                }
+            }
+            
+            if (!found) {
+                /*
+                 * Running this the first time will force a token refresh, in
+                 * other use cases the service will be invoked when the token
+                 * will need to be refreshed so there is no need to perform
+                 * a forced refresh at this point.
+                 */
+                FirebaseApp.initializeApp(
+                        context,
+                        new FirebaseOptions.Builder()
+                                .setApplicationId(applicationId)
+                                .setGcmSenderId(senderId)
+                                .build(),
+                        name);
+            } else {
+                EXECUTOR.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        RegistrationTokenFetcher.fetch(context);
+                    }
+                });
+            }
         }
     }
     
@@ -112,11 +200,6 @@ public final class DDNANotifications {
     
     public static void markUnityLoaded() {
         UnityForwarder.getInstance().markLoaded();
-    }
-    
-    @Nullable
-    public static String getRegistrationToken() {
-        return FirebaseInstanceId.getInstance().getToken();
     }
     
     private DDNANotifications() {}
