@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (YYYY-MM-DD)
+## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (2017-03-13)
 Updated notifications from Google Messaging to Firebase Messaging.  
 Added broadcast receiver for listening to notification events.  
 Added notification factory for customising notifications.  
