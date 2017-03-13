@@ -7,6 +7,7 @@ Added notification factory for customising notifications.
 Fixed notifications from campaigns overwriting other notifications.  
 Fixed application icon not being picked up for notifications.  
 Deprecated some manifest properties for customising notifications.  
+Removed deprecated methods and classes.  
 
 ## [4.2.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.7) (YYYY-MM-DD)
 Fixed campaign and cohort ids not being picked up from a notification.  
