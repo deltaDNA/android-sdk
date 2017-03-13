@@ -24,11 +24,13 @@ class MetaData {
     
     static Bundle values;
     
+    static final String APPLICATION_ID = "ddna_application_id";
     static final String SENDER_ID = "ddna_sender_id";
     
     static final String NOTIFICATION_ICON = "ddna_notification_icon";
     static final String NOTIFICATION_TITLE = "ddna_notification_title";
     
+    @Deprecated
     static final String START_LAUNCH_INTENT = "ddna_start_launch_intent";
     
     static synchronized Bundle get(Context context) {
@@ -40,6 +42,10 @@ class MetaData {
                                 context.getPackageName(),
                                 PackageManager.GET_META_DATA)
                         .metaData;
+                
+                if (values == null) {
+                    values = Bundle.EMPTY;
+                }
             } catch (PackageManager.NameNotFoundException e) {
                 // will never happen
                 throw new RuntimeException(e);

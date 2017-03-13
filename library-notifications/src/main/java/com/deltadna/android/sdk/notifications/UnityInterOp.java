@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.notifications.example;
+package com.deltadna.android.sdk.notifications;
 
-import android.content.Context;
-
-import com.deltadna.android.sdk.notifications.NotificationFactory;
-import com.deltadna.android.sdk.notifications.NotificationListenerService;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Example of a {@link NotificationListenerService} which changes the look of
- * the notification after a push message is received.
+ * Convenience annotation for marking classes used by the Unity SDK for
+ * inter-op on Android.
+ * <p>
+ * A modification to a public method/field of these classes will generally
+ * indicate a need to also make changes in the Unity SDK.
  */
-public class StyledNotificationListenerService extends NotificationListenerService {
-    
-    @Override
-    protected NotificationFactory createFactory(Context context) {
-        return new StyledNotificationFactory(context);
-    }
-}
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+@interface UnityInterOp {}

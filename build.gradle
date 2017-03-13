@@ -16,8 +16,9 @@
 
 buildscript {
     ext {
-        kotlinVersion = '1.0.3'
-        supportVersion = '23.4.0'
+        kotlinVersion = '1.0.6'
+        supportVersion = '25.1.1'
+        firebaseVersion = '10.2.0'
         
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
@@ -29,16 +30,17 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath 'com.android.tools.build:gradle:2.2.3'
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
         classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.0.8'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
 
 allprojects {
     repositories {
         jcenter()
+        mavenLocal()
     }
 }
 
@@ -61,12 +63,12 @@ subprojects {
     }
     
     android {
-        compileSdkVersion 23
-        buildToolsVersion '24.0.2'
+        compileSdkVersion 25
+        buildToolsVersion '25.0.2'
         
         defaultConfig {
             minSdkVersion 15
-            targetSdkVersion 23
+            targetSdkVersion 25
             
             versionCode 1
             versionName VERSION_NAME
@@ -104,15 +106,16 @@ subprojects {
     
     if (isLibrary) {
         dependencies {
-            testCompile 'com.google.truth:truth:0.29'
-            testCompile 'com.nhaarman:mockito-kotlin:0.5.2'
+            testCompile 'com.google.truth:truth:0.31'
+            testCompile 'com.nhaarman:mockito-kotlin:1.2.0'
             testCompile 'com.squareup.okhttp:mockwebserver:2.7.5'
             testCompile 'junit:junit:4.12'
-            testCompile 'nl.jqno.equalsverifier:equalsverifier:2.1.5'
+            testCompile 'nl.jqno.equalsverifier:equalsverifier:2.2.1'
             testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
             testCompile 'org.json:json:20160810'
-            testCompile 'org.robolectric:robolectric:3.1.2'
+            testCompile 'org.mockito:mockito-core:2.7.4'
+            testCompile 'org.robolectric:robolectric:3.2.2'
         }
     }
     
@@ -128,7 +131,7 @@ subprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.14.1'
+    gradleVersion = '3.3'
 }
 
 task clean(type: Delete) {

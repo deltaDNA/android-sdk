@@ -16,18 +16,15 @@
 
 package com.deltadna.android.sdk.notifications;
 
-import android.content.Intent;
 import android.util.Log;
 
-import com.google.android.gms.iid.InstanceIDListenerService;
+import com.google.firebase.iid.FirebaseInstanceIdService;
 
 /**
- * {@link InstanceIDListenerService} which gets notified when the
- * {@link com.google.android.gms.iid.InstanceID} has been refreshed, resulting
- * in a need to refresh the GCM registration token.
+ * {@link FirebaseInstanceIdService} which gets notified when the registration
+ * token has been updated.
  */
-public final class InstanceIdListenerService
-        extends InstanceIDListenerService {
+public final class InstanceIdListenerService extends FirebaseInstanceIdService {
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
@@ -35,8 +32,7 @@ public final class InstanceIdListenerService
     
     @Override
     public void onTokenRefresh() {
-        Log.d(TAG, "InstanceID token has been updated");
-        
-        startService(new Intent(this, RegistrationIntentService.class));
+        Log.d(TAG, "Registration token has been refreshed");
+        RegistrationTokenFetcher.fetch(this);
     }
 }

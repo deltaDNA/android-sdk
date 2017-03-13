@@ -17,92 +17,131 @@
 package com.deltadna.android.sdk.notifications;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+
+import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Helper class for easily registering/un-registering for/from push
  * notifications.
  */
+@UnityInterOp
 public final class DDNANotifications {
-    
-    /**
-     * Action which will be broadcast over the
-     * {@link android.support.v4.content.LocalBroadcastManager}
-     * when retrieving a registration token from GCM succeeds.
-     * <p>
-     * The token will be included in the {@link Intent} under the
-     * {@link #EXTRA_REGISTRATION_TOKEN} key as a {@link String} value.
-     *
-     * @see #EXTRA_REGISTRATION_TOKEN
-     */
-    public static final String ACTION_TOKEN_RETRIEVAL_SUCCESSFUL =
-            "com.deltadna.android.sdk.notifications.TOKEN_RETRIEVAL_SUCCESSFUL";
-    
-    /**
-     * Action which will be broadcast over the
-     * {@link android.support.v4.content.LocalBroadcastManager}
-     * when retrieving a registration token from GCM fails.
-     * <p>
-     * The reason for the failure will be included in the {@link Intent} under
-     * the {@link #EXTRA_FAILURE_REASON} key as a serialized {@link Throwable}
-     * value.
-     *
-     * @see #EXTRA_FAILURE_REASON
-     */
-    public static final String ACTION_TOKEN_RETRIEVAL_FAILED =
-            "com.deltadna.android.sdk.notifications.TOKEN_RETRIEVAL_FAILED";
-    
-    public static final String EXTRA_REGISTRATION_TOKEN = "token";
-    public static final String EXTRA_FAILURE_REASON = "reason";
-    
-    public static final String EXTRA_PAYLOAD = "payload";
-    public static final String EXTRA_LAUNCH = "launch";
-    
-    /**
-     * {@link IntentFilter} to be used when registering a
-     * {@link android.content.BroadcastReceiver} for listening to both token
-     * retrieval successes and failures.
-     *
-     * @see #ACTION_TOKEN_RETRIEVAL_SUCCESSFUL
-     * @see #ACTION_TOKEN_RETRIEVAL_FAILED
-     */
-    public static final IntentFilter FILTER_TOKEN_RETRIEVAL;
-    static {
-        final IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_TOKEN_RETRIEVAL_SUCCESSFUL);
-        filter.addAction(ACTION_TOKEN_RETRIEVAL_FAILED);
-        
-        FILTER_TOKEN_RETRIEVAL = filter;
-    }
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + DDNANotifications.class.getSimpleName();
+    private static final String NAME = "deltadna-sdk-notifications";
+    private static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
     
     /**
      * Register the client for push notifications.
      * <p>
      * A good time to perform this would be for example when the user enables
      * push notifications from the game's settings, or when a previous
-     * registration attempt fails as notified by
-     * {@link #ACTION_TOKEN_RETRIEVAL_FAILED}.
+     * registration attempt fails as notified by an {@link EventReceiver}.
      * <p>
-     * Method can be safely called from the Unity SDK, but local broadcasts
-     * will not be sent.
+     * This method registers the Firebase Cloud Messaging used by deltaDNA as
+     * the main one.
      *
+     * @param context   the context
+     *
+     * @throws IllegalStateException    if the configuration meta-data entries
+     *                                  are missing from the manifest
+     *
+     * @see #register(Context, boolean)
      * @see DDNA#setRegistrationId(String)
      */
     public static void register(Context context) {
+        register(context, false);
+    }
+    
+    /**
+     * Register the client for push notifications.
+     * <p>
+     * A good time to perform this would be for example when the user enables
+     * push notifications from the game's settings, or when a previous
+     * registration attempt fails as notified by an {@link EventReceiver}.
+     * <p>
+     * If you have multiple Firebase Cloud Messaging senders in your project
+     * then you can use the deltaDNA sender either as a main one or as a
+     * secondary one by setting the {@code secondary} parameter. If you set
+     * {@code secondary} to {@code true} then the default FCM sender will need
+     * to have been initialised beforehand.
+     *
+     * @param context   the context
+     * @param secondary whether the {@link FirebaseApp} instance used for
+     *                  deltaDNA notifications should be registered as a
+     *                  secondary (non-main) instance
+     *
+     * @throws IllegalStateException    if the configuration meta-data entries
+     *                                  are missing from the manifest
+     *
+     * @see DDNA#setRegistrationId(String)
+     */
+    public static void register(final Context context, boolean secondary) {
         Log.d(TAG, "Registering for push notifications");
         
-        context.startService(new Intent(
-                context,
-                RegistrationIntentService.class));
+        final String applicationId;
+        final String senderId;
+        try {
+            final Bundle metaData = MetaData.get(context);
+            
+            applicationId = context.getString(
+                    metaData.getInt(MetaData.APPLICATION_ID));
+            senderId = context.getString(
+                    metaData.getInt(MetaData.SENDER_ID));
+        } catch (final Resources.NotFoundException e) {
+            throw new IllegalStateException(
+                    String.format(
+                            Locale.US,
+                            "Failed to find configuration meta-data, have %s and %s been defined in the manifest?",
+                            MetaData.APPLICATION_ID,
+                            MetaData.SENDER_ID),
+                    e);
+        }
+        
+        synchronized (DDNANotifications.class) {
+            final String name = secondary ? NAME : FirebaseApp.DEFAULT_APP_NAME;
+            
+            boolean found = false;
+            for (FirebaseApp app : FirebaseApp.getApps(context)) {
+                if (app.getName().equals(name)) {
+                    found = true;
+                }
+            }
+            
+            if (!found) {
+                /*
+                 * Running this the first time will force a token refresh, in
+                 * other use cases the service will be invoked when the token
+                 * will need to be refreshed so there is no need to perform
+                 * a forced refresh at this point.
+                 */
+                FirebaseApp.initializeApp(
+                        context,
+                        new FirebaseOptions.Builder()
+                                .setApplicationId(applicationId)
+                                .setGcmSenderId(senderId)
+                                .build(),
+                        name);
+            } else {
+                EXECUTOR.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        RegistrationTokenFetcher.fetch(context);
+                    }
+                });
+            }
+        }
     }
     
     /**
@@ -146,19 +185,6 @@ public final class DDNANotifications {
         } else {
             DDNA.instance().recordNotificationOpened(launch, payload);
         }
-    }
-    
-    /**
-     * Notifies the SDK that a push notification has been dismissed by the user.
-     *
-     * @deprecated  as of version 4.1.6, replaced by
-     *              {@link #recordNotificationDismissed(Bundle)}
-     */
-    @Deprecated
-    public static void recordNotificationDismissed() {
-        if (!UnityForwarder.isPresent()) {
-            DDNA.instance().recordNotificationDismissed();
-        } // `else` Unity doesn't have this method
     }
     
     /**

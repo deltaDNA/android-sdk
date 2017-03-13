@@ -25,10 +25,10 @@ import android.util.Log;
 import com.deltadna.android.sdk.exceptions.NotInitialisedException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.EngageArchive;
+import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
-import com.deltadna.android.sdk.listeners.ImageMessageListener;
 import com.deltadna.android.sdk.listeners.SessionListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
@@ -308,73 +308,6 @@ public final class DDNA {
     }
     
     /**
-     * Records an event with Collect.
-     *
-     * @param name      the name of the event
-     * @param params    the parameters of the event, may be {@code null}
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @throws IllegalArgumentException if the {@code name} is null or empty
-     *
-     * @deprecated as of version 4, replaced by {@link #recordEvent(Event)}
-     */
-    @Deprecated
-    public DDNA recordEvent(String name, @Nullable Params params) {
-        return recordEvent((params != null)
-                ? new Event(name, params)
-                : new Event(name));
-    }
-    
-    /**
-     * Records an event with Collect.
-     *
-     * @param name      name of the event
-     * @param params    parameters of the event, may be {@code null}
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @throws IllegalArgumentException if the {@code name} is null or empty
-     *
-     * @deprecated as of version 4, replaced by {@link #recordEvent(Event)}
-     */
-    @Deprecated
-    public DDNA recordEvent(String name, @Nullable JSONObject params) {
-        return recordEvent((params != null)
-                ? new Event(name, new Params(params))
-                : new Event(name));
-    }
-    
-    /**
-     * Record when a push notification has been opened.
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @deprecated  as of version 4.1.2, replaced by
-     *              {@link #recordNotificationOpened(boolean)}
-     */
-    @Deprecated
-    public DDNA recordNotificationOpened() {
-        return recordNotificationOpened(true);
-    }
-    
-    /**
-     * Record when a push notification has been opened.
-     *
-     * @param launch whether the notification launched the app
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @deprecated  as of version 4.1.6, replaced by
-     *              {@link #recordNotificationOpened(boolean, Bundle)}
-     */
-    @Deprecated
-    public DDNA recordNotificationOpened(boolean launch) {
-        return recordEvent(new Event("notificationOpened")
-                .putParam("notificationLaunch", launch));
-    }
-    
-    /**
      * Record when a push notification has been opened.
      *
      * @param launch    whether the notification launched the app
@@ -411,20 +344,6 @@ public final class DDNA {
         event.putParam("notificationLaunch", launch);
         
         return recordEvent(event);
-    }
-    
-    /**
-     * Record when a push notification has been dismissed.
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @deprecated  as of version 4.1.6, replaced by
-     *              {@link #recordNotificationDismissed(Bundle)}
-     */
-    @Deprecated
-    public DDNA recordNotificationDismissed() {
-        return recordEvent(new Event("notificationOpened")
-                .putParam("notificationLaunch", false));
     }
     
     /**
@@ -494,115 +413,6 @@ public final class DDNA {
                 ENGAGE_API_VERSION, SDK_VERSION);
         
         return this;
-    }
-    
-    /**
-     * Makes an Engage request.
-     * <p>
-     * The result will be passed into the provided {@code listener} through
-     * one of the callback methods on the main UI thread, even if this method
-     * was called from a background thread.
-     *
-     * @param decisionPoint decision point for the request, as defined
-     *                      in the Portal
-     * @param params        additional parameters for the engagement, may be
-     *                      {@code null}
-     * @param listener      listener for the result
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @throws IllegalArgumentException if the {@code decisionPoint} is null
-     *                                  or empty
-     *
-     * @deprecated  as of version 4, replaced by
-     *              {@link #requestEngagement(Engagement, EngageListener)}
-     */
-    @Deprecated
-    public DDNA requestEngagement(
-            String decisionPoint,
-            @Nullable JSONObject params,
-            EngageListener<Engagement> listener) {
-        
-        return requestEngagement(decisionPoint, null, params, listener);
-    }
-    
-    /**
-     * @param decisionPoint decision point for the request, as defined
-     *                      in the Portal
-     * @param flavour       flavour for the decision point, may be {@code null}
-     * @param params        additional parameters for the engagement, may be
-     *                      {@code null}
-     * @param listener      listener for the result
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @throws IllegalArgumentException if the {@code decisionPoint} is null
-     *                                  or empty
-     *
-     * @deprecated  as of version 4, replaced by
-     *              {@link #requestEngagement(Engagement, EngageListener)}
-     */
-    @Deprecated
-    public DDNA requestEngagement(
-            String decisionPoint,
-            @Nullable String flavour,
-            @Nullable JSONObject params,
-            EngageListener<Engagement> listener) {
-        
-        return requestEngagement(
-                (params != null)
-                        ? new Engagement(decisionPoint, flavour, new Params(params))
-                        : new Engagement(decisionPoint, flavour),
-                listener);
-    }
-    
-    /**
-     * Makes a simple Image Message request.
-     * <p>
-     * The result will be passed into the provided {@code listener} through
-     * one of the callback methods on the main UI thread, even if this method
-     * was called from a background thread.
-     *
-     * @param decisionPoint the decision point for the engagement
-     * @param listener      listener for the result
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @throws IllegalArgumentException if the {@code decisionPoint} is null
-     *                                  or empty
-     *
-     * @deprecated  as of version 4.1, replaced by
-     *              {@link #requestEngagement(Engagement, EngageListener)}
-     */
-    @Deprecated
-    public DDNA requestImageMessage(
-            String decisionPoint,
-            ImageMessageListener listener) {
-        
-        return requestImageMessage(new Engagement(decisionPoint), listener);
-    }
-    
-    /**
-     * Makes an Image Message request.
-     * <p>
-     * The result will be passed into the provided {@code listener} through
-     * one of the callback methods on the main UI thread, even if this method
-     * was called from a background thread.
-     *
-     * @param engagement    the engagement
-     * @param listener      listener for the result
-     *
-     * @return this {@link DDNA} instance
-     *
-     * @deprecated  as of version 4.1, replaced by
-     *              {@link #requestEngagement(Engagement, EngageListener)}
-     */
-    @Deprecated
-    public DDNA requestImageMessage(
-            Engagement engagement,
-            ImageMessageListener listener) {
-        
-        return requestEngagement(engagement, listener);
     }
     
     /**
@@ -697,10 +507,14 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA setRegistrationId(@Nullable String registrationId) {
-        preferences.setRegistrationId(registrationId);
-        return recordEvent(new Event("notificationServices").putParam(
-                "androidRegistrationID",
-                (registrationId == null) ? "" : registrationId));
+        if (!Objects.equals(registrationId, preferences.getRegistrationId())) {
+            preferences.setRegistrationId(registrationId);
+            return recordEvent(new Event("notificationServices").putParam(
+                    "androidRegistrationID",
+                    (registrationId == null) ? "" : registrationId));
+        } else {
+            return this;
+        }
     }
     
     /**
@@ -710,7 +524,11 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      */
     public DDNA clearRegistrationId() {
-        return setRegistrationId(null);
+        if (!TextUtils.isEmpty(getRegistrationId())) {
+            setRegistrationId(null);
+        }
+        
+        return this;
     }
     
     /**

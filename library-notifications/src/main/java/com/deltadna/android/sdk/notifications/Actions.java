@@ -21,10 +21,20 @@ package com.deltadna.android.sdk.notifications;
  */
 class Actions {
     
-    static final String NOTIFICATION_OPENED =
-            "com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED";
-    static final String NOTIFICATION_DISMISSED =
-            "com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED";
+    public static final String PREFIX = "com.deltadna.android.sdk.notifications.";
+    public static final String REGISTERED = PREFIX + "REGISTERED";
+    public static final String REGISTRATION_FAILED = PREFIX + "REGISTRATION_FAILED";
+    public static final String MESSAGE_RECEIVED = PREFIX + "MESSAGE_RECEIVED";
+    public static final String NOTIFICATION_POSTED = PREFIX + "NOTIFICATION_POSTED";
+    public static final String NOTIFICATION_OPENED = PREFIX + "NOTIFICATION_OPENED";
+    public static final String NOTIFICATION_DISMISSED = PREFIX + "NOTIFICATION_DISMISSED";
+    
+    public static final String REGISTRATION_FAILURE_REASON = "registration_failure_reason";
+    public static final String REGISTRATION_TOKEN = "registration_token";
+    public static final String PUSH_MESSAGE = "push_message";
+    public static final String NOTIFICATION_INFO = "notification_info";
+    
+    static final String LAUNCH = "launch";
     
     private Actions() {}
 }

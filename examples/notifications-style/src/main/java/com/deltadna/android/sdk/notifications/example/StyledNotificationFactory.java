@@ -17,18 +17,29 @@
 package com.deltadna.android.sdk.notifications.example;
 
 import android.content.Context;
+import android.support.v4.app.NotificationCompat;
 
 import com.deltadna.android.sdk.notifications.NotificationFactory;
-import com.deltadna.android.sdk.notifications.NotificationListenerService;
+import com.deltadna.android.sdk.notifications.PushMessage;
 
 /**
- * Example of a {@link NotificationListenerService} which changes the look of
- * the notification after a push message is received.
+ * Example of a {@link NotificationFactory} which changes the look of the
+ * notification after a push message is received.
  */
-public class StyledNotificationListenerService extends NotificationListenerService {
+public class StyledNotificationFactory extends NotificationFactory {
+    
+    public StyledNotificationFactory(Context context) {
+        super(context);
+    }
     
     @Override
-    protected NotificationFactory createFactory(Context context) {
-        return new StyledNotificationFactory(context);
+    public NotificationCompat.Builder configure(
+            NotificationCompat.Builder builder,
+            PushMessage message) {
+        
+        return super.configure(builder, message)
+                .setSmallIcon(R.drawable.ic_stat_logo)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(message.message));
     }
 }

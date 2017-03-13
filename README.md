@@ -43,7 +43,7 @@ allprojects {
 ```
 In your app's build script
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.2.7'
+compile 'com.deltadna.android:deltadna-sdk:4.3.0'
 ```
 
 ## Initialising
@@ -268,7 +268,7 @@ If your application already handles retrieving of the id then you can set it on 
 ```java
 DDNA.instance().setRegistrationId("your_id");
 ```
-You may however also make use of the [deltadna-sdk-notifications](library-notifications) addon which requires less work on your side for refreshing the GCM id/token.
+You may however also make use of the [deltadna-sdk-notifications](library-notifications) addon which requires less work on your side for refreshing the registration id/token.
 
 If you would like to unregister the client from receiving push notifications then you should call
 ```Java
@@ -291,6 +291,7 @@ Can be found [here](CHANGELOG.md).
 ## Migrations
 * [Version 4.0](docs/migrations/4.0.md)
 * [Version 4.1](docs/migrations/4.1.md)
+* [Version 4.3](docs/migrations/4.3.md)
 
 ## License
 The sources are available under the Apache 2.0 license.

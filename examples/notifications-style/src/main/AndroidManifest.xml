@@ -20,13 +20,6 @@ limitations under the License.
     xmlns:tools="http://schemas.android.com/tools"
     package="com.deltadna.android.sdk.notifications.example">
     
-    <!-- manually added -->
-    <permission
-        android:name="com.deltadna.android.sdk.notifications.example.permission.C2D_MESSAGE"
-        android:protectionLevel="signature"/>
-    <uses-permission
-        android:name="com.deltadna.android.sdk.notifications.example.permission.C2D_MESSAGE"/>
-    
     <application
         android:name=".ExampleApplication"
         android:icon="@mipmap/ic_launcher"
@@ -47,36 +40,19 @@ limitations under the License.
         </activity>
         
         <!-- manually added -->
-        <receiver
-            android:name="com.google.android.gms.gcm.GcmReceiver"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.SEND">
-            
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
-                <category android:name="com.deltadna.android.sdk.notifications.example"/>
-            </intent-filter>
-        </receiver>
-        
-        <!-- manually added -->
         <service
-            android:name="com.deltadna.android.sdk.notifications.example.StyledNotificationListenerService"
-            android:exported="false">
+            android:name="com.deltadna.android.sdk.notifications.example.StyledNotificationListenerService">
             
             <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
         
-        <!-- manually added -->
+        <meta-data
+            android:name="ddna_application_id"
+            android:resource="@string/application_id"/>
         <meta-data
             android:name="ddna_sender_id"
             android:resource="@string/sender_id"/>
-        <meta-data
-            android:name="ddna_notification_icon"
-            android:value="ic_stat_logo"/>
-        <meta-data
-            android:name="ddna_start_launch_intent"
-            android:value="true"/>
     </application>
 </manifest>

@@ -18,92 +18,72 @@ package com.deltadna.android.sdk.notifications;
 
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.annotation.DrawableRes;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.android.gms.gcm.GcmListenerService;
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * {@link GcmListenerService} which listens to incoming downstream messages
- * from GCM.
+ * {@link FirebaseMessagingService} which listens to incoming downstream
+ * messages and posts them on the UI.
  * <p>
  * The default implementation posts a notification on the
- * {@link NotificationManager} with id {@link #NOTIFICATION_ID}, using 'title'
+ * {@link NotificationManager} with the id of the campaign, using 'title'
  * and 'alert' values from the downstream message as the notification's title
- * and message. If the title has not been defined in the message then the
- * application's name will be used instead. Upon selection the notification
- * will open the launch {@code Intent} of your game. Default behaviour can be
- * customized, with more details further on.
+ * and message respectively. If the title has not been defined in the message
+ * then the application's name will be used instead. Upon selection the
+ * notification will open the launch {@code Intent} of your game. Default
+ * behaviour can be customized, with more details further on.
  * <p>
  * The following entry will also need to be added to the manifest file:
- * <pre><code>
- * {@literal<}service
- *     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"
- *     android:exported="false"{@literal>}
+ * <pre>{@code
+ * <service
+ *     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService">
  *     
- *     {@literal<}intent-filter{@literal>}
- *         {@literal<}action android:name="com.google.android.c2dm.intent.RECEIVE"/{@literal>}
- *     {@literal<}/intent-filter{@literal>}
- * {@literal<}/service{@literal>}
- * </code></pre>
- * <p>
- * Behaviour can be customized by overriding {@link #createNotification(Bundle)}
- * and/or {@link #notify(Notification)} at runtime using your own subclass, or
- * by setting either of the following {@code meta-data} attributes inside the
- * {@code application} tag of your manifest file:
- * <pre><code>
- * {@literal<}meta-data
- *     android:name="ddna_notification_title"
- *     android:resource="@string/your_title_resource"/{@literal>}
- * 
- * {@literal<}meta-data
- *     android:name="ddna_notification_title"
- *     android:value="your-literal-title"/{@literal>}
- * 
- * {@literal<}meta-data
- *     android:name="ddna_notification_icon"
- *     android:value="your_icon_resource_name"/{@literal>}
- * 
- * {@literal<}meta-data
- *     android:name="ddna_start_launch_intent"
- *     android:value="false"/{@literal>}
- * </code></pre>
+ *     <intent-filter>
+ *         <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+ *     </intent-filter>
+ * </service>
+ * }</pre>
+ * The look of the notification can be customised by overriding
+ * {@link #createFactory(Context)} and extending the {@link NotificationFactory}
+ * to change the default behaviour.
  */
-public class NotificationListenerService extends GcmListenerService {
-
+public class NotificationListenerService extends FirebaseMessagingService {
+    
+    protected static final String NOTIFICATION_TAG =
+            "com.deltadna.android.sdk.notifications";
+    
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + NotificationListenerService.class.getSimpleName();
-    private static final String PLATFORM_TITLE = "title";
-    private static final String PLATFORM_ALERT = "alert";
     
-    /**
-     * Default id used by the service for posting notifications on the
-     * {@link NotificationManager}.
-     */
-    protected static final int NOTIFICATION_ID = 0;
-    
-    protected NotificationManager manager;
     protected Bundle metaData;
+    protected NotificationManager manager;
+    protected NotificationFactory factory;
     
     @Override
     public void onCreate() {
         super.onCreate();
         
+        metaData = MetaData.get(this);
         manager = (NotificationManager) getSystemService(
                 NOTIFICATION_SERVICE);
-        metaData = MetaData.get(this);
+        factory = createFactory(this);
     }
     
     @Override
-    public void onMessageReceived(String from, Bundle data) {
+    public void onMessageReceived(RemoteMessage message) {
+        final String from = message.getFrom();
+        final Map<String, String> data = message.getData();
+        
         Log.d(  TAG, String.format(
                 Locale.US,
                 "Received message %s from %s",
@@ -117,129 +97,50 @@ public class NotificationListenerService extends GcmListenerService {
         } else if (data == null || data.isEmpty()) {
             Log.w(TAG, "Message data is null or empty");
         } else {
-            notify(createNotification(data).build());
+            final PushMessage pushMessage = new PushMessage(
+                    this,
+                    message.getFrom(),
+                    message.getData());
+            sendBroadcast(new Intent(Actions.MESSAGE_RECEIVED).putExtra(
+                    Actions.PUSH_MESSAGE,
+                    pushMessage));
+            
+            final int id = (int) pushMessage.id;
+            final NotificationInfo info = new NotificationInfo(id, pushMessage);
+            
+            final Notification notification = factory.create(
+                    factory.configure(
+                            new NotificationCompat.Builder(this),
+                            pushMessage),
+                    info);
+            if (notification != null) {
+                notify(id, notification);
+                sendBroadcast(new Intent(Actions.NOTIFICATION_POSTED).putExtra(
+                        Actions.NOTIFICATION_INFO,
+                        info));
+            }
         }
     }
     
     /**
-     * Creates a {@link android.support.v4.app.NotificationCompat.Builder}
-     * whose built result will be posted on the {@link NotificationManager}.
+     * Creates the notification factory to be used for creating notifications
+     * when a push message is received.
      *
-     * Implementations which call
-     * {@link NotificationCompat.Builder#setContentIntent(PendingIntent)}
-     * or
-     * {@link NotificationCompat.Builder#setDeleteIntent(PendingIntent)}
-     * on the {@link NotificationCompat.Builder} and thus override the default
-     * behaviour should notify the SDK that the push notification has been
-     * opened or dismissed respectively.
+     * @param context   the context
      *
-     * @param data  the data from the message
-     *
-     * @return      configured notification builder
-     *
-     * @see NotificationInteractionReceiver
+     * @return          notification factory
      */
-    protected NotificationCompat.Builder createNotification(Bundle data) {
-        final String title = getTitle(data);
-        final String alert;
-        if (data.containsKey(PLATFORM_ALERT)) {
-            alert = data.getString(PLATFORM_ALERT);
-        } else {
-            Log.w(TAG, "Missing 'alert' key in message");
-            alert = "Missing 'alert' key";
-        }
-        
-        final NotificationCompat.Builder builder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(getIcon())
-                        .setContentTitle(title)
-                        .setContentText(alert)
-                        .setAutoCancel(true);
-        
-        // to make the behaviour consistent with iOS on Unity
-        final boolean backgrounded = !Utils.inForeground(this);
-        if (!backgrounded) {
-            Log.d(TAG, "Notifying SDK of notification opening");
-            DDNANotifications.recordNotificationOpened(data, false);
-        }
-        
-        builder.setContentIntent(PendingIntent.getBroadcast(
-                this,
-                0,
-                new Intent(Actions.NOTIFICATION_OPENED)
-                        .putExtra(DDNANotifications.EXTRA_PAYLOAD, data)
-                        .putExtra(DDNANotifications.EXTRA_LAUNCH, backgrounded),
-                PendingIntent.FLAG_ONE_SHOT));
-        builder.setDeleteIntent(PendingIntent.getBroadcast(
-                this,
-                0,
-                new Intent(Actions.NOTIFICATION_DISMISSED)
-                        .putExtra(DDNANotifications.EXTRA_PAYLOAD, data),
-                PendingIntent.FLAG_ONE_SHOT));
-        
-        return builder;
+    protected NotificationFactory createFactory(Context context) {
+        return new NotificationFactory(context);
     }
     
     /**
      * Posts a {@link Notification} on the {@link NotificationManager}.
      *
-     * @param notification the notification
+     * @param id            the id
+     * @param notification  the notification
      */
-    protected void notify(Notification notification) {
-        manager.notify(NOTIFICATION_ID, notification);
-    }
-    
-    private String getTitle(Bundle data) {
-        if (data.containsKey(PLATFORM_TITLE)) {
-            return data.getString(PLATFORM_TITLE);
-        } else if (metaData.containsKey(MetaData.NOTIFICATION_TITLE)) {
-            final Object value = metaData.get(MetaData.NOTIFICATION_TITLE);
-            if (value instanceof String) {
-                return (String) value;
-            } else if (value instanceof Integer) {
-                try {
-                    return getString((Integer) value);
-                } catch (Resources.NotFoundException e) {
-                    throw new RuntimeException(
-                            "Failed to find string resource for "
-                                    + MetaData.NOTIFICATION_TITLE,
-                            e);
-                }
-            } else {
-                throw new RuntimeException(String.format(
-                        Locale.US,
-                        "Found %s for %s, only string or string resource allowed",
-                        value,
-                        MetaData.NOTIFICATION_TITLE));
-            }
-        } else {
-            return String.valueOf(getPackageManager().getApplicationLabel(
-                    getApplicationInfo()));
-        }
-    }
-    
-    @DrawableRes
-    private int getIcon() {
-        if (metaData.containsKey(MetaData.NOTIFICATION_ICON)) {
-            try {
-                final int value = getResources().getIdentifier(
-                        metaData.getString(MetaData.NOTIFICATION_ICON),
-                        "drawable",
-                        getPackageName());
-                
-                if (value == 0) {
-                    throw new Resources.NotFoundException();
-                } else {
-                    return value;
-                }
-            } catch (Resources.NotFoundException e) {
-                throw new RuntimeException(
-                        "Failed to find drawable resource for "
-                                + MetaData.NOTIFICATION_ICON,
-                        e);
-            }
-        } else {
-            return R.drawable.ddna_ic_stat_logo;
-        }
+    protected void notify(long id, Notification notification) {
+        manager.notify(NOTIFICATION_TAG, (int) id, notification);
     }
 }

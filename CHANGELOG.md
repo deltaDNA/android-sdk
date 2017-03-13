@@ -1,5 +1,14 @@
 # Change Log
 
+## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (2017-03-13)
+Updated notifications from Google Messaging to Firebase Messaging.  
+Added broadcast receiver for listening to notification events.  
+Added notification factory for customising notifications.  
+Fixed notifications from campaigns overwriting other notifications.  
+Fixed application icon not being picked up for notifications.  
+Deprecated some manifest properties for customising notifications.  
+Removed deprecated methods and classes.  
+
 ## [4.2.7](https://github.com/deltaDNA/android-sdk/releases/tag/4.2.7) (2017-01-16)
 Fixed campaign and cohort ids not being picked up from a notification.  
 

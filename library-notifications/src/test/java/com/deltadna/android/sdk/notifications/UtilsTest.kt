@@ -54,7 +54,17 @@ class UtilsTest {
     }
     
     @Test
-    fun convert() {
+    fun convertMap() {
+        // Bundle doesn't implement equals() properly
+        assertThat(Utils.convert(mapOf("a" to "1", "b" to "2")).toString())
+                .isEqualTo(Bundle(2).apply {
+                    putString("a", "1")
+                    putString("b", "2")
+                }.toString())
+    }
+    
+    @Test
+    fun convertBundle() {
         with(Bundle(2)) {
             putBoolean("1", true)
             putString("2", "string")
