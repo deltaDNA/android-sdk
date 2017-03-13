@@ -157,7 +157,7 @@ public class PushMessage implements Serializable {
     /**
      * Extracts the title from a push payload to be used for posting a
      * notification, falls back to looking for the meta data in the manifest,
-     * finally using the application's icon.
+     * finally using the application's title.
      *
      * @param context   the context
      * @param data  the notification payload
