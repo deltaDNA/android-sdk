@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.3.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.1) (YYYY-MM-DD)
+Fixed buttons with links not working in image messages.  
+
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (2017-03-13)
 Updated notifications from Google Messaging to Firebase Messaging.  
 Added broadcast receiver for listening to notification events.  

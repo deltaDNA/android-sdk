@@ -25,5 +25,7 @@ public interface ImageMessageResultListener {
     
     void onAction(String value, String params);
     
+    void onLink(String value, String params);
+    
     void onCancelled();
 }
