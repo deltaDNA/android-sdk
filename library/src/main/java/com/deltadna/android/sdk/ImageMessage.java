@@ -45,6 +45,7 @@ public final class ImageMessage implements Serializable {
     
     static final String ACTION_DISMISS = "dismiss";
     static final String ACTION_ACTION = "action";
+    static final String ACTION_LINK = "link";
     
     private static final String ALIGN_CENTER = "center";
     private static final String ALIGN_RIGHT = "right";
