@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.3.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.1) (YYYY-MM-DD)
+## [4.3.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.1) (2017-05-03)
 Fixed buttons with links not working in image messages.  
 
 ## [4.3.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.0) (2017-03-13)
