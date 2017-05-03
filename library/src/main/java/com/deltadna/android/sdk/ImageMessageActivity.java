@@ -43,6 +43,8 @@ import java.util.Iterator;
  */
 public final class ImageMessageActivity extends Activity {
     
+    private enum Action { ACTION, LINK }
+    
     private static final String EXTRA_IMG_MSG = "img_msg";
     private static final String EXTRA_VALUE = "value";
     private static final String EXTRA_PARAMS = "params";
@@ -95,6 +97,19 @@ public final class ImageMessageActivity extends Activity {
         if (action != null) {
             if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
                 final Intent intent = new Intent();
+                intent.setAction(Action.ACTION.name());
+                intent.putExtra(EXTRA_VALUE, action.value);
+                if (imageMessage.parameters() != null) {
+                    intent.putExtra(
+                            EXTRA_PARAMS,
+                            imageMessage.parameters().toString());
+                }
+                
+                setResult(Activity.RESULT_OK, intent);
+                finish();
+            } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_LINK)) {
+                final Intent intent = new Intent();
+                intent.setAction(Action.LINK.name());
                 intent.putExtra(EXTRA_VALUE, action.value);
                 if (imageMessage.parameters() != null) {
                     intent.putExtra(
@@ -126,16 +141,27 @@ public final class ImageMessageActivity extends Activity {
     public static void handleResult(
             int resultCode,
             Intent data,
-            ImageMessageResultListener action) {
+            ImageMessageResultListener callback) {
         
         if (resultCode == RESULT_OK) {
+            final Action action = Action.valueOf(data.getAction());
             final Bundle extras = data.getExtras();
             
-            action.onAction(
-                    extras.getString(EXTRA_VALUE),
-                    extras.getString(EXTRA_PARAMS));
+            switch (action) {
+                case ACTION:
+                    callback.onAction(
+                            extras.getString(EXTRA_VALUE),
+                            extras.getString(EXTRA_PARAMS));
+                    break;
+                
+                case LINK:
+                    callback.onLink(
+                            extras.getString(EXTRA_VALUE),
+                            extras.getString(EXTRA_PARAMS));
+                    break;
+            }
         } else if (resultCode == RESULT_CANCELED) {
-            action.onCancelled();
+            callback.onCancelled();
         }
     }
     

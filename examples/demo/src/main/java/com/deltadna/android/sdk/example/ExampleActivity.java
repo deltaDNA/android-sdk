@@ -82,6 +82,14 @@ public class ExampleActivity extends AppCompatActivity {
                         }
                         
                         @Override
+                        public void onLink(String value, String params) {
+                            showImageMessageDialog(getString(
+                                    R.string.image_message_link,
+                                    value,
+                                    params));
+                        }
+                        
+                        @Override
                         public void onCancelled() {
                             showImageMessageDialog(getString(
                                     R.string.image_message_cancelled));

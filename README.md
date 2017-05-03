@@ -43,7 +43,7 @@ allprojects {
 ```
 In your app's build script
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.3.0'
+compile 'com.deltadna.android:deltadna-sdk:4.3.1'
 ```
 
 ## Initialising
@@ -249,9 +249,13 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
                 new ImageMessageResultListener() {
                     @Override
                     public void onAction(String value, String params) {
-                        // act on value/params
+                        // act on action button with value/params
                     }
-
+                    
+                    public void onLink(String value, String params) {
+                        // act on link button with value/params
+                    }
+                    
                     @Override
                     public void onCancelled() {
                         // act on cancellation
