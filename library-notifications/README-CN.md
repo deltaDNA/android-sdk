@@ -13,9 +13,10 @@
 * [整合](#整合)
 * [注册](#注册)
 * [高级](#高级)
- * [通知](#通知)
- * [Token检索](#Token检索)
- * [防反编译](#防反编译)
+ * [样式和行为](#样式和行为)
+  * [Unity](#unity)
+ * [事件](#事件)
+ * [防反编译（ProGuard）](#防反编译（ProGuard）)
 * [常见问题解答](#常见问题解答)
 * [更新日志](#更新日志)
 * [授权](#授权)
@@ -23,7 +24,7 @@
 ## 概述
 这是一个deltaDNA Android SDK的附加模块，可以很容易的将推送通知功能整合到一个项目中。
 
-当发送一个推送通知到客户端时，这个程序将展示来自平台的`Alert`区域的通知消息并将应用的名字作为标题，除非`title`密钥下的一个值已经被添加到推送消息的装置中。一旦这个通知被用户触发
+当发送一个推送通知到客户端时，这个程序将展示来自平台的`alert`区域的通知消息并将应用的名字作为标题，除非`title`密钥下的一个值已经被添加到推送消息的装置中。当用户点击这个通知后，此模块将通过SDK发送适当的事件。
 
 更多关于整合和定制的细节可以在这个文档中进一步找到。
 
@@ -45,36 +46,10 @@ compile 'com.deltadna.android:deltadna-sdk-notifications:4.4.0-SNAPSHOT'
 ```
 
 ## 整合
-当你将这个SDK和这个通知插件添加到你的项目后，你将需要添加如下两个权限（permission）到你的`AndroidManifest.xml`文件的`manifest`部分
-```xml
-<permission
-    android:name="your.package.name.permission.C2D_MESSAGE"
-    android:protectionLevel="signature"/>
-<uses-permission
-    android:name="your.package.name.permission.C2D_MESSAGE"/>
-```
-其中`your.package.name`需要用你的应用程序的包名替代。
-
-下一步是将如下的定义添加到`application`中
-```xml
-<receiver
-    android:name="com.google.android.gms.gcm.GcmReceiver"
-    android:exported="true"
-    android:permission="com.google.android.c2dm.permission.SEND">
-    
-    <intent-filter>
-        <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
-        <category android:name="your.package.name"/>
-    </intent-filter>
-</receiver>
-```
-其中`your.package.name`需要用你的应用程序的包名替代。
-
-现在你将需要将[`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java)添加到上一步骤的同一个元素层级
+当你在你的项目中添加了这个SDK和通知插件后，你将需要在`application`部分添加一个[`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java)定义
 ```xml
 <service
-    android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"
-    android:exported="false">
+    android:name="com.deltadna.android.sdk.notifications.NotificationListenerService">
     
     <intent-filter>
         <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
@@ -83,72 +58,63 @@ compile 'com.deltadna.android:deltadna-sdk-notifications:4.4.0-SNAPSHOT'
 ```
 上述的定义可以由这个库提供。这个服务非常重要，因为其需要在平台发出推送消息后在用户界面显示通知，例如我们可以定制其行为。
 
-最后一步是添加你的发送者ID（也就是从Google Developer Console获得的项目编号）到这个应用程序的字符串资源。并在清单的`application`部分添加一个参考
+最后一步是从Firebase控制面板添加你的应用（Application）和发件人ID（Sender IDs）到清单（manifest）文件。如果你的应用已经设置为使用Google开发者控制面板，那么这时你可以按照[此处](https://firebase.google.com/support/guides/google-android#migrate_your_console_project)的技术指导轻松的迁移这个项目到Firebase。
 ```xml
-<meta-data
-    android:name="ddna_sender_id"
-    android:resource="@string/sender_id"/>
+<application ...>
+    ...
+    
+    <meta-data
+        android:name="ddna_application_id"
+        android:resource="@string/application_id"/>
+    <meta-data
+        android:name="ddna_sender_id"
+        android:resource="@string/sender_id"/>
+</application>
 ```
 
-你可以随时参考[这里的](../examples/notifications)案例项目。
+你可以随时参考[这里](../examples/notifications)的案例项目。
 
 ## 注册
-为了通过这个平台给推送通知注册客户端，`register()`方法需要被从[`DDNANotifications`](src/main/java/com/deltadna/android/sdk/notifications/DDNANotifications.java)调用。这将初始化一个请求来从GCM搜索一个注册Token，并将其发送到deltaDNA的服务器。请注意后者将只在`DDNA.startSdk()`被调用时发生。例如如果应用程序运行时这个注册Token被搜索到，当这个应用程序将再次开始时这个新的Token将被发送到服务器，因此发送通知到客户端将不会发生直至上述事件发生以后。
+为了通过这个平台给推送通知注册客户端，`register()`方法需要被从[`DDNANotifications`](src/main/java/com/deltadna/android/sdk/notifications/DDNANotifications.java)调用。这将初始化一个请求来从GCM搜索一个注册Token，并将其发送到deltaDNA的服务器。
 
-例如，一个调用`register()`的好的时机将是当用户为其应用程序在设置中启用通知或者一个之前的尝试搜索Token失败时（更多的细节可以从[这里](#token-retrieval)找到）。
+例如，一个调用`register()`的好的时机将是当用户为其应用程序在设置中启用通知或者一个之前的尝试搜索Token失败时。
 
-也可以通过从`DDNANotifications`调用`unregister()`注销推送通知到客户端。
+也可以通过从DDNANotifications调用unregister()注销推送通知到客户端。如果你想要稍后注册，那么应该调用`register()`。
 
 ## 高级
-### 通知
-默认`NotificationListenerService`将为`title`键的值查询推送消息的载荷。如果没有，那么应用程序的名称将被用于取代通知的标题。
+### 样式和行为
+如果你想要改变通知的样式，例如使用可扩展的文本，那么可以扩展[`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java)以修改默认的行为。
 
-自定义这个行为的最简单方式是在`application`部分的清单文件设置`ddna_notification_title` `meta-data`属性
+一个例子可以从[这里](../examples/notifications-style/src/main/java/com/deltadna/android/sdk/notifications/example/StyledNotificationListenerService.java)找到。你还将需要改变清单（manifest）文件中的`service`定义以指向新的类。
+
+#### Unity
+改变Unity上的样式略微复杂一些，但是下面的步骤描述了如何实现这一点；
+1.  你将需要导入（checkout）[android-sdk](https://github.com/deltaDNA/android-sdk)项目并在Android Studio中打开它。确保你已经下载了所有需要的依赖，从而能够构建这个项目。
+2.  导入你需要的项目版本从而匹配在deltaDNA Unity SDK中使用的版本。你可以通过跳转进入`Assets/DeltaDNA/Plugins/Android`查找以找出`deltadna-sdk-notifications-*.aar`文件的版本。例如，如果在这个路径下的文件被命名为`deltadna-sdk-notifications-4.2.3.aar`，那么你将需要在`android-sdk`项目中执行`git checkout 4.2.3`。
+3.  现在你可以对[`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java)类进行修改，直接进行或者创建一个新的从其派生出的类并覆盖适当的方法。
+4.  更改以后，你可以通过从项目的跟目录运行`./gradlew clean build check`构建这个SDK。一旦成功构建，新的ARR就可以从`library-notifications/build/outputs/aar`（确保使用发行版本）复制到`Assets/DeltaDNA/Plugins/Android`以替代已有的AAR。如果你已经在一个新的类中做出了更改，那么你将还需要在通知配置UI为你的Unity项目更改*Listener Service*入口，以使用你的新替换的类。
+
+### 事件
+这个模块发送一些与注册推送通知，推送它们到UI和在其上面监听用户交互相关的事件。你可以通过扩展[`EventReceiver`](src/main/java/com/deltadna/android/sdk/notifications/EventReceiver.java)并覆盖所需的方法来监听这些事件。
+
+你还需要在你应用的清单（manifest）文件注册你的接收器，例如：
 ```xml
-<meta-data
-    android:name="ddna_notification_title"
-    android:resource="@string/notification_title"/>
-```
-
-用一个相似的方式，这个被显示的图标可以通过设置`ddna_notification_icon`属性定制
-```xml
-<meta-data
-    android:name="ddna_notification_icon"
-    android:value="ic_stat_logo"/>
-```
-值得注意的是由于Android里面的一个限制，这时不支持使用可拉伸的资源。因此上述的例子`ic_stat_logo`事实上将在运行时被以`@drawable/ic_stat_logo`的方式解决。如果没有设置，那么一个默认的图片将被库使用。
-
-最后，在默认情况下，通知将启用被定义为应用程序启用意图的活动。这个行为可以被禁用，通过
-```xml
-<meta-data
-    android:name="ddna_start_launch_intent"
-    android:value="false"/>
-```
-
-如果通知的属性需要在运行时被动态改变，那么`NotificationListenerService`可以被扩展，`createNotification`或`notify`方法将被覆盖。在这种情况下，你将需要改变在清单文件中的`service`定义以指向你自己的类。
-
-### Token检索
-在Hood下通过库搜索GCM注册Token时，知道何时其成功或失败是有用的。基于这个原因，库将用`DDNANotifications.ACTION_TOKEN_RETRIEVAL_SUCCESSFUL`行为通过[`LocalBroadcastManager`](http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html)发送一个广播，这个Token将被包含在附加的`DDNANotifications.EXTRA_REGISTRATION_TOKEN` `String`下的`Intent`中。
-
-同样的，如果搜索失败，一个广播将通过`DDNANotifications.ACTION_TOKEN_RETRIEVAL_FAILED`行为被发送。失败的原因可以从附加的`DDNANotifications.EXTRA_FAILURE_REASON` `Serializable`中找到，这将是一个`Throwable`类型。
-
-我们为了应用方便，提供了一个[`IntentFilter`](http://developer.android.com/reference/android/content/IntentFilter.html)，被设置用于在`DDNANotifications.FILTER_TOKEN_RETRIEVAL`中监听的上述的两个行为。
-
-一个[`BroadcastReceiver`](http://developer.android.com/reference/android/content/BroadcastReceiver.html)的应用实例可以从[这里](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java)找到。
-
-### 防反编译
-如果你为你的应用设置`minifyEnabled true`，那么没有必要在你的ProGuard配置中添加额外的代码。因为这个库提供了其自己的配置文件，可以在编译过程中被Android编译工具包含进去。
-
-## 常见问题解答
-1.  我的项目有一个在较新版本Google Play Services的依赖，我是否可以使用一个不同于文档中GCM版本的其他版本？
+<receiver
+    android:name="your.package.name.YourClassName"
+    android:exported="false">
     
-    是的，通过从通知依赖中移除GCM并分别抓取它。
-    ```groovy
-    compile('com.deltadna.android:deltadna-sdk-notifications:VERSION') {
-        exclude module: 'play-services-gcm'
-    }
-    compile 'com.google.android.gms:play-services-gcm:8.4.0'
-    ```
-    我们已经确认到目前为止，版本8、9和10可以被替代使用。
+    <intent-filter>
+        <action android:name="com.deltadna.android.sdk.notifications.REGISTERED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.REGISTRATION_FAILED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.MESSAGE_RECEIVED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_POSTED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED"/>
+        <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED"/>
+    </intent-filter>
+</receiver>
+```
 
-   如果使用Unity，那么你将需要使用`<android-sdk-dir>/extras/google/m2repository`中的最新版本替代`Assets/DeltaDNA/Plugins/Android`文件夹下的Play Service AARs。请注意最新版本的Play Services可能使用不同的依赖，因此你可能需要使用`play-services-gcm` AAR开始并查看POM文件以确定哪些依赖也将需要被添加到路径（你还需要对任何需转换的依赖做相同的操作）。`support-annotations`不应被删除，因为它是deltaDNA通知库所需要的。
+[`EventReceiver`](src/main/java/com/deltadna/android/sdk/notifications/EventReceiver.java)的示例实现可以从[这里](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java)找到。
+
+### 防反编译（ProGuard）
+如果你为你的应用设置`minifyEnabled true`，那么没有必要在你的ProGuard配置中添加额外的代码。因为这个库提供了其自己的配置文件，可以在编译过程中被Android编译工具包含进去。
