@@ -15,12 +15,12 @@
 * [记录事件](#记录事件)
  * [简单事件](#简单事件)
  * [复杂事件](#复杂事件)
- * [交易](#交易)
-* [吸引](#吸引)
+ * [交易（Transaction）](#交易（Transaction）)
+* [吸引（Engage）](#吸引（Engage）)
  * [图片消息](#图片消息)
 * [推送通知](#推送通知)
 * [设置](#设置)
-* [防反编译](#防反编译)
+* [防反编译（ProGuard）](#防反编译（ProGuard）)
 * [更新日志](#更新日志)
 * [迁移](#迁移)
 * [授权](#授权)
@@ -155,7 +155,7 @@ DDNA.instance().recordEvent(new MissionStartedEvent(
         "EASY"));
 ```
 
-### 交易
+### 交易（Transaction）
 交易（Transaction）是一个复杂事件，可以在当你遇到玩家从游戏提供商或其他玩家那里购买、交易、赢得或交换游戏币和装备时提供嵌套、数组和一些特殊对象。为了帮助实现这些功能我们提供了`Transaction`方法，这是一个拥有额外属性的`Event`类的方法
 ```java
 recordEvent(new Transaction(
@@ -174,7 +174,7 @@ recordEvent(new Transaction(
 
 这个事件可以被设计的更复杂，但结构是合乎逻辑的、灵活的，并为玩家消费或者接收任何货币和装备的组合提供一种机制。
 
-## 吸引
+## 吸引（Engage）
 一个吸引（Engage）请求可以通过调用`requestEngagement(Engagement, EngageListener)`实现。提供给你`Engagement`和`EngageListener`来监听是否执行完成或者出现错误。
 ```java
 requestEngagement(
@@ -249,9 +249,13 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
                 new ImageMessageResultListener() {
                     @Override
                     public void onAction(String value, String params) {
-                        // 获取值/参数
+                        // 获取带有值/参数的行为按钮
                     }
-
+					
+                    public void onLink(String value, String params) {
+                        // 获取带有值/参数的链接按钮
+                    }
+					
                     @Override
                     public void onCancelled() {
                         // 执行取消
@@ -276,13 +280,13 @@ DDNA.instance().clearRegistrationId();
 ```
 
 ## 设置
-如果你需要进一步的关于这个SDK如何工作的自定义设置，例如禁用事件自动上传或者改变在请求失败时重试的次数，你可能需要通过`Settings`类来实现。这可以通过如下源码实现
+如果你需要进一步的关于这个SDK如何工作的自定义设置，例如禁用事件自动上传或者改变在请求失败时重试的次数，你可能需要通过设置`Settings`类来实现。这可以通过如下源码实现
 ```java
 DDNA.instance().getSettings();
 ```
 Settings类也可以在初始化`Configuration`时被设置，这是被推荐的方法。
 
-## 防反编译
+## 防反编译（ProGuard）
 如果你为你的应用设置`minifyEnabled true`，那么没有必要在你的ProGuard配置中添加额外的代码。因为这个库提供了其自己的配置文件，可以在编译过程中被Android编译工具包含进去。
 
 ## 更新日志
@@ -291,6 +295,7 @@ Settings类也可以在初始化`Configuration`时被设置，这是被推荐的
 ## 迁移
 * [版本4.0](docs/migrations/4.0.md)
 * [版本4.1](docs/migrations/4.1.md)
+* [版本4.3](docs/migrations/4.3.md)
 
 ## 授权
 该资源适用于Apache 2.0授权。
