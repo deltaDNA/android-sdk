@@ -128,11 +128,6 @@ public final class ImageMessageActivity extends Activity {
         }
     }
     
-    @Override
-    public void onBackPressed(){
-        moveTaskToBack(true);
-    }
-    
     public static Intent createIntent(Context context, ImageMessage msg) {
         return new Intent(context, ImageMessageActivity.class)
                 .putExtra(EXTRA_IMG_MSG, msg);
