@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.3.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.2) (YYYY-MM-DD)
+## [4.3.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.2) (2017-05-17)
 Fixed back button closing app during an image message.  
 
 ## [4.3.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.1) (2017-05-03)
