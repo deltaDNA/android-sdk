@@ -16,41 +16,55 @@
 
 package com.deltadna.android.sdk.helpers;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.deltadna.android.sdk.BuildConfig;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
- * The Engage archive holds previously requested engage responses. The responses
+ * The engage archive holds previously requested engage responses. The responses
  * can be saved to disk.
  */
-public class EngageArchive{
-	static private final String FILENAME = "ENGAGEMENTS";
-
-	private HashMap<String, String> mTable = new HashMap<String, String>();
-	private Object mLock = new Object();
-	private String mPath;
-
+public class EngageArchive {
+    
+    private static final String TAG = BuildConfig.LOG_TAG
+            + ' '
+            + EngageArchive.class.getSimpleName();
+	private static final String FILENAME = "ENGAGEMENTS";
+    
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Map<String, String> table = Collections.synchronizedMap(
+            new HashMap<String, String>());
+    
+	private final File path;
+    
 	/**
-	 * Creates a new EnagageArchive, loading any previously saved Engagements from
+	 * Creates a new instance, loading any previously saved engagements from
 	 * a file at {@code path}.
 	 * 
-	 * @param path The data file path.
+	 * @param path          the path for the engage archive
+     * @param legacyPath    the legacy path from which to migrate engage files
 	 */
-	public EngageArchive(String path){
-		mPath = path;
-		load(mPath);
+	public EngageArchive(File path, File legacyPath) {
+		this.path = path;
+        
+        executor.submit(new MigrateLegacyArchive(legacyPath, path));
+        executor.submit(new Load());
 	}
     
 	/**
@@ -63,7 +77,7 @@ public class EngageArchive{
 	 * @return TRUE if store contains a response, FALSE otherwise.
 	 */
     public boolean contains(String decisionPoint, @Nullable String flavour) {
-        return mTable.containsKey(createKey(decisionPoint, flavour));
+        return table.containsKey(createKey(decisionPoint, flavour));
 	}
     
 	/**
@@ -75,7 +89,7 @@ public class EngageArchive{
 	 * @return The data on success, null otherwise.
 	 */
     public String get(String decisionPoint, @Nullable String flavour) {
-        return mTable.get(createKey(decisionPoint, flavour));
+        return table.get(createKey(decisionPoint, flavour));
 	}
     
 	/**
@@ -90,122 +104,22 @@ public class EngageArchive{
             @Nullable String flavour,
             String value) {
         
-        mTable.put(createKey(decisionPoint, flavour), value);
+        table.put(createKey(decisionPoint, flavour), value);
 	}
     
 	/**
-	 * Loads an existing archive from disk.
-	 * 
-	 * @param path The path to load from.
-	 */
-	private void load(String path){
-		synchronized(mLock){
-			FileInputStream fs = null;
-
-			try{
-				File file = new File(path, FILENAME);
-
-				Log.d(BuildConfig.LOG_TAG, "Loading Engage from " + file.getAbsolutePath());
-
-				if(file.exists()){
-					fs = new FileInputStream(file);
-
-					String key = null;
-					String value = null;
-					int read = 0;
-					byte[] length = new byte[4];
-					int valueLength;
-					byte[] valueField;
-					while(fs.read(length, 0, length.length) > 0){
-						valueLength = Utils.toInt32(length);
-						valueField = new byte[valueLength];
-						fs.read(valueField, 0, valueField.length);
-						if(read % 2 == 0){
-							key = new String(valueField, "UTF-8");
-						}else{
-							value = new String(valueField, "UTF-8");
-							mTable.put(key, value);
-						}
-						read++;
-					}
-				}
-			}catch (Exception e){
-				Log.w(BuildConfig.LOG_TAG, "Unable to load Engagement archive: " + e.getMessage());
-
-			}finally{
-				if(fs != null){
-					try {
-						fs.close();
-					} catch (IOException e) {}
-				}
-			}
-		}
-	}
-	/**
 	 * Save the archive to disk.
 	 */
-	public void save(){
-		synchronized(mLock){
-			FileOutputStream fs = null;
-
-			try{
-				File dir = new File(mPath);
-
-				if(!dir.exists()){
-					dir.mkdirs();
-				}
-
-				ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-				byte[] keyBytes = null;
-				byte[] keyLenBytes = null;
-				byte[] valueBytes = null;
-				byte[] valueLenBytes = null;
-				String key = null;
-				String value = null;
-				Set<String> keys = mTable.keySet();
-				Iterator<String> iter = keys.iterator();
-				while(iter.hasNext()){
-					key = iter.next();
-					value = mTable.get(key);
-					
-					keyBytes = key.getBytes();
-					keyLenBytes = Utils.toBytes(keyBytes.length);
-					valueBytes = value.getBytes();
-					valueLenBytes = Utils.toBytes(valueBytes.length);
-
-					bytes.write(keyLenBytes);
-					bytes.write(keyBytes);
-					bytes.write(valueLenBytes);
-					bytes.write(valueBytes);
-				}
-
-				File file = new File(dir.getAbsolutePath(), FILENAME);
-				fs = new FileOutputStream(file);
-
-				byte[] byteArray = bytes.toByteArray();
-				
-				fs.write(byteArray, 0, byteArray.length);
-				
-			}catch (Exception e){
-				Log.w(BuildConfig.LOG_TAG, "Unable to save Engagement archive: " + e.getMessage());
-				
-			}finally{
-				if(fs != null){
-					try {
-						fs.close();
-					} catch (IOException e) {}
-				}
-			}
-		}
-	}
+	public void save() {
+        executor.submit(new Save());
+    }
+    
 	/**
 	 * Clears the archive.
 	 */
-	public void clear(){
-		synchronized(mLock){
-			mTable.clear();
-		}
-	}
+	public void clear() {
+        executor.submit(new Clear());
+    }
     
     private static String createKey(
             String decisionPoint,
@@ -214,5 +128,165 @@ public class EngageArchive{
         return (TextUtils.isEmpty(flavour))
                 ? decisionPoint
                 : decisionPoint + '_' + flavour;
+    }
+    
+    private final class MigrateLegacyArchive implements Runnable {
+        
+        private final File from;
+        private final File to;
+        
+        MigrateLegacyArchive(File from, File to) {
+            this.from = from;
+            this.to = to;
+        }
+        
+        @Override
+        public void run() {
+            if (!from.exists()) {
+                return;
+            }
+            
+            if (!to.exists() && !to.mkdirs()) {
+                Log.w(TAG, "Failed to create " + to + " for migration");
+                return;
+            }
+            
+            final File[] files = from.listFiles();
+            Log.d(TAG, String.format(
+                    Locale.US,
+                    "Moving %d files from %s to %s",
+                    files.length,
+                    from,
+                    to));
+            
+            int moved = 0;
+            for (final File file : files) {
+                try {
+                    Utils.move(file, to);
+                    moved++;
+                } catch (IOException e) {
+                    Log.w(TAG, "Failed moving " + file, e);
+                }
+            }
+            
+            if (moved == files.length) {
+                if (!from.delete()) {
+                    Log.w(TAG, "Failed deleting " + from);
+                }
+            }
+            
+            Log.d(TAG, String.format(
+                    Locale.US,
+                    "Successfully moved %d files from %s to %s",
+                    moved,
+                    from,
+                    to));
+        }
+    }
+    
+    private final class Load implements Runnable {
+        
+        @Override
+        public void run() {
+            FileInputStream fs = null;
+            
+            try {
+                File file = new File(path, FILENAME);
+                Log.d(TAG, "Loading engagement archive from " + file);
+                
+                if (file.exists()) {
+                    fs = new FileInputStream(file);
+                    
+                    String key = null;
+                    String value;
+                    int read = 0;
+                    byte[] length = new byte[4];
+                    int valueLength;
+                    byte[] valueField;
+                    while (fs.read(length, 0, length.length) > 0) {
+                        valueLength = Utils.toInt32(length);
+                        valueField = new byte[valueLength];
+                        fs.read(valueField, 0, valueField.length);
+                        if (read % 2 == 0) {
+                            key = new String(valueField, "UTF-8");
+                        } else {
+                            value = new String(valueField, "UTF-8");
+                            table.put(key, value);
+                        }
+                        read++;
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to load engagement archive", e);
+            } finally {
+                if (fs != null) {
+                    try {
+                        fs.close();
+                    } catch (IOException e) {
+                        Log.w(TAG, "Failed to close engagement archive", e);
+                    }
+                }
+            }
+        }
+    }
+    
+    private final class Save implements Runnable {
+        
+        @Override
+        public void run() {
+            FileOutputStream fs = null;
+            
+            try {
+                if (!path.exists()) {
+                    path.mkdirs();
+                }
+                
+                final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                byte[] keyBytes;
+                byte[] keyLenBytes;
+                byte[] valueBytes;
+                byte[] valueLenBytes;
+                String key;
+                String value;
+                final Set<String> keys = table.keySet();
+                final Iterator<String> iter = keys.iterator();
+                while (iter.hasNext()) {
+                    key = iter.next();
+                    value = table.get(key);
+                    
+                    keyBytes = key.getBytes();
+                    keyLenBytes = Utils.toBytes(keyBytes.length);
+                    valueBytes = value.getBytes();
+                    valueLenBytes = Utils.toBytes(valueBytes.length);
+                    
+                    bytes.write(keyLenBytes);
+                    bytes.write(keyBytes);
+                    bytes.write(valueLenBytes);
+                    bytes.write(valueBytes);
+                }
+                
+                fs = new FileOutputStream(new File(path, FILENAME));
+                byte[] byteArray = bytes.toByteArray();
+                fs.write(byteArray, 0, byteArray.length);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to save engagement archive", e);
+            } finally {
+                if (fs != null) {
+                    try {
+                        fs.close();
+                    } catch (IOException e) {
+                        Log.w(TAG, "Failed to close engagement archive", e);
+                    }
+                }
+            }
+        }
+    }
+    
+    private final class Clear implements Runnable {
+        
+        @Override
+        public void run() {
+            table.clear();
+        }
     }
 }

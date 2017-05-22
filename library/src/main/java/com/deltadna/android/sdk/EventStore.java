@@ -26,7 +26,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.provider.BaseColumns;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -55,10 +54,7 @@ class EventStore extends BroadcastReceiver {
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + EventStore.class.getSimpleName();
-    private static final String DIRECTORY = "com.deltadna.android.sdk"
-            + File.separator
-            + "events"
-            + File.separator;
+    private static final String DIRECTORY = "events" + File.separator;
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final int EVENTS_LIMIT = 1024 * 1024;
     private static final int STORE_LIMIT = 5 * EVENTS_LIMIT;
@@ -141,7 +137,7 @@ class EventStore extends BroadcastReceiver {
         db.removeEventRows();
         for (final Location location : Location.values()) {
             if (location.available()) {
-                final File dir = location.directory(context);
+                final File dir = location.directory(context, DIRECTORY);
                 for (final File file : dir.listFiles()) {
                     if (!file.delete()) {
                         Log.w(TAG, "Failed to clear " + file);
@@ -156,7 +152,7 @@ class EventStore extends BroadcastReceiver {
     private void prepare() {
         for (final Location location : Location.values()) {
             if (location.available()) {
-                final File dir = location.directory(context);
+                final File dir = location.directory(context, DIRECTORY);
                 if (!dir.exists()) {
                     if (!dir.mkdirs()) {
                         Log.w(TAG, "Failed creating " + dir);
@@ -274,7 +270,9 @@ class EventStore extends BroadcastReceiver {
             }
             final String hash = md5(content);
             
-            final File file = new File(location.directory(context), name);
+            final File file = new File(
+                    location.directory(context, DIRECTORY),
+                    name);
             FileOutputStream out = null;
             try {
                 out = new FileOutputStream(file);
@@ -435,7 +433,7 @@ class EventStore extends BroadcastReceiver {
                 @Nullable
                 public String get() {
                     final File file = new File(
-                            location.directory(context),
+                            location.directory(context, DIRECTORY),
                             getCurrentName());
                     final StringBuilder builder = new StringBuilder();
                     BufferedReader reader = null;
@@ -483,7 +481,7 @@ class EventStore extends BroadcastReceiver {
                     }
                     
                     final File file = new File(
-                            getCurrentLocation().directory(context),
+                            getCurrentLocation().directory(context, DIRECTORY),
                             getCurrentName());
                     if (!file.delete()) {
                         Log.w(TAG, "Failed deleting " + file);
@@ -510,32 +508,5 @@ class EventStore extends BroadcastReceiver {
             return cursor.getString(
                     cursor.getColumnIndex(DbHelper.EVENTS_NAME));
         }
-    }
-    
-    private enum Location {
-        INTERNAL {
-            @Override
-            File directory(Context context) {
-                return new File(context.getFilesDir(), DIRECTORY);
-            }
-        },
-        EXTERNAL {
-            @Override
-            boolean available() {
-                return Environment.getExternalStorageState()
-                        .equals(Environment.MEDIA_MOUNTED);
-            }
-            
-            @Override
-            File directory(Context context) {
-                return new File(context.getExternalFilesDir(null), DIRECTORY);
-            }
-        };
-        
-        boolean available() {
-            return true;
-        }
-        
-        abstract File directory(Context context);
     }
 }
