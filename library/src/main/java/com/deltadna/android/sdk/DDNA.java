@@ -654,11 +654,17 @@ public final class DDNA {
             location = Location.INTERNAL;
         }
         engageStoragePath = location.directory(application, ENGAGE_DIRECTORY);
-        final String path = application.getExternalFilesDir(null).getPath();
-        final File legacyPath = new File(String.format(
-                Locale.US,
-                ENGAGE_PATH_LEGACY,
-                (path != null) ? path : ""));
+        final File legacyPath;
+        if (application.getExternalFilesDir(null) != null) {
+            final String path = application.getExternalFilesDir(null).getPath();
+            legacyPath = new File(String.format(
+                    Locale.US,
+                    ENGAGE_PATH_LEGACY,
+                    (path != null) ? path : ""));
+        } else {
+            Log.d(BuildConfig.LOG_TAG, "Legacy engage storage path not found");
+            legacyPath = null;
+        }
         
         preferences = new Preferences(application);
         store = new EventStore(application, settings, preferences);

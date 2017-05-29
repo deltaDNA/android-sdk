@@ -60,7 +60,7 @@ public class EngageArchive {
 	 * @param path          the path for the engage archive
      * @param legacyPath    the legacy path from which to migrate engage files
 	 */
-	public EngageArchive(File path, File legacyPath) {
+	public EngageArchive(File path, @Nullable File legacyPath) {
 		this.path = path;
         
         executor.submit(new MigrateLegacyArchive(legacyPath, path));

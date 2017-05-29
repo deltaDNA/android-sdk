@@ -63,6 +63,16 @@ class EngageArchiveTest {
     }
     
     @Test
+    fun migrationPathNull() {
+        val f = File.createTempFile("file1", "", legacyPath)
+        
+        EngageArchive(path, null)
+        pause()
+        
+        assertThat(f.exists()).isTrue()
+    }
+    
+    @Test
     fun saveAndLoad() {
         with(EngageArchive(path, legacyPath)) {
             put("point", "flavour", "value")
