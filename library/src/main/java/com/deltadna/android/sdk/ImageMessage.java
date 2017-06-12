@@ -143,7 +143,7 @@ public final class ImageMessage implements Serializable {
             listener.onPrepared(this);
         } else {
             // do we have an image?
-            final File file = new File(getImageFilepath());
+            final File file = getImageFile();
             if (!file.exists() && request == null) {
                 if (!file.getParentFile().exists()) {
                     if (!file.getParentFile().mkdirs()) {
@@ -208,7 +208,7 @@ public final class ImageMessage implements Serializable {
     public void cleanUp() {
         if (request != null) request.cancel();
         
-        final File file = new File(getImageFilepath());
+        final File file = getImageFile();
         if (file.exists() && !file.delete()) {
             Log.w(TAG, "Failed to cleanup " + file);
         }
@@ -255,14 +255,18 @@ public final class ImageMessage implements Serializable {
     }
     
     /**
-     * Gets the image filepath.
+     * Gets the image file.
      *
-     * @return the local image filepath.
+     * @return the local image file.
      */
-    String getImageFilepath() {
-        return DDNA.instance().getEngageStoragePath()
-                + "/engageimg_" + transactionId
-                + '.' + imageFormat;
+    File getImageFile() {
+        return new File(
+                DDNA.instance().getEngageStoragePath(),
+                String.format(
+                        Locale.US,
+                        "engageimg_%s.%s",
+                        transactionId,
+                        imageFormat));
     }
     
     /**

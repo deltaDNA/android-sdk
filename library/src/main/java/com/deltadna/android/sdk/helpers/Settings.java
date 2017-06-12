@@ -70,6 +70,7 @@ public class Settings{
     private int httpRequestEngageTimeout = 5;
     
     private boolean useInternalStorageForEvents;
+    private boolean useInternalStorageForEngage;
     
 	/**
 	 * TRUE to send new player event on first run of application.
@@ -317,5 +318,13 @@ public class Settings{
     
     public void setUseInternalStorageForEvents(boolean useInternal) {
         useInternalStorageForEvents = useInternal;
+    }
+    
+    public boolean isUseInternalStorageForEngage() {
+        return useInternalStorageForEngage;
+    }
+    
+    public void setUseInternalStorageForEngage(boolean useInternal) {
+        useInternalStorageForEngage = useInternal;
     }
 }

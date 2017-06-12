@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk
 
 import android.os.Build
+import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.test.assertThrown
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONException
@@ -39,7 +40,7 @@ class ProductTest {
             "environmentKey",
             "collectUrl",
             "engageUrl",
-            null,
+            Settings(),
             null,
             null,
             null,

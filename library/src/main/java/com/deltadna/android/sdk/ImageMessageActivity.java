@@ -187,7 +187,9 @@ public final class ImageMessageActivity extends Activity {
             if (bitmap == null) {
                 final BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                bitmap = BitmapFactory.decodeFile(imageMessage.getImageFilepath(), options);
+                bitmap = BitmapFactory.decodeFile(
+                        imageMessage.getImageFile().getPath(),
+                        options);
             }
             
             imageMessage.init(
