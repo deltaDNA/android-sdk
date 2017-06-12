@@ -73,7 +73,9 @@ public final class DDNA {
             "Android SDK v" + BuildConfig.VERSION_NAME;
     private static final int ENGAGE_API_VERSION = 4;
     
-    private static final String ENGAGE_STORAGE_PATH = "%s/ddsdk/engage/";
+    private static final String ENGAGE_DIRECTORY = "engage" + File.separator;
+    @Deprecated
+    private static final String ENGAGE_PATH_LEGACY = "%s/ddsdk/engage/";
     
     private static final SimpleDateFormat TIMESTAMP_FORMAT;
     static {
@@ -101,7 +103,7 @@ public final class DDNA {
     
     private final Map<String, Integer> iso4217;
     
-    private final String engageStoragePath;
+    private final File engageStoragePath;
     
     private boolean started;
 	private String sessionId = UUID.randomUUID().toString();
@@ -553,7 +555,7 @@ public final class DDNA {
         return sessionId;
     }
     
-    String getEngageStoragePath() {
+    File getEngageStoragePath() {
         return engageStoragePath;
     }
     
@@ -638,16 +640,35 @@ public final class DDNA {
                 ? ClientInfo.platform()
                 : platform;
         
-        // FIXME event archive
-        final File dir = application.getExternalFilesDir(null);
-        final String path = (dir != null)
-                ? dir.getAbsolutePath()
-                : "/";
+        final Location location;
+        if (settings.isUseInternalStorageForEngage()) {
+            location = Location.INTERNAL;
+        } else if (Location.EXTERNAL.available()) {
+            location = Location.EXTERNAL;
+        } else {
+            Log.w(BuildConfig.LOG_TAG, String.format(
+                    Locale.US,
+                    "%s not available, falling back to %s",
+                    Location.EXTERNAL,
+                    Location.INTERNAL));
+            location = Location.INTERNAL;
+        }
+        engageStoragePath = location.directory(application, ENGAGE_DIRECTORY);
+        final File legacyPath;
+        if (application.getExternalFilesDir(null) != null) {
+            final String path = application.getExternalFilesDir(null).getPath();
+            legacyPath = new File(String.format(
+                    Locale.US,
+                    ENGAGE_PATH_LEGACY,
+                    (path != null) ? path : ""));
+        } else {
+            Log.d(BuildConfig.LOG_TAG, "Legacy engage storage path not found");
+            legacyPath = null;
+        }
         
         preferences = new Preferences(application);
         store = new EventStore(application, settings, preferences);
-        archive = new EngageArchive(engageStoragePath =
-                String.format(Locale.US, ENGAGE_STORAGE_PATH, path));
+        archive = new EngageArchive(engageStoragePath, legacyPath);
         
         sessionHandler = new SessionRefreshHandler(
                 application,

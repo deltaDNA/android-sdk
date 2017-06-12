@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.3.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.3) (2017-06-12)
+Fixed writing to engage archive some devices.  
+
 ## [4.3.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.2) (2017-05-17)
 Fixed back button closing app during an image message.  
 
