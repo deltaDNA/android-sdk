@@ -2,6 +2,7 @@
 
 ## [4.5.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.0) (YYYY-MM-DD)
 Added image message action event.  
+Fixed database cursor not being closed.  
 
 ## [4.3.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.3.3) (2017-06-12)
 Fixed writing to engage archive some devices.  

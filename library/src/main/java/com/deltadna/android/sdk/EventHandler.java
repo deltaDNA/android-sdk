@@ -267,6 +267,8 @@ final class EventHandler {
             final CloseableIterator<EventStoreItem> events = store.items();
             if (!events.hasNext()) {
                 Log.d(TAG, "No stored events to upload");
+                
+                events.close(false);
                 return;
             }
             
