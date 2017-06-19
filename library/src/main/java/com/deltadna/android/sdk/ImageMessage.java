@@ -56,7 +56,8 @@ public final class ImageMessage implements Serializable {
     private static final int METRICTYPE_PIXELS = 0;
     private static final int METRICTYPE_PERCENTAGE = 1;
     
-    private final String transactionId;
+    final String decisionPoint;
+    final String transactionId;
     private final String parameters;
     
     private final String imageUrl;
@@ -76,7 +77,11 @@ public final class ImageMessage implements Serializable {
      *
      * @throws JSONException if the JSON is invalid
      */
-    public ImageMessage(JSONObject json) throws JSONException {
+    public ImageMessage(
+            String decisionPoint,
+            JSONObject json) throws JSONException {
+        
+        this.decisionPoint = decisionPoint;
         transactionId = json.getString("transactionID");
         parameters =  json.getJSONObject("parameters").toString();
         
@@ -286,7 +291,9 @@ public final class ImageMessage implements Serializable {
         //noinspection ConstantConditions
         if (engagement.isSuccessful() && engagement.getJson().has("image")) {
             try {
-                return new ImageMessage(engagement.getJson());
+                return new ImageMessage(
+                        engagement.getDecisionPoint(),
+                        engagement.getJson());
             } catch (JSONException e) {
                 Log.w(TAG, "Failed creating image message", e);
                 return null;

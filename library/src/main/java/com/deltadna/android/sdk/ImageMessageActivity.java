@@ -91,10 +91,17 @@ public final class ImageMessageActivity extends Activity {
     /**
      * Handles an action defined by the Delta DNA message.
      *
-     * @param action The action to handle.
+     * @param source    the source of the action
+     * @param action    the action to handle
      */
-    private void performAction(ImageMessage.Action action){
+    private void performAction(String source, ImageMessage.Action action){
         if (action != null) {
+            final Event event = new Event("imageMessageAction")
+                    .putParam("responseDecisionpointName", imageMessage.decisionPoint)
+                    .putParam("responseTransactionID", imageMessage.transactionId)
+                    .putParam("imActionName", source)
+                    .putParam("imActionType", action.type);
+            
             if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
                 final Intent intent = new Intent();
                 intent.setAction(Action.ACTION.name());
@@ -105,8 +112,9 @@ public final class ImageMessageActivity extends Activity {
                             imageMessage.parameters().toString());
                 }
                 
+                event.putParam("imActionValue", action.value);
+                
                 setResult(Activity.RESULT_OK, intent);
-                finish();
             } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_LINK)) {
                 final Intent intent = new Intent();
                 intent.setAction(Action.LINK.name());
@@ -117,14 +125,18 @@ public final class ImageMessageActivity extends Activity {
                             imageMessage.parameters().toString());
                 }
                 
+                event.putParam("imActionValue", action.value);
+                
                 setResult(Activity.RESULT_OK, intent);
-                finish();
             } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_DISMISS)) {
                 imageMessage.cleanUp();
                 
                 setResult(Activity.RESULT_CANCELED);
-                finish();
             }
+            
+            DDNA.instance().recordEvent(event);
+            
+            finish();
         }
     }
     
@@ -241,7 +253,9 @@ public final class ImageMessageActivity extends Activity {
                     final int orientation = getContext().getResources()
                             .getConfiguration().orientation;
                     
+                    String source = null;
                     ImageMessage.Action action = null;
+                    
                     // if the touch is on the popup then test buttons
                     if (imageMessage.background.layout(orientation).frame()
                             .contains((int) event.getX(), (int) event.getY())) {
@@ -253,20 +267,23 @@ public final class ImageMessageActivity extends Activity {
                             if (button.layout(orientation).frame().contains(
                                     (int) event.getX(),
                                     (int )event.getY())) {
+                                source = "button";
                                 action = button.action(orientation);
                                 break;
                             }
                         }
                         
                         if (action == null) {
+                            source = "background";
                             action = imageMessage.background.action(orientation);
                         }
                     } else {
                         // touch is outside the popup so use shim action
+                        source = "shim";
                         action = imageMessage.shim.action;
                     }
                     
-                    performAction(action);
+                    performAction(source, action);
                 }
             }
             
