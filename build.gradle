@@ -16,9 +16,9 @@
 
 buildscript {
     ext {
-        kotlinVersion = '1.1.1'
-        supportVersion = '25.1.1'
-        firebaseVersion = '10.2.0'
+        kotlinVersion = '1.1.2-5'
+        supportVersion = '25.3.1'
+        firebaseVersion = '10.2.6'
         
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
@@ -30,9 +30,9 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
-        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
-        classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.0.8'
+        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.2'
+        classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.1.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
@@ -64,7 +64,7 @@ subprojects {
     
     android {
         compileSdkVersion 25
-        buildToolsVersion '25.0.2'
+        buildToolsVersion '25.0.3'
         
         defaultConfig {
             minSdkVersion 15
@@ -106,16 +106,16 @@ subprojects {
     
     if (isLibrary) {
         dependencies {
-            testCompile 'com.google.truth:truth:0.31'
-            testCompile 'com.nhaarman:mockito-kotlin:1.2.0'
+            testCompile 'com.google.truth:truth:0.33'
+            testCompile 'com.nhaarman:mockito-kotlin:1.5.0'
             testCompile 'com.squareup.okhttp:mockwebserver:2.7.5'
             testCompile 'junit:junit:4.12'
-            testCompile 'nl.jqno.equalsverifier:equalsverifier:2.2.1'
+            testCompile 'nl.jqno.equalsverifier:equalsverifier:2.3'
             testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-            testCompile 'org.json:json:20160810'
-            testCompile 'org.mockito:mockito-core:2.7.4'
-            testCompile 'org.robolectric:robolectric:3.2.2'
+            testCompile 'org.json:json:20170516'
+            testCompile 'org.mockito:mockito-core:2.8.47'
+            testCompile 'org.robolectric:robolectric:3.3.2'
         }
     }
     
@@ -138,6 +138,6 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-def getSha() {
+static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
 }
