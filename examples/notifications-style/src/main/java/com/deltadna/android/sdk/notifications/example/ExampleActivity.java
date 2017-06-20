@@ -24,7 +24,6 @@ import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
 import com.deltadna.android.sdk.notifications.DDNANotifications;
-import com.google.firebase.iid.FirebaseInstanceId;
 
 public class ExampleActivity extends AppCompatActivity {
     

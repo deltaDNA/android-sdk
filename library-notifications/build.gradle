@@ -17,8 +17,8 @@
 android {}
 
 dependencies {
-    compile "com.android.support:support-annotations:$supportVersion"
-    compile "com.google.firebase:firebase-messaging:$firebaseVersion"
+    api "com.android.support:support-annotations:$supportVersion"
+    api "com.google.firebase:firebase-messaging:$firebaseVersion"
     
-    provided project(':library')
+    compileOnly project(':library')
 }
