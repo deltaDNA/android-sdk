@@ -23,9 +23,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.runners.MockitoJUnitRunner
+import org.junit.runners.JUnit4
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(JUnit4::class)
 class ParamsTest {
     
     private var uut: Params? = null
@@ -72,7 +72,7 @@ class ParamsTest {
     
     @Test
     fun isEmpty() {
-        whenever(json!!.length()).thenReturn(0, 1)
+        whenever(json.length()).thenReturn(0, 1)
         
         assertThat(uut!!.isEmpty).isTrue()
         assertThat(uut!!.isEmpty).isFalse()

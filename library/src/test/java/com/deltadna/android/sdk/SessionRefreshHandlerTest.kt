@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 class SessionRefreshHandlerTest {
@@ -66,7 +67,9 @@ class SessionRefreshHandlerTest {
         activity1.start()
         activity1.stop()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(
+                TIMEOUT.toLong(),
+                TimeUnit.MILLISECONDS)
         
         verify(listener).onExpired()
     }
@@ -77,7 +80,9 @@ class SessionRefreshHandlerTest {
         activity1.stop()
         activity1.restart()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(
+                TIMEOUT.toLong(),
+                TimeUnit.MILLISECONDS)
         
         verify(listener, never()).onExpired()
     }
@@ -88,7 +93,9 @@ class SessionRefreshHandlerTest {
         activity1.stop()
         uut.unregister()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(
+                TIMEOUT.toLong(),
+                TimeUnit.MILLISECONDS)
         
         verify(listener, never()).onExpired()
     }
@@ -108,7 +115,9 @@ class SessionRefreshHandlerTest {
         activity2.resume()
         activity1.stop()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(
+                TIMEOUT.toLong(),
+                TimeUnit.MILLISECONDS)
         
         verify(listener, never()).onExpired()
     }
@@ -132,7 +141,9 @@ class SessionRefreshHandlerTest {
         activity2.pause()
         activity2.stop()
         
-        Robolectric.getForegroundThreadScheduler().advanceBy(TIMEOUT.toLong())
+        Robolectric.getForegroundThreadScheduler().advanceBy(
+                TIMEOUT.toLong(),
+                TimeUnit.MILLISECONDS)
         
         verify(listener).onExpired()
     }

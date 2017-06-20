@@ -24,11 +24,11 @@ import com.nhaarman.mockito_kotlin.whenever
 import org.json.JSONObject
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.runners.MockitoJUnitRunner
+import org.junit.runners.JUnit4
 import java.io.OutputStream
 import java.net.HttpURLConnection
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(JUnit4::class)
 class RequestBodyTest {
     
     @Test
