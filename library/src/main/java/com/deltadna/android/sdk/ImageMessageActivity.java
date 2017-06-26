@@ -24,6 +24,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -32,6 +33,9 @@ import android.widget.RelativeLayout;
 
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Iterator;
 
@@ -96,21 +100,15 @@ public final class ImageMessageActivity extends Activity {
      */
     private void performAction(String source, ImageMessage.Action action){
         if (action != null) {
-            final Event event = new Event("imageMessageAction")
-                    .putParam("responseDecisionpointName", imageMessage.decisionPoint)
-                    .putParam("responseTransactionID", imageMessage.transactionId)
-                    .putParam("imActionName", source)
-                    .putParam("imActionType", action.type);
+            final Event event = createActionEvent(source, action);
             
             if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
                 final Intent intent = new Intent();
                 intent.setAction(Action.ACTION.name());
                 intent.putExtra(EXTRA_VALUE, action.value);
-                if (imageMessage.parameters() != null) {
-                    intent.putExtra(
-                            EXTRA_PARAMS,
-                            imageMessage.parameters().toString());
-                }
+                intent.putExtra(
+                        EXTRA_PARAMS,
+                        imageMessage.parameters().toString());
                 
                 event.putParam("imActionValue", action.value);
                 
@@ -119,11 +117,9 @@ public final class ImageMessageActivity extends Activity {
                 final Intent intent = new Intent();
                 intent.setAction(Action.LINK.name());
                 intent.putExtra(EXTRA_VALUE, action.value);
-                if (imageMessage.parameters() != null) {
-                    intent.putExtra(
-                            EXTRA_PARAMS,
-                            imageMessage.parameters().toString());
-                }
+                intent.putExtra(
+                        EXTRA_PARAMS,
+                        imageMessage.parameters().toString());
                 
                 event.putParam("imActionValue", action.value);
                 
@@ -138,6 +134,47 @@ public final class ImageMessageActivity extends Activity {
             
             finish();
         }
+    }
+    
+    private Event createActionEvent(String source, ImageMessage.Action action) {
+        JSONObject params;
+        try {
+            params = new JSONObject(imageMessage.eventParams);
+        } catch (JSONException e) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Failed to convert eventParams to JSON",
+                    e);
+            params = new JSONObject();
+        }
+        
+        return new Event("imageMessageAction")
+                .putParam(
+                        "responseTransactionID",
+                        params.optLong("responseTransactionID", -1))
+                .putParam(
+                        "responseDecisionpointName",
+                        params.optString("responseDecisionpointName"))
+                .putParam(
+                        "responseEngagementID",
+                        params.optLong("responseEngagementID", -1))
+                .putParam(
+                        "responseEngagementName",
+                        params.optString("responseEngagementName"))
+                .putParam(
+                        "responseEngagementType",
+                        params.optString("responseEngagementType"))
+                .putParam(
+                        "responseMessageSequence",
+                        params.optLong("responseMessageSequence", -1))
+                .putParam(
+                        "responseVariantName",
+                        params.optString("responseVariantName"))
+                .putParam(
+                        "imActionName",
+                        source)
+                .putParam(
+                        "imActionType",
+                        action.type);
     }
     
     public static Intent createIntent(Context context, ImageMessage msg) {
