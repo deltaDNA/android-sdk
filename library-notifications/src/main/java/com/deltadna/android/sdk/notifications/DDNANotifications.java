@@ -187,17 +187,6 @@ public final class DDNANotifications {
         }
     }
     
-    /**
-     * Notifies the SDK that a push notification has been dismissed by the user.
-     *
-     * @param payload the payload of the push notification
-     */
-    public static void recordNotificationDismissed(Bundle payload) {
-        if (!UnityForwarder.isPresent()) {
-            DDNA.instance().recordNotificationDismissed(payload);
-        } // `else` Unity doesn't have this method
-    }
-    
     public static void markUnityLoaded() {
         UnityForwarder.getInstance().markLoaded();
     }

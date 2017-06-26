@@ -16,9 +16,6 @@
 
 package com.deltadna.android.sdk.notifications;
 
-import android.app.ActivityManager;
-import android.app.ActivityManager.RunningAppProcessInfo;
-import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,29 +23,9 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.List;
 import java.util.Map;
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
-
 class Utils {
-    
-    static boolean inForeground(Context context) {
-        final List<RunningAppProcessInfo> processes = ((ActivityManager)
-                context.getSystemService(Context.ACTIVITY_SERVICE))
-                .getRunningAppProcesses();
-        
-        if (processes != null) {
-            for (final RunningAppProcessInfo process : processes) {
-                if (    process.processName.equals(context.getPackageName())
-                        && process.importance == IMPORTANCE_FOREGROUND) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
     
     static Bundle convert(Map<String, String> payload) {
         final Bundle result = new Bundle(payload.size());

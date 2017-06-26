@@ -22,7 +22,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 /**
  * Factory class responsible for filling details from a push message and
@@ -92,21 +91,11 @@ public class NotificationFactory {
             NotificationCompat.Builder builder,
             NotificationInfo info) {
         
-        // to make the behaviour consistent with iOS on Unity
-        final boolean backgrounded = !Utils.inForeground(context);
-        if (!backgrounded) {
-            Log.d(BuildConfig.LOG_TAG, "Notifying SDK of notification opening");
-            DDNANotifications.recordNotificationOpened(
-                    Utils.convert(info.message.data),
-                    false);
-        }
-        
         builder.setContentIntent(PendingIntent.getBroadcast(
                 context,
                 0,
                 new Intent(Actions.NOTIFICATION_OPENED)
-                        .putExtra(Actions.NOTIFICATION_INFO, info)
-                        .putExtra(Actions.LAUNCH, backgrounded),
+                        .putExtra(Actions.NOTIFICATION_INFO, info),
                 PendingIntent.FLAG_UPDATE_CURRENT));
         builder.setDeleteIntent(PendingIntent.getBroadcast(
                 context,
