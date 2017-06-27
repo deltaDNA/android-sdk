@@ -56,6 +56,7 @@ public final class ImageMessage implements Serializable {
     private static final int METRICTYPE_PIXELS = 0;
     private static final int METRICTYPE_PERCENTAGE = 1;
     
+    final String eventParams;
     private final String transactionId;
     private final String parameters;
     
@@ -77,6 +78,7 @@ public final class ImageMessage implements Serializable {
      * @throws JSONException if the JSON is invalid
      */
     public ImageMessage(JSONObject json) throws JSONException {
+        eventParams = json.getJSONObject("eventParams").toString();
         transactionId = json.getString("transactionID");
         parameters =  json.getJSONObject("parameters").toString();
         

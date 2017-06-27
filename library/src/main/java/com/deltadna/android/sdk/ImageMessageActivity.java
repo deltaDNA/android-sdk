@@ -24,6 +24,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -32,6 +33,9 @@ import android.widget.RelativeLayout;
 
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Iterator;
 
@@ -91,41 +95,86 @@ public final class ImageMessageActivity extends Activity {
     /**
      * Handles an action defined by the Delta DNA message.
      *
-     * @param action The action to handle.
+     * @param source    the source of the action
+     * @param action    the action to handle
      */
-    private void performAction(ImageMessage.Action action){
+    private void performAction(String source, ImageMessage.Action action){
         if (action != null) {
+            final Event event = createActionEvent(source, action);
+            
             if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
                 final Intent intent = new Intent();
                 intent.setAction(Action.ACTION.name());
                 intent.putExtra(EXTRA_VALUE, action.value);
-                if (imageMessage.parameters() != null) {
-                    intent.putExtra(
-                            EXTRA_PARAMS,
-                            imageMessage.parameters().toString());
-                }
+                intent.putExtra(
+                        EXTRA_PARAMS,
+                        imageMessage.parameters().toString());
+                
+                event.putParam("imActionValue", action.value);
                 
                 setResult(Activity.RESULT_OK, intent);
-                finish();
             } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_LINK)) {
                 final Intent intent = new Intent();
                 intent.setAction(Action.LINK.name());
                 intent.putExtra(EXTRA_VALUE, action.value);
-                if (imageMessage.parameters() != null) {
-                    intent.putExtra(
-                            EXTRA_PARAMS,
-                            imageMessage.parameters().toString());
-                }
+                intent.putExtra(
+                        EXTRA_PARAMS,
+                        imageMessage.parameters().toString());
+                
+                event.putParam("imActionValue", action.value);
                 
                 setResult(Activity.RESULT_OK, intent);
-                finish();
             } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_DISMISS)) {
                 imageMessage.cleanUp();
                 
                 setResult(Activity.RESULT_CANCELED);
-                finish();
             }
+            
+            DDNA.instance().recordEvent(event);
+            
+            finish();
         }
+    }
+    
+    private Event createActionEvent(String source, ImageMessage.Action action) {
+        JSONObject params;
+        try {
+            params = new JSONObject(imageMessage.eventParams);
+        } catch (JSONException e) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Failed to convert eventParams to JSON",
+                    e);
+            params = new JSONObject();
+        }
+        
+        return new Event("imageMessageAction")
+                .putParam(
+                        "responseTransactionID",
+                        params.optLong("responseTransactionID", -1))
+                .putParam(
+                        "responseDecisionpointName",
+                        params.optString("responseDecisionpointName"))
+                .putParam(
+                        "responseEngagementID",
+                        params.optLong("responseEngagementID", -1))
+                .putParam(
+                        "responseEngagementName",
+                        params.optString("responseEngagementName"))
+                .putParam(
+                        "responseEngagementType",
+                        params.optString("responseEngagementType"))
+                .putParam(
+                        "responseMessageSequence",
+                        params.optLong("responseMessageSequence", -1))
+                .putParam(
+                        "responseVariantName",
+                        params.optString("responseVariantName"))
+                .putParam(
+                        "imActionName",
+                        source)
+                .putParam(
+                        "imActionType",
+                        action.type);
     }
     
     public static Intent createIntent(Context context, ImageMessage msg) {
@@ -241,7 +290,9 @@ public final class ImageMessageActivity extends Activity {
                     final int orientation = getContext().getResources()
                             .getConfiguration().orientation;
                     
+                    String source = null;
                     ImageMessage.Action action = null;
+                    
                     // if the touch is on the popup then test buttons
                     if (imageMessage.background.layout(orientation).frame()
                             .contains((int) event.getX(), (int) event.getY())) {
@@ -253,20 +304,23 @@ public final class ImageMessageActivity extends Activity {
                             if (button.layout(orientation).frame().contains(
                                     (int) event.getX(),
                                     (int )event.getY())) {
+                                source = "button";
                                 action = button.action(orientation);
                                 break;
                             }
                         }
                         
                         if (action == null) {
+                            source = "background";
                             action = imageMessage.background.action(orientation);
                         }
                     } else {
                         // touch is outside the popup so use shim action
+                        source = "shim";
                         action = imageMessage.shim.action;
                     }
                     
-                    performAction(action);
+                    performAction(source, action);
                 }
             }
             

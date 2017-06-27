@@ -16,10 +16,15 @@
 
 package com.deltadna.android.sdk.notifications;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
 
 /**
@@ -31,6 +36,9 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + NotificationInteractionReceiver.class.getSimpleName();
+    private static final short DELAY = 5000;
+    
+    private final Handler notifier = new Handler(Looper.myLooper());
     
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -40,48 +48,52 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
         if (action != null) {
             final NotificationInfo info = (NotificationInfo)
                     intent.getSerializableExtra(Actions.NOTIFICATION_INFO);
+            if (info == null) {
+                Log.w(  TAG,
+                        "Failed to find or deserialise notification info");
+            }
             
             switch (action) {
                 case Actions.NOTIFICATION_OPENED:
-                    if (info == null) {
-                        Log.w(TAG, "Failed to find or deserialise notification info");
+                    if (MetaData.get(context).containsKey(MetaData.START_LAUNCH_INTENT)) {
+                        Log.w(  TAG,
+                                "Use of ddna_start_launch_intent in the manifest has been deprecated");
                     }
                     
-                    // to make the behaviour consistent with iOS on Unity
-                    if (    intent.getBooleanExtra(Actions.LAUNCH, false)
-                            && info != null) {
-                        
-                        Log.d(TAG, "Notifying SDK of notification opening");
-                        DDNANotifications.recordNotificationOpened(
-                                Utils.convert(info.message.data),
-                                true);
-                    }
-                    
-                    if (MetaData.get(context).containsKey(
-                            MetaData.START_LAUNCH_INTENT)) {
-                        
-                        Log.w(TAG, "Use of ddna_start_launch_intent in the manifest has been deprecated");
-                    }
                     if (MetaData.get(context).getBoolean(
-                            MetaData.START_LAUNCH_INTENT, true)) {
+                            MetaData.START_LAUNCH_INTENT,
+                            true)) {
+                        
+                        final Intent launchIntent = context
+                                .getPackageManager()
+                                .getLaunchIntentForPackage(context.getPackageName());
+                        
+                        if (info != null) {
+                            final Checker checker = new Checker(launchIntent);
+                            final Application app = (Application) context.getApplicationContext();
+                            app.registerActivityLifecycleCallbacks(checker);
+                            
+                            notifier.postDelayed(
+                                    new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Log.d(  TAG,
+                                                    "Notifying SDK of notification opening");
+                                            DDNANotifications.recordNotificationOpened(
+                                                    Utils.convert(info.message.data),
+                                                    checker.launched);
+                                        }
+                                    },
+                                    DELAY);
+                        }
                         
                         Log.d(TAG, "Starting activity with launch intent");
-                        context.startActivity(context
-                                .getPackageManager()
-                                .getLaunchIntentForPackage(
-                                        context.getPackageName()));
+                        context.startActivity(launchIntent);
                     }
                     break;
                 
                 case Actions.NOTIFICATION_DISMISSED:
-                    if (info == null) {
-                        Log.w(TAG, "Failed to find or deserialise notification info");
-                    }
-                    
-                    Log.d(TAG, "Notifying SDK of notification dismissal");
-                    DDNANotifications.recordNotificationDismissed((info == null)
-                            ? Bundle.EMPTY
-                            : Utils.convert(info.message.data));
+                    Log.d(TAG, "Notification has been dismissed");
                     break;
                 
                 default:
@@ -90,5 +102,51 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
         } else {
             Log.w(TAG, "Null action");
         }
+    }
+    
+    private class Checker implements Application.ActivityLifecycleCallbacks {
+        
+        final Intent intent;
+        boolean launched;
+        
+        Checker(Intent intent) {
+            this.intent = intent;
+        }
+        
+        private boolean intentMatches(Activity activity) {
+            final Intent other = activity.getIntent();
+            return (other != null
+                    && other.getComponent().equals(intent.getComponent())
+                    && other.getAction().equals(intent.getAction()));
+        }
+        
+        @Override
+        public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+            if (intentMatches(activity)) {
+                launched = true;
+            }
+        }
+        
+        @Override
+        public void onActivityStarted(Activity activity) {
+            if (intentMatches(activity)) {
+                launched = true;
+            }
+        }
+        
+        @Override
+        public void onActivityResumed(Activity activity) {}
+        
+        @Override
+        public void onActivityPaused(Activity activity) {}
+        
+        @Override
+        public void onActivityStopped(Activity activity) {}
+        
+        @Override
+        public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+        
+        @Override
+        public void onActivityDestroyed(Activity activity) {}
     }
 }

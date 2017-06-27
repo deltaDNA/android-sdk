@@ -57,6 +57,64 @@ class ImageMessageTest {
     
     private companion object {
         
-        val IMAGE = JSONObject("{\r\n    \"transactionID\": \"1898738848054116400\",\r\n    \"image\": {\r\n        \"width\": 512,\r\n        \"height\": 256,\r\n        \"format\": \"png\",\r\n        \"spritemap\": {\r\n            \"background\": {\r\n                \"x\": 2,\r\n                \"y\": 74,\r\n                \"width\": 320,\r\n                \"height\": 180\r\n            },\r\n            \"buttons\": [\r\n                {\r\n                    \"x\": 2,\r\n                    \"y\": 38,\r\n                    \"width\": 160,\r\n                    \"height\": 34\r\n                },\r\n                {\r\n                    \"x\": 2,\r\n                    \"y\": 2,\r\n                    \"width\": 160,\r\n                    \"height\": 34\r\n                }\r\n            ]\r\n        },\r\n        \"layout\": {\r\n            \"landscape\": {\r\n                \"background\": {\r\n                    \"contain\": {\r\n                        \"halign\": \"center\",\r\n                        \"valign\": \"center\",\r\n                        \"left\": \"10%\",\r\n                        \"right\": \"10%\",\r\n                        \"top\": \"0px\",\r\n                        \"bottom\": \"0%\"\r\n                    },\r\n                    \"action\": {\r\n                        \"type\": \"dismiss\"\r\n                    }\r\n                },\r\n                \"buttons\": [\r\n                    {\r\n                        \"x\": 160,\r\n                        \"y\": 145,\r\n                        \"action\": {\r\n                            \"type\": \"action\",\r\n                            \"value\": \"POWERUP\"\r\n                        }\r\n                    },\r\n                    {\r\n                        \"x\": 0,\r\n                        \"y\": 145,\r\n                        \"action\": {\r\n                            \"type\": \"dismiss\"\r\n                        }\r\n                    }\r\n                ]\r\n            }\r\n        },\r\n        \"shim\": {\r\n            \"mask\": \"dimmed\",\r\n            \"action\": {\r\n                \"type\": \"dismiss\"\r\n            }\r\n        },\r\n        \"url\": \"http://download.deltadna.net/engagements/f20f3c4fc19d4d49bc365b472770c065.png\"\r\n    },\r\n    \"parameters\": {\r\n        \"powerUpName\": \"MoHawk\"\r\n    }\r\n}")
+        val IMAGE = JSONObject(mapOf(
+                "transactionID" to "1898738848054116400",
+                "image" to mapOf(
+                        "width" to 512,
+                        "height" to 256,
+                        "format" to "png",
+                        "spritemap" to mapOf(
+                                "background" to mapOf(
+                                        "x" to 2,
+                                        "y" to 74,
+                                        "width" to 320,
+                                        "height" to 180),
+                                "buttons" to listOf(
+                                        mapOf(  "x" to 2,
+                                                "y" to 38,
+                                                "width" to 160,
+                                                "height" to 34),
+                                        mapOf(  "x" to 2,
+                                                "y" to 2,
+                                                "width" to 160,
+                                                "height" to 34))),
+                        "layout" to mapOf(
+                                "landscape" to mapOf(
+                                        "background" to mapOf(
+                                                "contain" to mapOf(
+                                                        "halign" to "center",
+                                                        "valign" to "center",
+                                                        "left" to "10%",
+                                                        "right" to "10%",
+                                                        "top" to "0px",
+                                                        "bottom" to "0%"),
+                                                "action" to mapOf(
+                                                        "type" to "dismiss")),
+                                        "buttons" to listOf(
+                                                mapOf(  "x" to 160,
+                                                        "y" to 145,
+                                                        "action" to mapOf(
+                                                                "type" to "action",
+                                                                "value" to "POWERUP")),
+                                                mapOf(  "x" to 0,
+                                                        "y" to 145,
+                                                        "action" to mapOf(
+                                                                "type" to "dismiss"))))),
+                        "shim" to mapOf(
+                                "mask" to "dimmed",
+                                "action" to mapOf(
+                                        "type" to "dismiss")),
+                        "url" to "http://download.deltadna.net/engagements/f20f3c4fc19d4d49bc365b472770c065.png"),
+                "eventParams" to mapOf(
+                        "platform" to "WEB",
+                        "responseTransactionID" to 2344672516611522560,
+                        "responseDecisionpointName" to "Fourteen",
+                        "responseEngagementID" to 15247,
+                        "responseEngagementName" to "15247",
+                        "responseEngagementType" to "TARGETING",
+                        "responseVariantName" to "20389",
+                        "responseMessageSequence" to 1),
+                "parameters" to mapOf(
+                        "powerUpName" to "MoHawk")))
     }
 }

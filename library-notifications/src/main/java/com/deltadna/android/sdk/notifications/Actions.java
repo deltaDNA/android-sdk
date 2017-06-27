@@ -34,7 +34,5 @@ class Actions {
     public static final String PUSH_MESSAGE = "push_message";
     public static final String NOTIFICATION_INFO = "notification_info";
     
-    static final String LAUNCH = "launch";
-    
     private Actions() {}
 }

@@ -29,16 +29,16 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.runners.MockitoJUnitRunner
+import org.junit.runners.JUnit4
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(JUnit4::class)
 class EventHandlerTest {
     
     private val store = mock<EventStore>()
     private val archive = mock<EngageArchive>()
     private val network = mock<NetworkManager>()
     
-    private var uut: EventHandler? = null
+    private var uut: EventHandler = EventHandler(store, archive, network)
     
     @Before
     fun before() {
@@ -47,8 +47,7 @@ class EventHandlerTest {
     
     @After
     fun after() {
-        uut!!.stop(false)
-        uut = null
+        uut.stop(false)
         
         reset(store)
         reset(archive)
@@ -60,9 +59,9 @@ class EventHandlerTest {
         withStoreEvents(
                 listOf("{\"value\":0}", "{\"value\":1}"),
                 listOf("{\"value\":0}"))
-        withListeners() { onCompleted(Response(200, null, null, null)) }
+        withListeners { onCompleted(Response(200, null, null, null)) }
         
-        uut!!.start(0, 1)
+        uut.start(0, 1)
         Thread.sleep(2200)
         
         verify(store, times(3)).items()
@@ -83,8 +82,8 @@ class EventHandlerTest {
     
     @Test
     fun stopPeriodicUploads() {
-        uut!!.start(1, 1)
-        uut!!.stop(false)
+        uut.start(1, 1)
+        uut.stop(false)
         Thread.sleep(2200)
         
         verify(store, never()).items()
@@ -94,10 +93,10 @@ class EventHandlerTest {
     @Test
     fun stopAndDispatch() {
         withStoreEvents(listOf("0")) {
-            withListeners() { onCompleted(Response(200, null, null, null)) }
+            withListeners { onCompleted(Response(200, null, null, null)) }
             
-            uut!!.start(1, 1)
-            uut!!.stop(true)
+            uut.start(1, 1)
+            uut.stop(true)
             Thread.sleep(2200)
             
             verify(store).items()
@@ -110,7 +109,7 @@ class EventHandlerTest {
     @Test
     fun handleEvent() {
         with(JSONObject()) {
-            uut!!.handleEvent(this)
+            uut.handleEvent(this)
             
             verify(store).add(eq(toString()))
         }
@@ -127,7 +126,7 @@ class EventHandlerTest {
             null
         }
         
-        uut!!.handleEngagement(
+        uut.handleEngagement(
                 engagement,
                 listener,
                 "userId",
@@ -157,12 +156,12 @@ class EventHandlerTest {
             (it.arguments[1] as RequestListener<*>).onError(Exception())
             null
         }
-        whenever(archive.contains(engagement.name, engagement.flavour!!))
+        whenever(archive.contains(engagement.name, engagement.flavour))
                 .thenReturn(true)
         whenever(archive.get(engagement.name, engagement.flavour))
                 .thenReturn(archived.toString())
         
-        uut!!.handleEngagement(
+        uut.handleEngagement(
                 engagement,
                 listener,
                 "userId",
@@ -197,7 +196,7 @@ class EventHandlerTest {
         whenever(archive.contains(engagement.name, engagement.flavour!!))
                 .thenReturn(false)
         
-        uut!!.handleEngagement(
+        uut.handleEngagement(
                 engagement,
                 listener,
                 "userId",
@@ -213,7 +212,7 @@ class EventHandlerTest {
         withStoreEvents(listOf("0")) {
             withListeners { onCompleted(Response(200, null, null, null)) }
             
-            uut!!.start(0, 1)
+            uut.start(0, 1)
             Thread.sleep(500)
             
             verify(this[0]).close(eq(true))
@@ -223,9 +222,9 @@ class EventHandlerTest {
     @Test
     fun itemsClearedOnCorruption() {
         withStoreEvents(listOf("0")) {
-            withListeners() { onCompleted(Response(400, null, null, null)) }
+            withListeners { onCompleted(Response(400, null, null, null)) }
             
-            uut!!.start(0, 1)
+            uut.start(0, 1)
             Thread.sleep(500)
             
             verify(this[0]).close(eq(true))
@@ -237,7 +236,17 @@ class EventHandlerTest {
         withStoreEvents(listOf("0")) {
             withListeners { onError(Exception()) }
             
-            uut!!.start(0, 1)
+            uut.start(0, 1)
+            Thread.sleep(500)
+            
+            verify(this[0]).close(eq(false))
+        }
+    }
+    
+    @Test
+    fun closesWhenNoItems() {
+        withStoreEvents(listOf()) {
+            uut.start(0, 1)
             Thread.sleep(500)
             
             verify(this[0]).close(eq(false))
@@ -251,7 +260,7 @@ class EventHandlerTest {
                 listOf(true, false, true)) {
             withListeners { onCompleted(Response(200, null, null, null)) }
             
-            uut!!.start(0, 1)
+            uut.start(0, 1)
             Thread.sleep(500)
             
             verify(this, times(2)).next()
@@ -264,11 +273,11 @@ class EventHandlerTest {
         withStoreEventsAndAvailability(listOf("0", null, "2")) {
             withListeners { onCompleted(Response(200, null, null, null)) }
             
-            uut!!.start(0, 1)
+            uut.start(0, 1)
             Thread.sleep(500)
             
             verify(network).collect(
-                    argThat { toString().equals("{\"eventList\":[0,2]}") },
+                    argThat { toString() == "{\"eventList\":[0,2]}" },
                     any())
             verify(this, times(3)).next()
             verify(this).close(eq(true))
@@ -280,9 +289,8 @@ class EventHandlerTest {
             block: List<CloseableIterator<EventStoreItem>>.() -> Unit = {}) {
         var stubbing = whenever(store.items())
         block.invoke(items.map {
-            with(spy(StoredEventsIterator(it))) {
+            spy(StoredEventsIterator(it)).apply {
                 stubbing = stubbing.thenReturn(this)
-                this
             }
         })
     }
@@ -291,10 +299,9 @@ class EventHandlerTest {
             values: List<String?>,
             availabilities: List<Boolean> = listOf(),
             block: CloseableIterator<EventStoreItem>.() -> Unit = {}) {
-        with(spy(StoredEventsIterator(values, availabilities))) {
+        spy(StoredEventsIterator(values, availabilities)).apply {
             whenever(store.items()).thenReturn(this)
             block.invoke(this)
-            this
         }
     }
     
@@ -310,17 +317,13 @@ class EventHandlerTest {
             backingAvailabilities: List<Boolean> = listOf()) :
             CloseableIterator<EventStoreItem> {
         
-        private val backing: List<EventStoreItemImpl>
-        private var index = -1
-        
-        init {
-            backing = (0..backingValues.size - 1).map {
-                EventStoreItemImpl(
+        private val backing: List<EventStoreItemImpl> = (0..backingValues.size - 1)
+                .map { EventStoreItemImpl(
                         backingValues[it],
                         backingAvailabilities.getOrElse(it, { true }))
-            }
         }
-        
+        private var index = -1
+
         override fun hasNext() = index < backing.size - 1
         override fun next() = backing[++index]
         override fun close(clear: Boolean) {}
@@ -334,7 +337,6 @@ class EventHandlerTest {
         override fun get() = value
     }
     
-    open class KEngagement : Engagement<KEngagement> {
-        constructor(point: String, flavour: String?) : super(point, flavour)
-    }
+    open class KEngagement(point: String, flavour: String?)
+        : Engagement<KEngagement>(point, flavour)
 }

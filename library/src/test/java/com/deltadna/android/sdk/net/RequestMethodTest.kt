@@ -23,10 +23,10 @@ import com.nhaarman.mockito_kotlin.verify
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.runners.MockitoJUnitRunner
+import org.junit.runners.JUnit4
 import java.net.HttpURLConnection
 
-@RunWith(MockitoJUnitRunner::class)
+@RunWith(JUnit4::class)
 class RequestMethodTest {
     
     private val connection = mock<HttpURLConnection>()
