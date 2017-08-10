@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.5.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.1) (YYYY-MM-DD)
+Removed reference to Unity method.  
+
 ## [4.5.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.0) (2017-06-27)
 Added image message action event.  
 Fixed database cursor not being closed.  
