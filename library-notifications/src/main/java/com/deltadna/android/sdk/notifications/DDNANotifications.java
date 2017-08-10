@@ -174,13 +174,11 @@ public final class DDNANotifications {
         
         if (UnityForwarder.isPresent()) {
             final Bundle copy = new Bundle(payload);
-            copy.putString("_ddCommunicationSender", "GOOGLE_NOTIFICATION");
             copy.putBoolean("_ddLaunch", launch);
             
             UnityForwarder.getInstance().forward(
                     "DeltaDNA.AndroidNotifications",
-                    launch  ? "DidLaunchWithPushNotification"
-                            : "DidReceivePushNotification",
+                    "DidReceivePushNotification",
                     Utils.convert(copy));
         } else {
             DDNA.instance().recordNotificationOpened(launch, payload);
