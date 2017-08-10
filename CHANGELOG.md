@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.5.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.1) (YYYY-MM-DD)
+## [4.5.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.1) (2017-08-10)
 Removed reference to Unity method.  
 
 ## [4.5.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.0) (2017-06-27)
