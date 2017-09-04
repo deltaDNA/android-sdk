@@ -102,7 +102,9 @@ public final class ImageMessageActivity extends Activity {
         if (action != null) {
             final Event event = createActionEvent(source, action);
             
-            if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
+            if (action.type.equalsIgnoreCase(ImageMessage.ACTION_NONE)) {
+                return;
+            } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
                 final Intent intent = new Intent();
                 intent.setAction(Action.ACTION.name());
                 intent.putExtra(EXTRA_VALUE, action.value);

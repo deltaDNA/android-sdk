@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.5.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.2) (2017-09-04)
+Fixed background with no action dismissing image message.  
+
 ## [4.5.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.1) (2017-08-10)
 Removed reference to Unity method.  
 

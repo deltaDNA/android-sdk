@@ -43,6 +43,7 @@ public final class ImageMessage implements Serializable {
             + ' '
             + ImageMessage.class.getSimpleName();
     
+    static final String ACTION_NONE = "none";
     static final String ACTION_DISMISS = "dismiss";
     static final String ACTION_ACTION = "action";
     static final String ACTION_LINK = "link";
