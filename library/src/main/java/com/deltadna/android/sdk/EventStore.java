@@ -338,7 +338,7 @@ class EventStore extends BroadcastReceiver {
                 int newVersion) {}
         
         long getEventsSize() {
-            final Cursor cursor = getWritableDatabase().rawQuery(
+            final Cursor cursor = getReadableDatabase().rawQuery(
                     "SELECT SUM(" + EVENTS_SIZE + ") FROM " + TABLE_EVENTS + ";",
                     new String[] {});
             final long result = (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
@@ -347,7 +347,7 @@ class EventStore extends BroadcastReceiver {
         }
         
         Cursor getEventRows() {
-            return getWritableDatabase().rawQuery(
+            return getReadableDatabase().rawQuery(
                     String.format(
                             Locale.US,
                             "SELECT e.%s, e.%s, e.%s, e.%s, e.%s, SUM(e1.%s) AS Total "
@@ -417,7 +417,6 @@ class EventStore extends BroadcastReceiver {
         }
         
         @Override
-        @Nullable
         public EventStoreItem next() {
             if (!cursor.moveToNext()) throw new NoSuchElementException();
             

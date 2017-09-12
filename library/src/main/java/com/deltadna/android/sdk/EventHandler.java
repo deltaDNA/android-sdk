@@ -41,6 +41,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Class which handles collect and engage events, ensuring that collect
@@ -265,85 +266,85 @@ final class EventHandler {
         @Override
         public void run() {
             final CloseableIterator<EventStoreItem> events = store.items();
-            if (!events.hasNext()) {
-                Log.d(TAG, "No stored events to upload");
-                
-                events.close(false);
-                return;
-            }
+            final AtomicBoolean clearEvents = new AtomicBoolean(false);
             
-            final StringBuilder builder = new StringBuilder("{\"eventList\":[");
-            int count = 0;
-            while (events.hasNext()) {
-                final EventStoreItem event = events.next();
-                
-                if (event.available()) {
-                    final String content = event.get();
-                    if (content != null) {
-                        builder.append(content);
-                        builder.append(',');
-                        
-                        count++;
-                    } else {
-                        Log.w(TAG, "Failed retrieving event, skipping");
-                    }
-                } else {
-                    Log.w(TAG, "Stored event not available, pausing");
-                    break;
-                }
-            }
-            if (builder.charAt(builder.length()- 1) == ',') {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            builder.append("]}");
-            
-            final JSONObject payload;
             try {
-                payload = new JSONObject(builder.toString());
-            } catch (JSONException e) {
-                Log.w(TAG, e);
-                return;
-            }
-            
-            Log.d(TAG, "Uploading " + count + " events");
-            final CountDownLatch latch = new CountDownLatch(1);
-            final CancelableRequest request = network.collect(
-                    payload,
-                    new RequestListener<Void>() {
-                        @Override
-                        public void onCompleted(Response<Void> result) {
-                            if (result.isSuccessful()) {
-                                Log.d(TAG, "Successfully uploaded events");
-                                events.close(true);
-                            } else {
-                                Log.w(TAG, "Failed to upload events due to " + result);
-                                if (result.code == 400) {
-                                    Log.w(TAG, "Wiping event store due to unrecoverable data");
-                                    events.close(true);
+                if (!events.hasNext()) {
+                    Log.d(TAG, "No stored events to upload");
+                    return;
+                }
+                
+                final StringBuilder builder = new StringBuilder("{\"eventList\":[");
+                int count = 0;
+                while (events.hasNext()) {
+                    final EventStoreItem event = events.next();
+                    
+                    if (event.available()) {
+                        final String content = event.get();
+                        if (content != null) {
+                            builder.append(content);
+                            builder.append(',');
+                            
+                            count++;
+                        } else {
+                            Log.w(TAG, "Failed retrieving event, skipping");
+                        }
+                    } else {
+                        Log.w(TAG, "Stored event not available, pausing");
+                        break;
+                    }
+                }
+                if (builder.charAt(builder.length() - 1) == ',') {
+                    builder.deleteCharAt(builder.length() - 1);
+                }
+                builder.append("]}");
+                
+                final JSONObject payload;
+                try {
+                    payload = new JSONObject(builder.toString());
+                } catch (JSONException e) {
+                    Log.w(TAG, e);
+                    return;
+                }
+                
+                Log.d(TAG, "Uploading " + count + " events");
+                final CountDownLatch latch = new CountDownLatch(1);
+                final CancelableRequest request = network.collect(
+                        payload,
+                        new RequestListener<Void>() {
+                            @Override
+                            public void onCompleted(Response<Void> result) {
+                                if (result.isSuccessful()) {
+                                    Log.d(TAG, "Successfully uploaded events");
+                                    clearEvents.set(true);
                                 } else {
-                                    events.close(false);
+                                    Log.w(TAG, "Failed to upload events due to " + result);
+                                    if (result.code == 400) {
+                                        Log.w(TAG, "Wiping event store due to unrecoverable data");
+                                        clearEvents.set(true);
+                                    }
                                 }
+                                
+                                latch.countDown();
                             }
                             
-                            latch.countDown();
-                        }
-                        
-                        @Override
-                        public void onError(Throwable t) {
-                            Log.w(  TAG,
-                                    "Failed to upload events, will retry later",
-                                    t);
-                            
-                            events.close(false);
-                            latch.countDown();
-                        }
-                    });
-            
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Log.w(TAG, "Cancelling event upload", e);
-                request.cancel();
+                            @Override
+                            public void onError(Throwable t) {
+                                Log.w(TAG,
+                                        "Failed to upload events, will retry later",
+                                        t);
+                                latch.countDown();
+                            }
+                        });
+                
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    Log.w(TAG, "Cancelling event upload", e);
+                    request.cancel();
+                }
+            } finally {
+                events.close(clearEvents.get());
             }
         }
     }
