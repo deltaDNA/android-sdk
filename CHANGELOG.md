@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.5.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.3) (YYYY-MM-DD)
+Fixed incorrect clearing of events on unavailable storage.  
 Improved database handling when uploading events.  
 
 ## [4.5.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.2) (2017-09-04)

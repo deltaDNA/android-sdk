@@ -41,7 +41,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Class which handles collect and engage events, ensuring that collect
@@ -266,11 +266,14 @@ final class EventHandler {
         @Override
         public void run() {
             final CloseableIterator<EventStoreItem> events = store.items();
-            final AtomicBoolean clearEvents = new AtomicBoolean(false);
+            final AtomicReference<CloseableIterator.Mode> clearEvents =
+                    new AtomicReference<>(CloseableIterator.Mode.ALL);
             
             try {
                 if (!events.hasNext()) {
                     Log.d(TAG, "No stored events to upload");
+                    
+                    clearEvents.set(CloseableIterator.Mode.NONE);
                     return;
                 }
                 
@@ -291,6 +294,7 @@ final class EventHandler {
                         }
                     } else {
                         Log.w(TAG, "Stored event not available, pausing");
+                        clearEvents.set(CloseableIterator.Mode.UP_TO_CURRENT);
                         break;
                     }
                 }
@@ -304,6 +308,8 @@ final class EventHandler {
                     payload = new JSONObject(builder.toString());
                 } catch (JSONException e) {
                     Log.w(TAG, e);
+                    
+                    clearEvents.set(CloseableIterator.Mode.NONE);
                     return;
                 }
                 
@@ -316,12 +322,11 @@ final class EventHandler {
                             public void onCompleted(Response<Void> result) {
                                 if (result.isSuccessful()) {
                                     Log.d(TAG, "Successfully uploaded events");
-                                    clearEvents.set(true);
                                 } else {
                                     Log.w(TAG, "Failed to upload events due to " + result);
                                     if (result.code == 400) {
                                         Log.w(TAG, "Wiping event store due to unrecoverable data");
-                                        clearEvents.set(true);
+                                        clearEvents.set(CloseableIterator.Mode.ALL);
                                     }
                                 }
                                 
@@ -333,6 +338,8 @@ final class EventHandler {
                                 Log.w(TAG,
                                         "Failed to upload events, will retry later",
                                         t);
+                                
+                                clearEvents.set(CloseableIterator.Mode.NONE);
                                 latch.countDown();
                             }
                         });
@@ -341,6 +348,8 @@ final class EventHandler {
                     latch.await();
                 } catch (InterruptedException e) {
                     Log.w(TAG, "Cancelling event upload", e);
+                    
+                    clearEvents.set(CloseableIterator.Mode.NONE);
                     request.cancel();
                 }
             } finally {

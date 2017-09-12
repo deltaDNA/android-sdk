@@ -19,16 +19,19 @@ package com.deltadna.android.sdk
 import android.content.Context
 import android.os.Environment
 import com.deltadna.android.sdk.helpers.Settings
+import com.deltadna.android.sdk.util.CloseableIterator
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowEnvironment
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class EventStoreTest {
     
     private var application: Context? = null
@@ -161,19 +164,19 @@ class EventStoreTest {
                 assertThat(hasNext()).isTrue()
                 next()
                 assertThat(hasNext()).isFalse()
-                close(true)
+                close(CloseableIterator.Mode.ALL)
             }
             with(items()) {
                 assertThat(hasNext()).isTrue()
                 next()
                 assertThat(hasNext()).isFalse()
-                close(true)
+                close(CloseableIterator.Mode.ALL)
             }
             with(items()) {
                 assertThat(hasNext()).isTrue()
                 next()
                 assertThat(hasNext()).isFalse()
-                close(true)
+                close(CloseableIterator.Mode.ALL)
             }
             with(items()) {
                 assertThat(hasNext()).isFalse()
@@ -210,7 +213,7 @@ class EventStoreTest {
                     assertThat(hasNext()).isTrue()
                     next()
                     assertThat(hasNext()).isFalse()
-                    close(true)
+                    close(CloseableIterator.Mode.ALL)
                 }
             }
             assertThat(items().hasNext()).isFalse()
@@ -223,7 +226,7 @@ class EventStoreTest {
         with(uut!!) {
             items.forEach { add(it) }
             pause()
-            items().close(false)
+            items().close(CloseableIterator.Mode.NONE)
             
             with(items()) {
                 items.forEach {
@@ -239,13 +242,34 @@ class EventStoreTest {
     }
     
     @Test
-    fun itemsRemovedOnCloseWithClear() {
+    fun itemsRemovedOnCloseWithClearAll() {
         with(uut!!) {
             listOf("1", "2", "3").forEach { add(it) }
             pause()
-            items().close(true)
+            items().close(CloseableIterator.Mode.ALL)
             
             assertThat(items().hasNext()).isFalse()
+        }
+    }
+    
+    @Test
+    fun itemsRemovedOnCloseWithClearUpToCurrent() {
+        with(uut!!) {
+            listOf("1", "2", "3").forEach { add(it) }
+            pause()
+            
+            with(items()) {
+                next()
+                ShadowEnvironment.setExternalStorageState(Environment.MEDIA_UNMOUNTED)
+                assertThat(next().available()).isFalse()
+                close(CloseableIterator.Mode.UP_TO_CURRENT)
+            }
+            
+            ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
+            with(items()) {
+                assertThat(next().get()).isEqualTo("2")
+                assertThat(next().get()).isEqualTo("3")
+            }
         }
     }
     

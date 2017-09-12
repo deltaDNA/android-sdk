@@ -471,23 +471,26 @@ class EventStore extends BroadcastReceiver {
         }
         
         @Override
-        public void close(boolean clear) {
-            if (clear) {
-                cursor.moveToFirst();
-                while (!cursor.isAfterLast()) {
-                    if (!db.removeEventRow(getCurrentId())) {
-                        Log.w(TAG, "Failed to remove event row");
+        public void close(Mode mode) {
+            switch (mode) {
+                case ALL:
+                    cursor.moveToFirst();
+                    while (!cursor.isAfterLast()) {
+                        removeRow();
+                        cursor.moveToNext();
                     }
                     
-                    final File file = new File(
-                            getCurrentLocation().directory(context, DIRECTORY),
-                            getCurrentName());
-                    if (!file.delete()) {
-                        Log.w(TAG, "Failed deleting " + file);
+                    break;
+                    
+                case UP_TO_CURRENT:
+                    final int position = cursor.getPosition();
+                    cursor.moveToFirst();
+                    while (cursor.getPosition() < position) {
+                        removeRow();
+                        cursor.moveToNext();
                     }
                     
-                    cursor.moveToNext();
-                }
+                    break;
             }
             
             cursor.close();
@@ -506,6 +509,19 @@ class EventStore extends BroadcastReceiver {
         private String getCurrentName() {
             return cursor.getString(
                     cursor.getColumnIndex(DbHelper.EVENTS_NAME));
+        }
+        
+        private void removeRow() {
+            if (!db.removeEventRow(getCurrentId())) {
+                Log.w(TAG, "Failed to remove event row");
+            }
+            
+            final File file = new File(
+                    getCurrentLocation().directory(context, DIRECTORY),
+                    getCurrentName());
+            if (!file.delete()) {
+                Log.w(TAG, "Failed deleting " + file);
+            }
         }
     }
 }

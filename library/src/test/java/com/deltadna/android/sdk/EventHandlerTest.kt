@@ -215,7 +215,7 @@ class EventHandlerTest {
             uut.start(0, 1)
             Thread.sleep(500)
             
-            verify(this[0]).close(eq(true))
+            verify(this[0]).close(same(CloseableIterator.Mode.ALL))
         }
     }
     
@@ -227,7 +227,7 @@ class EventHandlerTest {
             uut.start(0, 1)
             Thread.sleep(500)
             
-            verify(this[0]).close(eq(true))
+            verify(this[0]).close(same(CloseableIterator.Mode.ALL))
         }
     }
     
@@ -239,7 +239,7 @@ class EventHandlerTest {
             uut.start(0, 1)
             Thread.sleep(500)
             
-            verify(this[0]).close(eq(false))
+            verify(this[0]).close(same(CloseableIterator.Mode.NONE))
         }
     }
     
@@ -249,7 +249,7 @@ class EventHandlerTest {
             uut.start(0, 1)
             Thread.sleep(500)
             
-            verify(this[0]).close(eq(false))
+            verify(this[0]).close(same(CloseableIterator.Mode.NONE))
         }
     }
     
@@ -264,7 +264,7 @@ class EventHandlerTest {
             Thread.sleep(500)
             
             verify(this, times(2)).next()
-            verify(this).close(eq(true))
+            verify(this).close(same(CloseableIterator.Mode.UP_TO_CURRENT))
         }
     }
     
@@ -280,7 +280,7 @@ class EventHandlerTest {
                     argThat { toString() == "{\"eventList\":[0,2]}" },
                     any())
             verify(this, times(3)).next()
-            verify(this).close(eq(true))
+            verify(this).close(same(CloseableIterator.Mode.ALL))
         }
     }
     
@@ -326,7 +326,7 @@ class EventHandlerTest {
 
         override fun hasNext() = index < backing.size - 1
         override fun next() = backing[++index]
-        override fun close(clear: Boolean) {}
+        override fun close(mode: CloseableIterator.Mode) {}
         override fun remove() {}
     }
     
