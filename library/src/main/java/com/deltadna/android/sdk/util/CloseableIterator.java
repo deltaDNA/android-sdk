@@ -20,5 +20,7 @@ import java.util.Iterator;
 
 public interface CloseableIterator<T> extends Iterator<T> {
     
-    void close(boolean clear);
+    enum Mode { NONE, UP_TO_CURRENT, ALL}
+    
+    void close(Mode mode);
 }

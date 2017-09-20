@@ -94,7 +94,7 @@ public class Product<T extends Product<T>> implements JsonParams {
      * @throws IllegalArgumentException if the {@code name} is null or empty
      * @throws IllegalArgumentException if the {@code type} is null or empty
      */
-    public T addVirtualCurrency(String name, String type, int amount) {
+    public T addVirtualCurrency(String name, String type, long amount) {
         virtualCurrencies.put(new Params().put(
                 "virtualCurrency",
                 new Params()

@@ -338,7 +338,7 @@ class EventStore extends BroadcastReceiver {
                 int newVersion) {}
         
         long getEventsSize() {
-            final Cursor cursor = getWritableDatabase().rawQuery(
+            final Cursor cursor = getReadableDatabase().rawQuery(
                     "SELECT SUM(" + EVENTS_SIZE + ") FROM " + TABLE_EVENTS + ";",
                     new String[] {});
             final long result = (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
@@ -347,7 +347,7 @@ class EventStore extends BroadcastReceiver {
         }
         
         Cursor getEventRows() {
-            return getWritableDatabase().rawQuery(
+            return getReadableDatabase().rawQuery(
                     String.format(
                             Locale.US,
                             "SELECT e.%s, e.%s, e.%s, e.%s, e.%s, SUM(e1.%s) AS Total "
@@ -417,7 +417,6 @@ class EventStore extends BroadcastReceiver {
         }
         
         @Override
-        @Nullable
         public EventStoreItem next() {
             if (!cursor.moveToNext()) throw new NoSuchElementException();
             
@@ -472,23 +471,26 @@ class EventStore extends BroadcastReceiver {
         }
         
         @Override
-        public void close(boolean clear) {
-            if (clear) {
-                cursor.moveToFirst();
-                while (!cursor.isAfterLast()) {
-                    if (!db.removeEventRow(getCurrentId())) {
-                        Log.w(TAG, "Failed to remove event row");
+        public void close(Mode mode) {
+            switch (mode) {
+                case ALL:
+                    cursor.moveToFirst();
+                    while (!cursor.isAfterLast()) {
+                        removeRow();
+                        cursor.moveToNext();
                     }
                     
-                    final File file = new File(
-                            getCurrentLocation().directory(context, DIRECTORY),
-                            getCurrentName());
-                    if (!file.delete()) {
-                        Log.w(TAG, "Failed deleting " + file);
+                    break;
+                    
+                case UP_TO_CURRENT:
+                    final int position = cursor.getPosition();
+                    cursor.moveToFirst();
+                    while (cursor.getPosition() < position) {
+                        removeRow();
+                        cursor.moveToNext();
                     }
                     
-                    cursor.moveToNext();
-                }
+                    break;
             }
             
             cursor.close();
@@ -507,6 +509,19 @@ class EventStore extends BroadcastReceiver {
         private String getCurrentName() {
             return cursor.getString(
                     cursor.getColumnIndex(DbHelper.EVENTS_NAME));
+        }
+        
+        private void removeRow() {
+            if (!db.removeEventRow(getCurrentId())) {
+                Log.w(TAG, "Failed to remove event row");
+            }
+            
+            final File file = new File(
+                    getCurrentLocation().directory(context, DIRECTORY),
+                    getCurrentName());
+            if (!file.delete()) {
+                Log.w(TAG, "Failed deleting " + file);
+            }
         }
     }
 }
