@@ -52,7 +52,7 @@ compile 'com.deltadna.android:deltadna-sdk-notifications:4.6.0-SNAPSHOT'
     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService">
     
     <intent-filter>
-        <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+        <action android:name="com.google.firebase.MESSAGING_EVENT"/>
     </intent-filter>
 </service>
 ```
