@@ -52,7 +52,7 @@ Once you have the SDK and the Notifications addon in your project you will need 
     android:name="com.deltadna.android.sdk.notifications.NotificationListenerService">
     
     <intent-filter>
-        <action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+        <action android:name="com.google.firebase.MESSAGING_EVENT"/>
     </intent-filter>
 </service>
 ```
