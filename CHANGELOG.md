@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.5.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.3) (YYYY-MM-DD)
+## [4.5.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.3) (2017-09-20)
 Fixed incorrect clearing of events on unavailable storage.  
 Fixed unable to send long values as virtual currency.  
 Improved database handling when uploading events.  
