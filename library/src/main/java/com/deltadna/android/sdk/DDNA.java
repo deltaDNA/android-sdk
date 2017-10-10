@@ -91,7 +91,7 @@ public final class DDNA {
     private final Settings settings;
     @Nullable
     private final String clientVersion;
-    private final String platform;
+    private final ClientInfo.Platform platform;
     
     private final Preferences preferences;
     private final EventStore store;
@@ -632,11 +632,11 @@ public final class DDNA {
             @Nullable String hashSecret,
             @Nullable String clientVersion,
             @Nullable String userId,
-            @Nullable String platform) {
+            @Nullable ClientInfo.Platform platform) {
         
         this.settings = settings;
         this.clientVersion = clientVersion;
-        this.platform = TextUtils.isEmpty(platform)
+        this.platform = (platform == null)
                 ? ClientInfo.platform()
                 : platform;
         
@@ -799,7 +799,7 @@ public final class DDNA {
         @Nullable
         private String userId;
         @Nullable
-        private String platform;
+        private ClientInfo.Platform platform;
         
         private final Settings settings;
         
@@ -882,7 +882,7 @@ public final class DDNA {
          *
          * @return this {@link Configuration} instance
          */
-        public Configuration platform(@Nullable String platform) {
+        public Configuration platform(@Nullable ClientInfo.Platform platform) {
             this.platform = platform;
             return this;
         }

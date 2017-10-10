@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.6.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.0) (YYYY-MM-DD)
+Added support for Amazon platform option.  
+
 ## [4.5.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.3) (2017-09-20)
 Fixed incorrect clearing of events on unavailable storage.  
 Fixed unable to send long values as virtual currency.  
