@@ -412,7 +412,9 @@ public final class DDNA {
                 listener,
                 getUserId(),
                 sessionId,
-                ENGAGE_API_VERSION, SDK_VERSION);
+                ENGAGE_API_VERSION,
+                SDK_VERSION,
+                platform);
         
         return this;
     }
@@ -881,6 +883,9 @@ public final class DDNA {
          * @param platform the platform
          *
          * @return this {@link Configuration} instance
+         *
+         * @see ClientInfo#PLATFORM_ANDROID
+         * @see ClientInfo#PLATFORM_AMAZON
          */
         public Configuration platform(@Nullable String platform) {
             this.platform = platform;

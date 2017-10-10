@@ -26,8 +26,21 @@ import java.util.TimeZone;
 
 public final class ClientInfo {
     
+    /**
+     * Will be used as default.
+     */
+    public static final String PLATFORM_ANDROID = "ANDROID";
+    /**
+     * To be used when targeting the Amazon Appstore.
+     */
+    public static final String PLATFORM_AMAZON = "AMAZON";
+    
+    /**
+     * @see #PLATFORM_ANDROID
+     * @see #PLATFORM_AMAZON
+     */
     public static String platform() {
-        return "ANDROID";
+        return PLATFORM_ANDROID;
     }
     
     public static String deviceName() {

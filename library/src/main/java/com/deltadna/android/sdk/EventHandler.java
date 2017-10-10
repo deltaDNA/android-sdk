@@ -82,7 +82,7 @@ final class EventHandler {
         this.archive = archive;
         this.network = network;
     }
-
+    
     /**
      * Starts automatic background event uploads.
      * 
@@ -99,7 +99,7 @@ final class EventHandler {
                 repeatRate,
                 TimeUnit.SECONDS);
     }
-
+    
     /**
      * Stops automatic background event uploads.
      * 
@@ -115,7 +115,7 @@ final class EventHandler {
             dispatch();
         }
     }
-
+    
     /**
      * Dispatches any events immediately.
      */
@@ -147,7 +147,8 @@ final class EventHandler {
             String userId,
             String sessionId,
             final int engageApiVersion,
-            String sdkVersion) {
+            String sdkVersion,
+            String platform) {
         
         final JSONObject event;
         try {
@@ -157,7 +158,7 @@ final class EventHandler {
                     .put("sessionID", sessionId)
                     .put("version", engageApiVersion)
                     .put("sdkVersion", sdkVersion)
-                    .put("platform", ClientInfo.platform())
+                    .put("platform", platform)
                     .put("manufacturer", ClientInfo.manufacturer())
                     .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
                     .put("timezoneOffset", ClientInfo.timezoneOffset())
