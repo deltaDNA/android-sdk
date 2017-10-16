@@ -11,6 +11,7 @@
 * [Overview](#overview)
 * [Adding to a project](#adding-to-a-project)
 * [Initialising](#initialising)
+ * [Amazon](#amazon)
 * [Starting and stopping](#starting-and-stopping)
 * [Recording events](#recording-events)
  * [Simple event](#simple-event)
@@ -79,6 +80,17 @@ You will need to register your `Application` subclass in the manifest file
 After the `initialise()` call the SDK will be available throughout the entire lifecycle of your application by calling `DDNA.instance()`.
 
 You may also set optional attributes on the `Configuration`, such as the client version, or user id, amongst other options.
+
+### Amazon
+When building an APK to be distributed on the Amazon Appstore then the platform needs to be changed to the `ClientInfo.Platform.AMAZON` enum during initialisation
+```java
+DDNA.initialise(new DDNA.Configuration(
+        this,
+        "environmentKey",
+        "collectUrl",
+        "engageUrl")
+        .platform(ClientInfo.Platform.AMAZON));
+```
 
 ## Starting and stopping
 Inside of your `Activity` class you will need to start the SDK with `DDNA.instance().startSdk()` from the `onCreate(Bundle)` method, and likewise stop the SDK with `DDNA.instance().stopSdk()` from the `onDestroy()` method.

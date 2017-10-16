@@ -26,8 +26,19 @@ import java.util.TimeZone;
 
 public final class ClientInfo {
     
-    public static String platform() {
-        return "ANDROID";
+    public enum Platform {
+        /**
+         * To be used when targeting the Google Play Store.
+         */
+        ANDROID,
+        /**
+         * To be used when targeting the Amazon Appstore.
+         */
+        AMAZON
+    }
+    
+    public static Platform platform() {
+        return Platform.ANDROID;
     }
     
     public static String deviceName() {
