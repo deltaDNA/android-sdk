@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.5.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.4) (YYYY-MM-DD)
+## [4.5.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.4) (2017-10-17)
 Fixed push notification compatibility with Android 8.  
 Updated target API to 26 (Android 8).  
 Updated Android support library.  
