@@ -3,6 +3,11 @@
 ## [4.6.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.0) (YYYY-MM-DD)
 Added support for Amazon platform option.  
 
+## [4.5.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.4) (2017-10-17)
+Fixed push notification compatibility with Android 8.  
+Updated target API to 26 (Android 8).  
+Updated Android support library.  
+
 ## [4.5.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.5.3) (2017-09-20)
 Fixed incorrect clearing of events on unavailable storage.  
 Fixed unable to send long values as virtual currency.  

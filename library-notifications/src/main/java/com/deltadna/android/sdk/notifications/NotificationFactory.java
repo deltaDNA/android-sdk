@@ -16,10 +16,14 @@
 
 package com.deltadna.android.sdk.notifications;
 
+import android.annotation.TargetApi;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 
@@ -40,6 +44,12 @@ import android.support.v4.app.NotificationCompat;
  */
 public class NotificationFactory {
     
+    /**
+     * Identifier for the default {@link NotificationChannel} used for
+     * notifications.
+     */
+    public static final String DEFAULT_CHANNEL = "com.deltadna.default";
+    
     protected final Context context;
     
     public NotificationFactory(Context context) {
@@ -59,6 +69,10 @@ public class NotificationFactory {
             NotificationCompat.Builder builder,
             PushMessage message) {
         
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setChannelId(getChannel().getId());
+        }
+        
         return builder
                 .setSmallIcon(message.icon)
                 .setContentTitle(message.title)
@@ -67,7 +81,9 @@ public class NotificationFactory {
     }
     
     /**
-     * Creates a {@link Notification} from 
+     * Creates a {@link Notification} from a previously configured
+     * {@link NotificationCompat.Builder} and a {@link NotificationInfo}
+     * instance.
      *
      * Implementations which call
      * {@link NotificationCompat.Builder#setContentIntent(PendingIntent)}
@@ -105,5 +121,27 @@ public class NotificationFactory {
                 PendingIntent.FLAG_UPDATE_CURRENT));
         
         return builder.build();
+    }
+    
+    /**
+     * Gets the {@link NotificationChannel} to be used for configuring the
+     * push notification.
+     * <p>
+     * The {@link #DEFAULT_CHANNEL} is used as the default identifier.
+     *
+     * @return  notification channel to be used
+     */
+    @TargetApi(Build.VERSION_CODES.O)
+    protected NotificationChannel getChannel() {
+        final NotificationChannel channel = new NotificationChannel(
+                DEFAULT_CHANNEL,
+                context.getString(R.string.ddna_notification_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT);
+        
+        ((NotificationManager) context.getSystemService(
+                Context.NOTIFICATION_SERVICE))
+                .createNotificationChannel(channel);
+        
+        return channel;
     }
 }
