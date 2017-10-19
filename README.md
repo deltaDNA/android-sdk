@@ -89,7 +89,7 @@ DDNA.initialise(new DDNA.Configuration(
         "environmentKey",
         "collectUrl",
         "engageUrl")
-        .platform(ClientInfo.Platform.AMAZON));
+        .platform(ClientInfo.PLATFORM_AMAZON));
 ```
 
 ## Starting and stopping

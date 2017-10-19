@@ -26,19 +26,21 @@ import java.util.TimeZone;
 
 public final class ClientInfo {
     
-    public enum Platform {
-        /**
-         * To be used when targeting the Google Play Store.
-         */
-        ANDROID,
-        /**
-         * To be used when targeting the Amazon Appstore.
-         */
-        AMAZON
-    }
+    /**
+     * Will be used as default.
+     */
+    public static final String PLATFORM_ANDROID = "ANDROID";
+    /**
+     * To be used when targeting the Amazon Appstore.
+     */
+    public static final String PLATFORM_AMAZON = "AMAZON";
     
-    public static Platform platform() {
-        return Platform.ANDROID;
+    /**
+     * @see #PLATFORM_ANDROID
+     * @see #PLATFORM_AMAZON
+     */
+    public static String platform() {
+        return PLATFORM_ANDROID;
     }
     
     public static String deviceName() {

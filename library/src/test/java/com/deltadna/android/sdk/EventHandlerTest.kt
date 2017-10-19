@@ -132,7 +132,8 @@ class EventHandlerTest {
                 "userId",
                 "sessionId",
                 0,
-                "sdkVersion")
+                "sdkVersion",
+                "platform")
         
         verify(archive).put(
                 eq(engagement.name),
@@ -167,7 +168,8 @@ class EventHandlerTest {
                 "userId",
                 "sessionId",
                 0,
-                "sdkVersion")
+                "sdkVersion",
+                "platform")
         
         val cached = JSONObject(archived.toString())
                 .put("isCachedResponse", true)
@@ -202,7 +204,8 @@ class EventHandlerTest {
                 "userId",
                 "sessionId",
                 0,
-                "sdkVersion")
+                "sdkVersion",
+                "platform")
         
         verify(listener).onError(same(cause))
     }

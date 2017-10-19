@@ -91,7 +91,7 @@ public final class DDNA {
     private final Settings settings;
     @Nullable
     private final String clientVersion;
-    private final ClientInfo.Platform platform;
+    private final String platform;
     
     private final Preferences preferences;
     private final EventStore store;
@@ -412,7 +412,9 @@ public final class DDNA {
                 listener,
                 getUserId(),
                 sessionId,
-                ENGAGE_API_VERSION, SDK_VERSION);
+                ENGAGE_API_VERSION,
+                SDK_VERSION,
+                platform);
         
         return this;
     }
@@ -632,7 +634,7 @@ public final class DDNA {
             @Nullable String hashSecret,
             @Nullable String clientVersion,
             @Nullable String userId,
-            @Nullable ClientInfo.Platform platform) {
+            @Nullable String platform) {
         
         this.settings = settings;
         this.clientVersion = clientVersion;
@@ -799,7 +801,7 @@ public final class DDNA {
         @Nullable
         private String userId;
         @Nullable
-        private ClientInfo.Platform platform;
+        private String platform;
         
         private final Settings settings;
         
@@ -881,8 +883,11 @@ public final class DDNA {
          * @param platform the platform
          *
          * @return this {@link Configuration} instance
+         *
+         * @see ClientInfo#PLATFORM_ANDROID
+         * @see ClientInfo#PLATFORM_AMAZON
          */
-        public Configuration platform(@Nullable ClientInfo.Platform platform) {
+        public Configuration platform(String platform) {
             this.platform = platform;
             return this;
         }
