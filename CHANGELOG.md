@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.6.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.0) (YYYY-MM-DD)
+## [4.6.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.0) (2017-10-23)
 Improved support for Amazon platform.  
 Updated build and runtime dependencies.  
 
