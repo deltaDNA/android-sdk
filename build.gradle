@@ -31,7 +31,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0-rc2'
+        classpath 'com.android.tools.build:gradle:3.0.0'
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.2'
         classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.1.7'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"

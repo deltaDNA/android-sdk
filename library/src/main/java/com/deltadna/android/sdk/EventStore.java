@@ -338,12 +338,17 @@ class EventStore extends BroadcastReceiver {
                 int newVersion) {}
         
         long getEventsSize() {
-            final Cursor cursor = getReadableDatabase().rawQuery(
-                    "SELECT SUM(" + EVENTS_SIZE + ") FROM " + TABLE_EVENTS + ";",
-                    new String[] {});
-            final long result = (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
-            cursor.close();
-            return result;
+            Cursor cursor = null;
+            try {
+                cursor = getReadableDatabase().rawQuery(
+                        "SELECT SUM(" + EVENTS_SIZE + ") " +
+                        "FROM " + TABLE_EVENTS + ";",
+                        new String[] {});
+                
+                return (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
+            } finally {
+                if (cursor != null) cursor.close();
+            }
         }
         
         Cursor getEventRows() {
@@ -472,28 +477,30 @@ class EventStore extends BroadcastReceiver {
         
         @Override
         public void close(Mode mode) {
-            switch (mode) {
-                case ALL:
-                    cursor.moveToFirst();
-                    while (!cursor.isAfterLast()) {
-                        removeRow();
-                        cursor.moveToNext();
-                    }
+            try {
+                switch (mode) {
+                    case ALL:
+                        cursor.moveToFirst();
+                        while (!cursor.isAfterLast()) {
+                            removeRow();
+                            cursor.moveToNext();
+                        }
+                        
+                        break;
                     
-                    break;
-                    
-                case UP_TO_CURRENT:
-                    final int position = cursor.getPosition();
-                    cursor.moveToFirst();
-                    while (cursor.getPosition() < position) {
-                        removeRow();
-                        cursor.moveToNext();
-                    }
-                    
-                    break;
+                    case UP_TO_CURRENT:
+                        final int position = cursor.getPosition();
+                        cursor.moveToFirst();
+                        while (cursor.getPosition() < position) {
+                            removeRow();
+                            cursor.moveToNext();
+                        }
+                        
+                        break;
+                }
+            } finally {
+                cursor.close();
             }
-            
-            cursor.close();
         }
         
         private long getCurrentId() {
