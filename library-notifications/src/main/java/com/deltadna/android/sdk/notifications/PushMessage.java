@@ -118,10 +118,21 @@ public class PushMessage implements Serializable {
         final Bundle metaData = MetaData.get(context);
         if (metaData.containsKey(MetaData.NOTIFICATION_ICON)) {
             try {
-                final int value = context.getResources().getIdentifier(
-                        metaData.getString(MetaData.NOTIFICATION_ICON),
-                        "drawable",
-                        context.getPackageName());
+                final Object icon = metaData.get(MetaData.NOTIFICATION_ICON);
+                final int value;
+                if (icon instanceof String) {
+                    value = context.getResources().getIdentifier(
+                            metaData.getString(MetaData.NOTIFICATION_ICON),
+                            "drawable",
+                            context.getPackageName());
+                } else if (icon instanceof Integer) {
+                    value = (int) icon;
+                } else {
+                    Log.w(BuildConfig.LOG_TAG, String.format(
+                            "Unexpected type %s for ddna_notification_icon",
+                            (icon == null) ? "null" : icon.getClass()));
+                    value = 0;
+                }
                 
                 if (value == 0) {
                     Log.w(  TAG,
