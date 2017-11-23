@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.6.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.1) (YYYY-MM-DD)
+## [4.6.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.1) (2017-11-23)
 Fixed crash when notifications icon defined as drawable resource.  
 Fixed possible leaked cursors.  
 
