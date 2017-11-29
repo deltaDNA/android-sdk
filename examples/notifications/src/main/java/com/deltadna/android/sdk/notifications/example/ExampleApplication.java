@@ -19,6 +19,7 @@ package com.deltadna.android.sdk.notifications.example;
 import android.app.Application;
 
 import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.notifications.DDNANotifications;
 
 public class ExampleApplication extends Application {
     
@@ -31,5 +32,8 @@ public class ExampleApplication extends Application {
                 "07575004106474324897044893014183",
                 "http://collect3347ndrds.deltadna.net/collect/api",
                 "http://engage3347ndrds.deltadna.net"));
+        
+        // only needs to be called if targeting API 26 or higher
+        DDNANotifications.setReceiver(ExampleReceiver.class);
     }
 }

@@ -16,6 +16,8 @@
 
 package com.deltadna.android.sdk.notifications;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -52,6 +54,17 @@ class Utils {
         }
         
         return result.toString();
+    }
+    
+    static Intent wrapWithReceiver(Context context, Intent intent) {
+        synchronized (DDNANotifications.class) {
+            if (DDNANotifications.receiver != null) {
+                //noinspection ConstantConditions
+                intent.setClass(context, DDNANotifications.receiver);
+            }
+        }
+        
+        return intent;
     }
     
     private Utils() {}

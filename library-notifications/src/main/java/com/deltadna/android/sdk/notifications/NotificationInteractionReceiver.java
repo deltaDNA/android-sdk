@@ -23,7 +23,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
@@ -46,15 +45,12 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
         
         final String action = intent.getAction();
         if (action != null) {
-            final NotificationInfo info = (NotificationInfo)
-                    intent.getSerializableExtra(Actions.NOTIFICATION_INFO);
-            if (info == null) {
-                Log.w(  TAG,
-                        "Failed to find or deserialise notification info");
-            }
+            final Intent intentCopy = new Intent();
             
             switch (action) {
-                case Actions.NOTIFICATION_OPENED:
+                case Actions.NOTIFICATION_OPENED_INTERNAL:
+                    intentCopy.setAction(Actions.NOTIFICATION_OPENED);
+                    
                     if (MetaData.get(context).containsKey(MetaData.START_LAUNCH_INTENT)) {
                         Log.w(  TAG,
                                 "Use of ddna_start_launch_intent in the manifest has been deprecated");
@@ -63,6 +59,15 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
                     if (MetaData.get(context).getBoolean(
                             MetaData.START_LAUNCH_INTENT,
                             true)) {
+                        
+                        final NotificationInfo info = (NotificationInfo)
+                                intent.getSerializableExtra(Actions.NOTIFICATION_INFO);
+                        if (info == null) {
+                            Log.w(  TAG,
+                                    "Failed to find/deserialise notification info");
+                        } else {
+                            intentCopy.putExtra(Actions.NOTIFICATION_INFO, info);
+                        }
                         
                         final Intent launchIntent = context
                                 .getPackageManager()
@@ -92,13 +97,23 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
                     }
                     break;
                 
-                case Actions.NOTIFICATION_DISMISSED:
+                case Actions.NOTIFICATION_DISMISSED_INTERNAL:
+                    intentCopy.setAction(Actions.NOTIFICATION_DISMISSED);
                     Log.d(TAG, "Notification has been dismissed");
                     break;
                 
                 default:
-                    Log.w(TAG, "Unexpected action " + action);
+                    Log.d(TAG, "Ignoring " + action);
+                    return;
             }
+            
+            /*
+             * We need to pass the intent on as we have received it as an
+             * explicit broadcast, thus inadvertently stopping anyone else from
+             * receiving it. We've also made sure to change the actions so we
+             * don't receive it a second time.
+             */
+            context.sendBroadcast(Utils.wrapWithReceiver(context, intentCopy));
         } else {
             Log.w(TAG, "Null action");
         }
@@ -116,7 +131,9 @@ public final class NotificationInteractionReceiver extends BroadcastReceiver {
         private boolean intentMatches(Activity activity) {
             final Intent other = activity.getIntent();
             return (other != null
+                    && other.getComponent() != null
                     && other.getComponent().equals(intent.getComponent())
+                    && other.getAction() != null
                     && other.getAction().equals(intent.getAction()));
         }
         
