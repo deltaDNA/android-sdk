@@ -110,13 +110,17 @@ public class NotificationFactory {
         builder.setContentIntent(PendingIntent.getBroadcast(
                 context,
                 0,
-                new Intent(Actions.NOTIFICATION_OPENED)
+                new Intent(Actions.NOTIFICATION_OPENED_INTERNAL)
+                        .setPackage(context.getPackageName())
+                        .setClass(context, NotificationInteractionReceiver.class)
                         .putExtra(Actions.NOTIFICATION_INFO, info),
                 PendingIntent.FLAG_UPDATE_CURRENT));
         builder.setDeleteIntent(PendingIntent.getBroadcast(
                 context,
                 0,
-                new Intent(Actions.NOTIFICATION_DISMISSED)
+                new Intent(Actions.NOTIFICATION_DISMISSED_INTERNAL)
+                        .setPackage(context.getPackageName())
+                        .setClass(context, NotificationInteractionReceiver.class)
                         .putExtra(Actions.NOTIFICATION_INFO, info),
                 PendingIntent.FLAG_UPDATE_CURRENT));
         

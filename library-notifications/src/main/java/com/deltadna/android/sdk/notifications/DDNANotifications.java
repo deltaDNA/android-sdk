@@ -19,6 +19,7 @@ package com.deltadna.android.sdk.notifications;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
@@ -41,6 +42,9 @@ public final class DDNANotifications {
             + DDNANotifications.class.getSimpleName();
     private static final String NAME = "deltadna-sdk-notifications";
     private static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
+    
+    @Nullable
+    static Class<? extends EventReceiver> receiver = null;
     
     /**
      * Register the client for push notifications.
@@ -160,6 +164,22 @@ public final class DDNANotifications {
         Log.d(TAG, "Unregistering from push notifications");
         
         DDNA.instance().clearRegistrationId();
+    }
+    
+    /**
+     * Allows for a {@link EventReceiver} class to be registered for event
+     * broadcasts published by the SDK. This method should be used if your
+     * build is targeting API 26 and higher.
+     *
+     * @param receiver  the {@link EventReceiver}, may be {@code null} to
+     *                  unregister
+     */
+    public static void setReceiver(
+            @Nullable Class<? extends EventReceiver> receiver) {
+        
+        synchronized (DDNANotifications.class) {
+            DDNANotifications.receiver = receiver;
+        }
     }
     
     /**

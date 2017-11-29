@@ -114,6 +114,11 @@ You will need to register your receiver in the manifest file of your application
 </receiver>
 ```
 
+If targeting API 26 or higher the receiver needs to be registered explicitly:
+```java
+DDNANotifications.setReceiver(MyEventReceiver.class);
+```
+
 An example implementation of an [`EventReceiver`](src/main/java/com/deltadna/android/sdk/notifications/EventReceiver.java) can be found [here](../examples/notifications/src/main/java/com/deltadna/android/sdk/notifications/example/ExampleReceiver.java).
 
 ### ProGuard

@@ -38,8 +38,8 @@ limitations under the License.
             
             <intent-filter>
                 <!-- actions must match definitions in Actions class -->
-                <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_OPENED"/>
-                <action android:name="com.deltadna.android.sdk.notifications.NOTIFICATION_DISMISSED"/>
+                <action android:name="com.deltadna.android.sdk.notifications.internal.NOTIFICATION_OPENED"/>
+                <action android:name="com.deltadna.android.sdk.notifications.internal.NOTIFICATION_DISMISSED"/>
             </intent-filter>
         </receiver>
         

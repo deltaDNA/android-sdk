@@ -19,20 +19,25 @@ package com.deltadna.android.sdk.notifications;
 /**
  * Actions must match definitions in AndroidManifest.xml.
  */
-class Actions {
+final class Actions {
     
-    public static final String PREFIX = "com.deltadna.android.sdk.notifications.";
-    public static final String REGISTERED = PREFIX + "REGISTERED";
-    public static final String REGISTRATION_FAILED = PREFIX + "REGISTRATION_FAILED";
-    public static final String MESSAGE_RECEIVED = PREFIX + "MESSAGE_RECEIVED";
-    public static final String NOTIFICATION_POSTED = PREFIX + "NOTIFICATION_POSTED";
-    public static final String NOTIFICATION_OPENED = PREFIX + "NOTIFICATION_OPENED";
-    public static final String NOTIFICATION_DISMISSED = PREFIX + "NOTIFICATION_DISMISSED";
+    private static final String PREFIX = "com.deltadna.android.sdk.notifications.";
+    private static final String PREFIX_INTERNAL = PREFIX + "internal.";
     
-    public static final String REGISTRATION_FAILURE_REASON = "registration_failure_reason";
-    public static final String REGISTRATION_TOKEN = "registration_token";
-    public static final String PUSH_MESSAGE = "push_message";
-    public static final String NOTIFICATION_INFO = "notification_info";
+    static final String REGISTERED = PREFIX + "REGISTERED";
+    static final String REGISTRATION_FAILED = PREFIX + "REGISTRATION_FAILED";
+    static final String MESSAGE_RECEIVED = PREFIX + "MESSAGE_RECEIVED";
+    static final String NOTIFICATION_POSTED = PREFIX + "NOTIFICATION_POSTED";
+    static final String NOTIFICATION_OPENED = PREFIX + "NOTIFICATION_OPENED";
+    static final String NOTIFICATION_DISMISSED = PREFIX + "NOTIFICATION_DISMISSED";
+    
+    static final String NOTIFICATION_OPENED_INTERNAL = PREFIX_INTERNAL + "NOTIFICATION_OPENED";
+    static final String NOTIFICATION_DISMISSED_INTERNAL = PREFIX_INTERNAL + "NOTIFICATION_DISMISSED";
+    
+    static final String REGISTRATION_FAILURE_REASON = "registration_failure_reason";
+    static final String REGISTRATION_TOKEN = "registration_token";
+    static final String PUSH_MESSAGE = "push_message";
+    static final String NOTIFICATION_INFO = "notification_info";
     
     private Actions() {}
 }

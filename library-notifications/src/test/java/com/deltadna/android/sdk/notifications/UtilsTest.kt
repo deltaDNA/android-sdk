@@ -16,8 +16,14 @@
 
 package com.deltadna.android.sdk.notifications
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.same
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -46,5 +52,28 @@ class UtilsTest {
             assertThat(Utils.convert(this))
                     .isEqualTo("{\"1\":true,\"2\":\"string\"}")
         }
+    }
+    
+    @Test
+    fun wrapWithReceiverNotSet() {
+        with(mock<Intent>()) {
+            val result = Utils.wrapWithReceiver(mock(), this)
+            
+            assertThat(result).isSameAs(this)
+            verifyZeroInteractions(this)
+        }
+    }
+    
+    @Test
+    fun wrapWithReceiverSet() {
+        val context = mock<Context>()
+        val intent = mock<Intent>()
+        
+        DDNANotifications.setReceiver(EventReceiver::class.java)
+        val result = Utils.wrapWithReceiver(context, intent)
+        DDNANotifications.setReceiver(null)
+        
+        assertThat(result).isSameAs(intent)
+        verify(intent).setClass(same(context), same(EventReceiver::class.java))
     }
 }

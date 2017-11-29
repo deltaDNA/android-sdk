@@ -44,6 +44,11 @@ import android.util.Log;
  *     </intent-filter>
  *  </receiver>
  * }</pre>
+ * <p>
+ * If targeting API 26 or higher the receiver needs to be registered explicitly:
+ * <pre>{@code
+ * DDNANotifications.setReceiver(MyEventReceiver.class);
+ * }</pre>
  */
 public abstract class EventReceiver extends BroadcastReceiver {
     
