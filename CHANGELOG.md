@@ -1,7 +1,7 @@
 # Change Log
 
-## [4.6.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.2) (YYYY-MM-DD)
-Added explicit event receiver registration if targeting API 26 or higher.    
+## [4.6.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.2) (2017-12-01)
+Added explicit event receiver registration if targeting API 26 or higher.  
 Fixed push notification broadcast events if targeting API 26 or higher.  
 Fixed push notifications not opening app if targeting API 26 or higher.  
 Fixed push notification events to not be broadcast outside of the app.  
