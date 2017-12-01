@@ -20,6 +20,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -60,6 +61,11 @@ public class NotificationListenerService extends FirebaseMessagingService {
     
     protected static final String NOTIFICATION_TAG =
             "com.deltadna.android.sdk.notifications";
+    protected static final IntentFilter RECEIVER_FILTER = new IntentFilter();
+    static {
+        RECEIVER_FILTER.addAction(Actions.NOTIFICATION_OPENED);
+        RECEIVER_FILTER.addAction(Actions.NOTIFICATION_DISMISSED);
+    }
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
@@ -101,9 +107,11 @@ public class NotificationListenerService extends FirebaseMessagingService {
                     this,
                     message.getFrom(),
                     message.getData());
-            sendBroadcast(new Intent(Actions.MESSAGE_RECEIVED).putExtra(
-                    Actions.PUSH_MESSAGE,
-                    pushMessage));
+            sendBroadcast(Utils.wrapWithReceiver(
+                    this,
+                    new Intent(Actions.MESSAGE_RECEIVED)
+                            .setPackage(getPackageName())
+                            .putExtra(Actions.PUSH_MESSAGE, pushMessage)));
             
             final int id = (int) pushMessage.id;
             final NotificationInfo info = new NotificationInfo(id, pushMessage);
@@ -115,9 +123,11 @@ public class NotificationListenerService extends FirebaseMessagingService {
                     info);
             if (notification != null) {
                 notify(id, notification);
-                sendBroadcast(new Intent(Actions.NOTIFICATION_POSTED).putExtra(
-                        Actions.NOTIFICATION_INFO,
-                        info));
+                sendBroadcast(Utils.wrapWithReceiver(
+                        this,
+                        new Intent(Actions.NOTIFICATION_POSTED)
+                                .setPackage(getPackageName())
+                                .putExtra(Actions.NOTIFICATION_INFO, info)));
             }
         }
     }

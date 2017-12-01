@@ -91,8 +91,11 @@ final class RegistrationTokenFetcher {
         } else {
             DDNA.instance().setRegistrationId(token);
             
-            context.sendBroadcast(new Intent(Actions.REGISTERED)
-                    .putExtra(Actions.REGISTRATION_TOKEN, token));
+            context.sendBroadcast(Utils.wrapWithReceiver(
+                    context,
+                    new Intent(Actions.REGISTERED)
+                            .setPackage(context.getPackageName())
+                            .putExtra(Actions.REGISTRATION_TOKEN, token)));
         }
     }
     
@@ -103,8 +106,11 @@ final class RegistrationTokenFetcher {
                     "DidFailToRegisterForPushNotifications",
                     t.getMessage());
         } else {
-            context.sendBroadcast(new Intent(Actions.REGISTRATION_FAILED)
-                    .putExtra(Actions.REGISTRATION_FAILURE_REASON, t));
+            context.sendBroadcast(Utils.wrapWithReceiver(
+                    context,
+                    new Intent(Actions.REGISTRATION_FAILED)
+                            .setPackage(context.getPackageName())
+                            .putExtra(Actions.REGISTRATION_FAILURE_REASON, t)));
         }
     }
     
