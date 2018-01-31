@@ -16,7 +16,7 @@
 
 buildscript {
     ext {
-        kotlinVersion = '1.1.51'
+        kotlinVersion = '1.2.10'
         supportVersion = '26.1.0'
         firebaseVersion = '11.4.2'
         
@@ -31,9 +31,9 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
+        classpath 'com.android.tools.build:gradle:3.0.1'
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.2'
-        classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.1.7'
+        classpath 'gradle.plugin.com.nimbledroid:gradle-profiler:1.1.8'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
@@ -66,7 +66,7 @@ subprojects {
     
     android {
         compileSdkVersion 26
-        buildToolsVersion '26.0.2'
+        buildToolsVersion '26.0.3'
         
         defaultConfig {
             minSdkVersion 15
@@ -108,7 +108,7 @@ subprojects {
     
     if (isLibrary) {
         dependencies {
-            testImplementation 'com.google.truth:truth:0.36'
+            testImplementation 'com.google.truth:truth:0.37'
             testImplementation 'com.nhaarman:mockito-kotlin:1.5.0'
             testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
             testImplementation 'junit:junit:4.12'
@@ -117,8 +117,8 @@ subprojects {
             testImplementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
             testImplementation 'org.json:json:20171018'
-            testImplementation 'org.mockito:mockito-core:2.11.0'
-            testImplementation 'org.robolectric:robolectric:3.5'
+            testImplementation 'org.mockito:mockito-core:2.13.0'
+            testImplementation 'org.robolectric:robolectric:3.6.1'
         }
     }
     
@@ -134,7 +134,7 @@ subprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.2.1'
+    gradleVersion = '4.4.1'
 }
 
 task clean(type: Delete) {
