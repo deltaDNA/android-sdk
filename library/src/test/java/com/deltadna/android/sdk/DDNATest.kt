@@ -16,14 +16,10 @@
 
 package com.deltadna.android.sdk
 
-import android.os.Build
 import com.deltadna.android.sdk.helpers.Settings
-import com.deltadna.android.sdk.listeners.SessionListener
+import com.deltadna.android.sdk.listeners.EventListener
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.verifyNoMoreInteractions
+import com.nhaarman.mockito_kotlin.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,8 +28,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = "src/main/AndroidManifest.xml",
-        sdk = intArrayOf(Build.VERSION_CODES.M))
+@Config(manifest = "library/src/main/AndroidManifest.xml")
 class DDNATest {
     
     private var uut = createUut()
@@ -41,6 +36,28 @@ class DDNATest {
     @Before
     fun before() {
         uut = createUut()
+    }
+    
+    @Test
+    fun startSdkEvents() {
+        val listener = mock<EventListener>()
+        uut.register(listener)
+        uut.startSdk()
+        
+        inOrder(listener) {
+            verify(listener).onNewSession()
+            verify(listener).onStarted()
+        }
+    }
+    
+    @Test
+    fun stopSdkEvents() {
+        val listener = mock<EventListener>()
+        uut.register(listener)
+        uut.startSdk()
+        uut.stopSdk()
+        
+        verify(listener).onStopped()
     }
     
     @Test
@@ -55,12 +72,12 @@ class DDNATest {
     
     @Test
     fun sessionNotifications() {
-        with(mock<SessionListener>()) {
+        with(mock<EventListener>()) {
             uut.register(this)
             uut.newSession()
             uut.newSession()
             
-            verify(this, times(2)).onSessionUpdated()
+            verify(this, times(2)).onNewSession()
             
             uut.unregister(this)
             uut.newSession()

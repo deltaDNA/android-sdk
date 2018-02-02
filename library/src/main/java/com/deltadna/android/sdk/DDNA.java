@@ -29,7 +29,7 @@ import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
-import com.deltadna.android.sdk.listeners.SessionListener;
+import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
 import org.json.JSONException;
@@ -108,8 +108,8 @@ public final class DDNA {
     private boolean started;
 	private String sessionId = UUID.randomUUID().toString();
     
-    private final Set<SessionListener> sessionListeners = Collections.newSetFromMap(
-            new WeakHashMap<SessionListener, Boolean>(1));
+    private final Set<EventListener> eventListeners = Collections.newSetFromMap(
+            new WeakHashMap<EventListener, Boolean>(1));
     
     public static synchronized DDNA initialise(Configuration configuration) {
         Preconditions.checkArg(
@@ -171,10 +171,10 @@ public final class DDNA {
         if (started) {
             Log.w(BuildConfig.LOG_TAG, "SDK already started");
         } else {
+            started = true;
+            
             setUserId(userId);
             newSession(true);
-            
-            started = true;
             
             if (settings.getSessionTimeout() > 0) {
                 sessionHandler.register();
@@ -189,6 +189,9 @@ public final class DDNA {
             triggerDefaultEvents();
             
             Log.d(BuildConfig.LOG_TAG, "SDK started");
+            for (final EventListener listener : eventListeners) {
+                listener.onStarted();
+            }
         }
         
         return this;
@@ -216,8 +219,12 @@ public final class DDNA {
                 archive.save();
             }
             
-            Log.d(BuildConfig.LOG_TAG, "SDK stopped");
             started = false;
+            
+            Log.d(BuildConfig.LOG_TAG, "SDK stopped");
+            for (final EventListener listener : eventListeners) {
+                listener.onStopped();
+            }
         }
         
         return this;
@@ -249,8 +256,8 @@ public final class DDNA {
         
         sessionId = UUID.randomUUID().toString();
         
-        for (final SessionListener listener : sessionListeners) {
-            listener.onSessionUpdated();
+        for (final EventListener listener : eventListeners) {
+            listener.onNewSession();
         }
         
         return this;
@@ -566,13 +573,13 @@ public final class DDNA {
         return network;
     }
     
-    public DDNA register(SessionListener listener) {
-        sessionListeners.add(listener);
+    public DDNA register(EventListener listener) {
+        eventListeners.add(listener);
         return this;
     }
     
-    public DDNA unregister(SessionListener listener) {
-        sessionListeners.remove(listener);
+    public DDNA unregister(EventListener listener) {
+        eventListeners.remove(listener);
         return this;
     }
     

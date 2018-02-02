@@ -16,7 +16,10 @@
 
 package com.deltadna.android.sdk.listeners;
 
-public interface SessionListener {
+public interface EventListener {
     
-    void onSessionUpdated();
+    void onStarted();
+    void onStopped();
+    
+    void onNewSession();
 }
