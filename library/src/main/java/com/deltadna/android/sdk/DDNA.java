@@ -768,14 +768,16 @@ public final class DDNA {
         setUserId(userId);
     }
     
-    private static String validateUrl(String url) {
+    private static String fixUrl(String url) {
         if (    !url.toLowerCase(Locale.US).startsWith("http://")
                 && !url.toLowerCase(Locale.US).startsWith("https://")) {
-            
-            return "http://" + url;
+            return "https://" + url;
+        } else if (url.toLowerCase(Locale.US).startsWith("http://")) {
+            Log.w(BuildConfig.LOG_TAG, "Changing " + url + " to use HTTPS");
+            return "https://" + url.substring("http://".length(), url.length());
+        } else {
+            return url;
         }
-        
-        return url;
     }
     
     private static String getCurrentTimestamp() {
@@ -826,8 +828,8 @@ public final class DDNA {
             
             this.application = application;
             this.environmentKey = environmentKey;
-            this.collectUrl = validateUrl(collectUrl);
-            this.engageUrl = validateUrl(engageUrl);
+            this.collectUrl = fixUrl(collectUrl);
+            this.engageUrl = fixUrl(engageUrl);
             
             this.settings = new Settings();
         }
