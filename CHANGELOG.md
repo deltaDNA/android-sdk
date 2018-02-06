@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.6.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.2) (YYYY-MM-DD)
+## [4.6.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.3) (2018-02-06)
 Updated Collect and Engage URLs to be forced to HTTPS.  
 
 ## [4.6.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.2) (2017-12-01)

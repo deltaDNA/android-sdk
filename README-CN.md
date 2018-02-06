@@ -43,7 +43,7 @@ allprojects {
 ```
 在你APP的构建脚本
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.6.3-SNAPSHOT'
+compile 'com.deltadna.android:deltadna-sdk:4.6.3'
 ```
 
 ## 初始化
