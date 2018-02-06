@@ -24,3 +24,9 @@ inline fun <reified T: Throwable> assertThrown(block: () -> Unit) {
         fail("Expected exception ${T::class} not thrown")
     } catch (ignored: Throwable) {}
 }
+
+inline fun <reified T> Any.read(field: String) =
+        javaClass.getDeclaredField(field).let {
+            it.isAccessible = true
+            it.get(this) as T
+        }

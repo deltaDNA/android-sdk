@@ -3,6 +3,9 @@
 ## [4.7.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.7.0) (YYYY-MM-DD)
 Updated build and runtime dependencies.  
 
+## [4.6.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.3) (2018-02-06)
+Updated Collect and Engage URLs to be forced to HTTPS.  
+
 ## [4.6.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.2) (2017-12-01)
 Added explicit event receiver registration if targeting API 26 or higher.  
 Fixed push notification broadcast events if targeting API 26 or higher.  
