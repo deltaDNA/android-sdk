@@ -24,10 +24,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = "src/main/AndroidManifest.xml")
 class PushMessageTest {
     
     private val app by lazy { RuntimeEnvironment.application }

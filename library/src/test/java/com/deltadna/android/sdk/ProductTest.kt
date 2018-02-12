@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk
 
-import android.os.Build
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.test.assertThrown
 import com.google.common.truth.Truth.assertThat
@@ -28,11 +27,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = "src/main/AndroidManifest.xml",
-        sdk = intArrayOf(Build.VERSION_CODES.M))
 class ProductTest {
     
     private val ddna = DDNA(

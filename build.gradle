@@ -95,7 +95,10 @@ subprojects {
             }
             
             testOptions {
-                unitTests.returnDefaultValues = true
+                unitTests {
+                    returnDefaultValues = true
+                    includeAndroidResources = true
+                }
             }
             
             buildTypes {
@@ -118,7 +121,7 @@ subprojects {
             testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
             testImplementation 'org.json:json:20171018'
             testImplementation 'org.mockito:mockito-core:2.13.0'
-            testImplementation 'org.robolectric:robolectric:3.6.1'
+            testImplementation 'org.robolectric:robolectric:3.7'
         }
     }
     
