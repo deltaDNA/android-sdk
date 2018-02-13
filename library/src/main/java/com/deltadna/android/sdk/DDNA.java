@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -706,12 +707,12 @@ public final class DDNA {
             final XmlPullParser xpp = factory.newPullParser();
             xpp.setInput(new InputStreamReader(
                     application.getResources().openRawResource(R.raw.iso_4217)));
-            
+
             boolean expectingCode = false;
             boolean expectingValue = false;
             String pulledCode = null;
             String pulledValue = null;
-            
+
             int eventType;
             while ((eventType = xpp.next()) != XmlPullParser.END_DOCUMENT) {
                 switch (eventType) {
@@ -720,13 +721,13 @@ public final class DDNA {
                             case "Ccy":
                                 expectingCode = true;
                                 break;
-                            
+
                             case "CcyMnrUnts":
                                 expectingValue = true;
                                 break;
                         }
                         break;
-                    
+
                     case XmlPullParser.TEXT:
                         if (expectingCode) {
                             pulledCode = xpp.getText();
@@ -734,19 +735,19 @@ public final class DDNA {
                             pulledValue = xpp.getText();
                         }
                         break;
-                    
+
                     case XmlPullParser.END_TAG:
                         switch (xpp.getName()) {
                             case "Ccy":
                                 expectingCode = false;
                                 break;
-                            
+
                             case "CcyMnrUnts":
                                 expectingValue = false;
                                 break;
-                            
+
                             case "CcyNtry":
-                                if (    !TextUtils.isEmpty(pulledCode)
+                                if (!TextUtils.isEmpty(pulledCode)
                                         && !TextUtils.isEmpty(pulledValue)) {
                                     int value;
                                     try {
@@ -754,10 +755,10 @@ public final class DDNA {
                                     } catch (NumberFormatException ignored) {
                                         value = 0;
                                     }
-                                    
+
                                     temp.put(pulledCode, value);
                                 }
-                                
+
                                 expectingCode = false;
                                 expectingValue = false;
                                 pulledCode = null;
@@ -766,6 +767,8 @@ public final class DDNA {
                         }
                 }
             }
+        } catch (Resources.NotFoundException e) {
+            Log.w(BuildConfig.LOG_TAG, "Failed to find ISO 4217 resource", e);
         } catch (XmlPullParserException | IOException e) {
             Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
         } finally {
