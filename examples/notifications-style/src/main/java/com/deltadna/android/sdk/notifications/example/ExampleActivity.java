@@ -78,16 +78,6 @@ public class ExampleActivity extends AppCompatActivity {
         DDNANotifications.unregister();
     }
     
-    public void onNotificationOpened(View view) {
-        // pretend the user opened a push notification
-        DDNA.instance().recordNotificationOpened(false, Bundle.EMPTY);
-    }
-    
-    public void onNotificationDismissed(View view) {
-        // pretend the user dismissed a push notification
-        DDNA.instance().recordNotificationDismissed(Bundle.EMPTY);
-    }
-    
     public void onStopSdk(View view) {
         DDNA.instance().stopSdk();
     }

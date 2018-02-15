@@ -27,8 +27,6 @@ limitations under the License.
     <string name="upload_events">Upload events</string>
     <string name="register">Register</string>
     <string name="unregister">Unregister</string>
-    <string name="notification_opened">Notification opened</string>
-    <string name="notification_dismissed">Notification dismissed</string>
     
     <string name="start_sdk">Start SDK</string>
     <string name="stop_sdk">Stop SDK</string>

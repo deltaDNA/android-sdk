@@ -25,7 +25,6 @@ limitations under the License.
     <string name="complex_event">Complex event</string>
     <string name="engage">Engage</string>
     <string name="image_message">Image Message</string>
-    <string name="notification_opened">Notification opened</string>
     <string name="start_sdk">Start SDK</string>
     <string name="stop_sdk">Stop SDK</string>
     

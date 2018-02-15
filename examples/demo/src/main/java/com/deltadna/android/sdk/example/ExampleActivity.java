@@ -147,14 +147,6 @@ public class ExampleActivity extends AppCompatActivity {
                 new ImageMessageListener());
     }
     
-    public void onNotificationOpened(View view) {
-        /*
-         * Pretend the user opened a push notification, triggered with an
-         * empty payload.
-         */
-        DDNA.instance().recordNotificationOpened(false, new Bundle());
-    }
-    
     public void onStartSdk(View view) {
         DDNA.instance().startSdk();
     }

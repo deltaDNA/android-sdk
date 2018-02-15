@@ -70,24 +70,8 @@ limitations under the License.
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="8dp"
                 android:text="@string/unregister"
                 android:onClick="onUnregister"/>
-            
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="8dp"
-                android:text="@string/notification_opened"
-                android:onClick="onNotificationOpened"/>
-            
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="@string/notification_dismissed"
-                android:onClick="onNotificationDismissed"/>
         </LinearLayout>
         
         <LinearLayout
