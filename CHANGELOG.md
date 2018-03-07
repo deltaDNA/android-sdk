@@ -1,6 +1,7 @@
 # Change Log
 
 ## [4.7.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.7.0) (YYYY-MM-DD)
+Added copy constructor to Params.  
 Updated build and runtime dependencies.  
 
 ## [4.6.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.6.3) (2018-02-06)

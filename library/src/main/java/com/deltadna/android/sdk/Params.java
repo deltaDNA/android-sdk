@@ -37,6 +37,17 @@ public class Params implements JsonParams {
         this(new JSONObject());
     }
     
+    /**
+     * Copy constructor creating a new instance.
+     *
+     * @param params    the params to copy from
+     *
+     * @throws JSONException if {@code params} is not valid JSON
+     */
+    public Params(Params params) throws JSONException {
+        this(new JSONObject(params.json.toString()));
+    }
+    
     public Params(JSONObject json) {
         this.json = json;
     }
