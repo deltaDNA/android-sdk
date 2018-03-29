@@ -81,7 +81,9 @@ public final class ImageMessage implements Serializable {
     public ImageMessage(JSONObject json) throws JSONException {
         eventParams = json.getJSONObject("eventParams").toString();
         transactionId = json.getString("transactionID");
-        parameters =  json.getJSONObject("parameters").toString();
+        parameters = (json.has("parameters")
+                ? json.optJSONObject("parameters")
+                : new JSONObject()).toString();
         
         final JSONObject image = json.getJSONObject("image");
         imageUrl = image.getString("url");
@@ -248,8 +250,8 @@ public final class ImageMessage implements Serializable {
         try {
             return new JSONObject(parameters);
         } catch (JSONException e) {
-            // cannot happen as parameters came from JSON
-            throw new IllegalStateException(e);
+            Log.w(BuildConfig.LOG_TAG, "Failed to serialise JSON parameters", e);
+            return new JSONObject();
         }
     }
     

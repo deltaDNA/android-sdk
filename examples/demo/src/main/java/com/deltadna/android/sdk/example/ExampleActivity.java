@@ -19,12 +19,14 @@ package com.deltadna.android.sdk.example;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.EngageFactory;
 import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.Event;
 import com.deltadna.android.sdk.ImageMessageActivity;
@@ -142,9 +144,16 @@ public class ExampleActivity extends AppCompatActivity {
     }
     
     public void onImageMessage(View view) {
-        DDNA.instance().requestEngagement(
-                new Engagement("testImageMessage"),
-                new ImageMessageListener());
+        DDNA.instance().getEngageFactory().requestImageMessage(
+                "testImageMessage",
+                new EngageFactory.Callback<ImageMessage>() {
+                    @Override
+                    public void onCompleted(@Nullable ImageMessage action) {
+                        if (action != null) {
+                            action.prepare(new ImageMessageListener());
+                        }
+                    }
+                });
     }
     
     public void onStartSdk(View view) {
@@ -164,8 +173,8 @@ public class ExampleActivity extends AppCompatActivity {
     }
     
     /**
-     * Example implementation of the {@link EngageListener} which just
-     * prints the result, or failure, to the log.
+     * Example implementation of the {@link EngageListener} which prints the
+     * result, or failure, to the log.
      */
     private class EngageListenerExample implements EngageListener<Engagement> {
         
@@ -181,37 +190,22 @@ public class ExampleActivity extends AppCompatActivity {
     }
     
     /**
-     * Example implementation of the {@link EngageListener} for an Image
-     * Messaging request, which prepares the {@link ImageMessage}, and finally
-     * shows it to the user.
-     *
-     * @see #onActivityResult(int, int, Intent)
+     * Example implementation of the
+     * {@link com.deltadna.android.sdk.ImageMessage.PrepareListener} which
+     * shows the {@link ImageMessage} once it has been prepared.
      */
-    private class ImageMessageListener implements EngageListener<Engagement> {
+    private class ImageMessageListener implements ImageMessage.PrepareListener {
         
         @Override
-        public void onCompleted(Engagement engagement) {
-            ImageMessage imageMessage = ImageMessage.create(engagement);
-            if (imageMessage != null) {
-                imageMessage.prepare(new ImageMessage.PrepareListener() {
-                    @Override
-                    public void onPrepared(ImageMessage src) {
-                        src.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
-                    }
-                    
-                    @Override
-                    public void onError(Throwable cause) {
-                        Log.w(  BuildConfig.LOG_TAG,
-                                "Image Message preparation error",
-                                cause);
-                    }
-                });
-            }
+        public void onPrepared(ImageMessage src) {
+            src.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
         }
         
         @Override
-        public void onError(Throwable t) {
-            Log.w(BuildConfig.LOG_TAG, "Image Message error", t);
+        public void onError(Throwable cause) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Image Message preparation error",
+                    cause);
         }
     }
 }

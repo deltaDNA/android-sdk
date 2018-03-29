@@ -22,6 +22,8 @@ import org.json.JSONObject
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import java.io.ByteArrayOutputStream
+import java.io.ObjectOutputStream
 
 @RunWith(JUnit4::class)
 class ImageMessageTest {
@@ -51,6 +53,12 @@ class ImageMessageTest {
             
             assertThat(ImageMessage.create(this)).isNull()
         }
+    }
+    
+    @Test
+    fun isSerializable() {
+        ObjectOutputStream(ByteArrayOutputStream())
+                .writeObject(ImageMessage(IMAGE))
     }
     
     private class KEngagement(point: String) : Engagement<KEngagement>(point)

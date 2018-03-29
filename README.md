@@ -216,7 +216,24 @@ class OutOfCreditsListener implements EngageListener<Engagement> {
 If there was an error processing your Engage request at the server then the details will be available in the `Engagement` by calling `getError()`. Any non-server errors, such as due to an Internet connection not being available, will be propagated into the `onError(Throwable)` callback method. In this case `onCompleted(Engagement)` will never be called.
 
 ### Image Messaging
-An Image Messaging request is performed in a similar way to an Engage request with an `ImageMessage` instance being built up from the returned `Engagement` in the `onCompleted(Engagement)` callback method. Since the decision point may not have been set-up to show an Image Message, the return value of `ImageMessage.create(Engagement)` needs to be null checked.
+An Image Messaging request is performed in a similar way to an Engage request with
+an `ImageMessage` instance being built up from the returned `Engagement` in the
+`onCompleted(Engagement)` callback method. Since the decision point may not have
+been set-up to show an Image Message the returned value needs to be null checked.
+```java
+DDNA.instance().getEngageFactory().requestImageMessage(
+        "missionDifficulty",
+        new EngageFactory.Callback<ImageMessage>() {
+            @Override
+            public void onCompleted(@Nullable ImageMessage action) {
+                if (action != null) {
+                    action.prepare(MyPrepareListener());
+                }
+            }
+        });
+```
+An alternative way of requesting an Image Message is by using the `DDNA` instance
+directly instead of the `EngageFactory`.
 ```java
 DDNA.instance().requestEngagement(
         new Engagement("missionDifficulty"),

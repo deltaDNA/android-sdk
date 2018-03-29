@@ -98,6 +98,7 @@ public final class DDNA {
     private final EventStore store;
     private final EngageArchive archive;
     private final NetworkManager network;
+    private final EngageFactory engageFactory;
     
     private final SessionRefreshHandler sessionHandler;
     private final EventHandler eventHandler;
@@ -381,6 +382,8 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code decisionPoint} is null
      *                                  or empty
+     *
+     * @see EngageFactory
      */
     public DDNA requestEngagement(
             String decisionPoint,
@@ -402,6 +405,8 @@ public final class DDNA {
      * @return this {@link DDNA} instance
      *
      * @throws IllegalArgumentException if the {@code engagement} is null
+     *
+     * @see EngageFactory
      */
     public <E extends Engagement> DDNA requestEngagement(
             E engagement,
@@ -439,6 +444,16 @@ public final class DDNA {
     public DDNA upload() {
         eventHandler.dispatch();
         return this;
+    }
+    
+    /**
+     * Gets the Engage factory which provides an easier way of requesting
+     * Engage actions.
+     *
+     * @return the {@link EngageFactory}
+     */
+    public EngageFactory getEngageFactory() {
+        return engageFactory;
     }
     
     /**
@@ -679,6 +694,7 @@ public final class DDNA {
         preferences = new Preferences(application);
         store = new EventStore(application, settings, preferences);
         archive = new EngageArchive(engageStoragePath, legacyPath);
+        engageFactory = new EngageFactory(this);
         
         sessionHandler = new SessionRefreshHandler(
                 application,
