@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.7.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.7.0) (YYYY-MM-DD)
+## [4.7.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.7.0) (2018-04-17)
 Added EngageFactory to simplify Engage requests.  
 Added copy constructor to Params.  
 Fixed game and image message parameters to be non-null.  
