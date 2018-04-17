@@ -153,7 +153,7 @@ public class Product<T extends Product<T>> implements JsonParams {
                 "code cannot be null or empty");
         
         if (ddna.getIso4217().containsKey(code)) {
-            return new Float(value * Math.pow(10, ddna.getIso4217().get(code)))
+            return Float.valueOf(value * (float) Math.pow(10, ddna.getIso4217().get(code)))
                     .intValue();
         } else {
             Log.w(BuildConfig.LOG_TAG, "Failed to find currency for: " + code);
