@@ -17,7 +17,6 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
@@ -25,27 +24,16 @@ import android.util.Log;
 
 import com.deltadna.android.sdk.exceptions.NotInitialisedException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
-import com.deltadna.android.sdk.helpers.EngageArchive;
-import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
-
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -68,15 +56,10 @@ import java.util.WeakHashMap;
  * To customise behaviour after initialisation you can call
  * {@link #getSettings()} to get access to the {@link Settings}.
  */
-public final class DDNA {
+public abstract class DDNA {
     
-    private static final String SDK_VERSION =
+    static final String SDK_VERSION =
             "Android SDK v" + BuildConfig.VERSION_NAME;
-    private static final int ENGAGE_API_VERSION = 4;
-    
-    private static final String ENGAGE_DIRECTORY = "engage" + File.separator;
-    @Deprecated
-    private static final String ENGAGE_PATH_LEGACY = "%s/ddsdk/engage/";
     
     private static final SimpleDateFormat TIMESTAMP_FORMAT;
     static {
@@ -89,46 +72,32 @@ public final class DDNA {
     
     private static DDNA instance;
     
-    private final Settings settings;
-    @Nullable
-    private final String clientVersion;
-    private final String platform;
-    
-    private final Preferences preferences;
-    private final EventStore store;
-    private final EngageArchive archive;
-    private final NetworkManager network;
-    private final EngageFactory engageFactory;
-    
-    private final SessionRefreshHandler sessionHandler;
-    private final EventHandler eventHandler;
-    
-    private final Map<String, Integer> iso4217;
-    
-    private final File engageStoragePath;
-    
-    private boolean started;
-	private String sessionId = UUID.randomUUID().toString();
-    
-    private final Set<EventListener> eventListeners = Collections.newSetFromMap(
-            new WeakHashMap<EventListener, Boolean>(1));
-    
     public static synchronized DDNA initialise(Configuration configuration) {
         Preconditions.checkArg(
                 configuration != null,
                 "configuration cannot be null");
         
         if (instance == null) {
-            instance = new DDNA(
-                    configuration.application,
-                    configuration.environmentKey,
-                    configuration.collectUrl,
-                    configuration.engageUrl,
-                    configuration.settings,
-                    configuration.hashSecret,
-                    configuration.clientVersion,
-                    configuration.userId,
-                    configuration.platform);
+            instance = new DDNADelegate(
+                    configuration,
+                    new DDNAImpl(
+                            configuration.application,
+                            configuration.environmentKey,
+                            configuration.collectUrl,
+                            configuration.engageUrl,
+                            configuration.settings,
+                            configuration.hashSecret,
+                            configuration.clientVersion,
+                            configuration.userId,
+                            configuration.platform),
+                    new DDNANonTracking(
+                            configuration.application,
+                            configuration.environmentKey,
+                            configuration.collectUrl,
+                            configuration.engageUrl,
+                            configuration.settings,
+                            configuration.hashSecret,
+                            configuration.platform));
         } else {
             Log.w(BuildConfig.LOG_TAG, "SDK has already been initialised");
         }
@@ -144,6 +113,39 @@ public final class DDNA {
         return instance;
     }
     
+    protected final Settings settings;
+    protected final String platform;
+    
+    final Preferences preferences;
+    final NetworkManager network;
+    private final EngageFactory engageFactory;
+    
+    final Set<EventListener> eventListeners = Collections.newSetFromMap(
+            new WeakHashMap<EventListener, Boolean>(1));
+    
+    protected String sessionId = UUID.randomUUID().toString();
+    
+    DDNA(   Application application,
+            String environmentKey,
+            String collectUrl,
+            String engageUrl,
+            Settings settings,
+            @Nullable String hashSecret,
+            @Nullable String platform) {
+        
+        this.settings = settings;
+        this.platform = (platform == null) ? ClientInfo.platform() : platform;
+        
+        preferences = new Preferences(application);
+        network = new NetworkManager(
+                environmentKey,
+                collectUrl,
+                engageUrl,
+                settings,
+                hashSecret);
+        engageFactory = new EngageFactory(this);
+    }
+    
     /**
      * Starts the SDK.
      * <p>
@@ -152,9 +154,7 @@ public final class DDNA {
      *
      * @return this {@link DDNA} instance
      */
-    public DDNA startSdk() {
-        return startSdk(null);
-    }
+    public abstract DDNA startSdk();
     
     /**
      * Starts the SDK.
@@ -167,37 +167,7 @@ public final class DDNA {
      *
      * @return this {@link DDNA} instance
      */
-    public DDNA startSdk(@Nullable String userId) {
-        Log.d(BuildConfig.LOG_TAG, "Starting SDK");
-        
-        if (started) {
-            Log.w(BuildConfig.LOG_TAG, "SDK already started");
-        } else {
-            started = true;
-            
-            setUserId(userId);
-            newSession(true);
-            
-            if (settings.getSessionTimeout() > 0) {
-                sessionHandler.register();
-            }
-            
-            if (settings.backgroundEventUpload()) {
-                eventHandler.start(
-                        settings.backgroundEventUploadStartDelaySeconds(),
-                        settings.backgroundEventUploadRepeatRateSeconds());
-            }
-            
-            triggerDefaultEvents();
-            
-            Log.d(BuildConfig.LOG_TAG, "SDK started");
-            for (final EventListener listener : eventListeners) {
-                listener.onStarted();
-            }
-        }
-        
-        return this;
-    }
+    public abstract DDNA startSdk(@Nullable String userId);
     
     /**
      * Stops the SDK.
@@ -207,63 +177,14 @@ public final class DDNA {
      *
      * @return this {@link DDNA} instance
      */
-    public DDNA stopSdk() {
-        Log.d(BuildConfig.LOG_TAG, "Stopping SDK");
-        
-        if (!started) {
-            Log.w(BuildConfig.LOG_TAG, "SDK has not been started");
-        } else {
-            recordEvent("gameEnded");
-            
-            sessionHandler.unregister();
-            eventHandler.stop(true);
-            if (archive != null) {
-                archive.save();
-            }
-            
-            started = false;
-            
-            Log.d(BuildConfig.LOG_TAG, "SDK stopped");
-            for (final EventListener listener : eventListeners) {
-                listener.onStopped();
-            }
-        }
-        
-        return this;
-    }
+    public abstract DDNA stopSdk();
     
     /**
      * Queries the status of the SDK.
      *
      * @return {@code true} if the SDK has been started, else {@code false}
      */
-    public boolean isStarted() {
-        return started;
-    }
-    
-    /**
-     * Changes the session id.
-     *
-     * @return this {@link DDNA} instance
-     */
-    public DDNA newSession() {
-        return newSession(false);
-    }
-    
-    DDNA newSession(boolean suppressWarning) {
-        if (!suppressWarning && settings.getSessionTimeout() > 0) {
-            Log.w(  BuildConfig.LOG_TAG,
-                    "Automatic session refreshing is enabled");
-        }
-        
-        sessionId = UUID.randomUUID().toString();
-        
-        for (final EventListener listener : eventListeners) {
-            listener.onNewSession();
-        }
-        
-        return this;
-    }
+    public abstract boolean isStarted();
     
     /**
      * Records an event with Collect.
@@ -274,9 +195,7 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code name} is null or empty
      */
-    public DDNA recordEvent(String name) {
-        return recordEvent(new Event(name));
-    }
+    public abstract DDNA recordEvent(String name);
     
     /**
      * Records an event with Collect.
@@ -287,36 +206,7 @@ public final class DDNA {
      *
      * @throws IllegalArgumentException if the {@code event} is null
      */
-    public DDNA recordEvent(Event event) {
-        Preconditions.checkArg(event != null, "event cannot be null");
-        
-        if (!started) {
-            Log.w(BuildConfig.LOG_TAG, "SDK has not been started");
-        }
-        
-        final JSONObject jsonEvent = new JSONObject();
-        try {
-            jsonEvent.put("eventName", event.name);
-            jsonEvent.put("eventTimestamp", getCurrentTimestamp());
-            jsonEvent.put("eventUUID", UUID.randomUUID().toString());
-            jsonEvent.put("sessionID", sessionId);
-            jsonEvent.put("userID", getUserId());
-            
-            JSONObject params =
-                    new JSONObject(event.params.toJson().toString());
-            params.put("platform", platform);
-            params.put("sdkVersion", SDK_VERSION);
-            
-            jsonEvent.put("eventParams", params);
-        } catch (JSONException e) {
-            // should never happen due to params enforcement
-            throw new IllegalArgumentException(e);
-        }
-        
-        eventHandler.handleEvent(jsonEvent);
-        
-        return this;
-    }
+    public abstract DDNA recordEvent(Event event);
     
     /**
      * Record when a push notification has been opened.
@@ -326,36 +216,7 @@ public final class DDNA {
      *
      * @return this {@link DDNA} instance
      */
-    public DDNA recordNotificationOpened(boolean launch, Bundle payload) {
-        final Event event = new Event("notificationOpened");
-        
-        if (payload.containsKey("_ddId"))
-            event.putParam("notificationId", payload.getLong("_ddId"));
-        if (payload.containsKey("_ddName"))
-            event.putParam("notificationName", payload.getString("_ddName"));
-        
-        boolean insertCommunicationAttrs = false;
-        if (payload.containsKey("_ddCampaign")) {
-            event.putParam(
-                    "campaignId",
-                    Long.parseLong(payload.getString("_ddCampaign")));
-            insertCommunicationAttrs = true;
-        }
-        if (payload.containsKey("_ddCohort")) {
-            event.putParam(
-                    "cohortId",
-                    Long.parseLong(payload.getString("_ddCohort")));
-            insertCommunicationAttrs = true;
-        }
-        if (insertCommunicationAttrs) {
-            event.putParam("communicationSender", "GOOGLE_NOTIFICATION");
-            event.putParam("communicationState", "OPEN");
-        }
-        
-        event.putParam("notificationLaunch", launch);
-        
-        return recordEvent(event);
-    }
+    public abstract DDNA recordNotificationOpened(boolean launch, Bundle payload);
     
     /**
      * Record when a push notification has been dismissed.
@@ -364,9 +225,7 @@ public final class DDNA {
      *
      * @return this {@link DDNA} instance
      */
-    public DDNA recordNotificationDismissed(Bundle payload) {
-        return recordNotificationOpened(false, payload);
-    }
+    public abstract DDNA recordNotificationDismissed(Bundle payload);
     
     /**
      * Makes an Engage request.
@@ -385,12 +244,9 @@ public final class DDNA {
      *
      * @see EngageFactory
      */
-    public DDNA requestEngagement(
+    public abstract DDNA requestEngagement(
             String decisionPoint,
-            EngageListener<Engagement> listener) {
-        
-        return requestEngagement(new Engagement(decisionPoint), listener);
-    }
+            EngageListener<Engagement> listener);
     
     /**
      * Makes an Engage request.
@@ -408,29 +264,9 @@ public final class DDNA {
      *
      * @see EngageFactory
      */
-    public <E extends Engagement> DDNA requestEngagement(
+    public abstract <E extends Engagement> DDNA requestEngagement(
             E engagement,
-            EngageListener<E> listener) {
-        
-        Preconditions.checkArg(engagement != null, "engagement cannot be null");
-        
-        if (!started) {
-            Log.w(  BuildConfig.LOG_TAG,
-                    "SDK has not been started, aborting engagement");
-            return this;
-        }
-        
-        eventHandler.handleEngagement(
-                engagement,
-                listener,
-                getUserId(),
-                sessionId,
-                ENGAGE_API_VERSION,
-                SDK_VERSION,
-                platform);
-        
-        return this;
-    }
+            EngageListener<E> listener);
     
     /**
      * Sends pending events to our platform.
@@ -441,19 +277,74 @@ public final class DDNA {
      *
      * @return this {@link DDNA} instance
      */
-    public DDNA upload() {
-        eventHandler.dispatch();
-        return this;
-    }
+    public abstract DDNA upload();
     
     /**
-     * Gets the Engage factory which provides an easier way of requesting
-     * Engage actions.
+     * Gets the registration id for push notifications.
      *
-     * @return the {@link EngageFactory}
+     * @return the registration id, may be {@code null} if not set
      */
-    public EngageFactory getEngageFactory() {
-        return engageFactory;
+    @Nullable
+    public abstract String getRegistrationId();
+    
+    /**
+     * Sets the registration id for push notifications.
+     *
+     * @param registrationId the registration id, may be {@code null}
+     *                       in order to unregister from notifications
+     *
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA setRegistrationId(@Nullable String registrationId);
+    
+    /**
+     * Clears the registration id associated with this device for disabling
+     * push notifications.
+     *
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA clearRegistrationId();
+    
+    /**
+     * Clears persistent data, such as the user ID, Collect events, and Engage
+     * cache.
+     * <p>
+     * This also normally stops the SDK, as a re-start will be required in order
+     * to re-initialise the user ID.
+     *
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA clearPersistentData();
+    
+    /**
+     * Forgets the current user and stops them from being tracked.
+     * <p>
+     * Any subsequent calls on the SDK will succeed, but not send/request
+     * anything to/from the Platform.
+     * <p>
+     * The status can be cleared by starting the SDK with a new user through
+     * {@link #startSdk(String)} or by clearing the persistent data with
+     * {@link #clearPersistentData()}.
+     *
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA forgetMe();
+    
+    abstract File getEngageStoragePath();
+    
+    abstract Map<String, Integer> getIso4217();
+    
+    /**
+     * Changes the session id.
+     *
+     * @return this {@link DDNA} instance
+     */
+    public final DDNA newSession() {
+        return newSession(false);
+    }
+    
+    public final String getSessionId() {
+        return sessionId;
     }
     
     /**
@@ -463,21 +354,40 @@ public final class DDNA {
      *          been set or generated by the SDK at this point
      */
     @Nullable
-    public String getUserId() {
+    public final String getUserId() {
         return preferences.getUserId();
     }
     
     /**
-     * Sets the user id.
-     * <p>
-     * Will be applied next time the SDK will be started.
+     * Gets the Engage factory which provides an easier way of requesting
+     * Engage actions.
      *
-     * @param userId the user id, may be {@code null} in which case
-     *               the SDK will generate a user id internally.
-     *
-     * @return this {@link DDNA} instance
+     * @return the {@link EngageFactory}
      */
-    public DDNA setUserId(@Nullable String userId) {
+    public final EngageFactory getEngageFactory() {
+        return engageFactory;
+    }
+    
+    public final Settings getSettings() {
+        return settings;
+    }
+    
+    // FIXME should not be exposed
+    public final NetworkManager getNetworkManager() {
+        return network;
+    }
+    
+    public final DDNA register(EventListener listener) {
+        eventListeners.add(listener);
+        return this;
+    }
+    
+    public final DDNA unregister(EventListener listener) {
+        eventListeners.remove(listener);
+        return this;
+    }
+    
+    final DDNA setUserId(@Nullable String userId) {
         final String currentUserId = getUserId();
         final String newUserId;
         boolean changed = false;
@@ -515,298 +425,22 @@ public final class DDNA {
         return this;
     }
     
-    /**
-     * Gets the registration id for push notifications.
-     *
-     * @return the registration id, may be {@code null} if not set
-     */
-    @Nullable
-    public String getRegistrationId() {
-        return preferences.getRegistrationId();
-    }
-    
-    /**
-     * Sets the registration id for push notifications.
-     *
-     * @param registrationId the registration id, may be {@code null}
-     *                       in order to unregister from notifications
-     *
-     * @return this {@link DDNA} instance
-     */
-    public DDNA setRegistrationId(@Nullable String registrationId) {
-        if (!Objects.equals(registrationId, preferences.getRegistrationId())) {
-            preferences.setRegistrationId(registrationId);
-            return recordEvent(new Event("notificationServices").putParam(
-                    "androidRegistrationID",
-                    (registrationId == null) ? "" : registrationId));
-        } else {
-            return this;
+    final DDNA newSession(boolean suppressWarning) {
+        if (!suppressWarning && settings.getSessionTimeout() > 0) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Automatic session refreshing is enabled");
         }
-    }
-    
-    /**
-     * Clears the registration id associated with this device for disabling
-     * push notifications.
-     *
-     * @return this {@link DDNA} instance
-     */
-    public DDNA clearRegistrationId() {
-        if (!TextUtils.isEmpty(getRegistrationId())) {
-            setRegistrationId(null);
+        
+        sessionId = UUID.randomUUID().toString();
+        
+        for (final EventListener listener : eventListeners) {
+            listener.onNewSession();
         }
         
         return this;
     }
     
-    /**
-     * Clears persistent data, such as the user id, Collect events,
-     * and Engage cache.
-     *
-     * @return this {@link DDNA} instance
-     */
-    public DDNA clearPersistentData() {
-        preferences.clear();
-        store.clear();
-        archive.clear();
-        
-        return this;
-    }
-    
-    public Settings getSettings() {
-        return settings;
-    }
-    
-    public String getSessionId() {
-        return sessionId;
-    }
-    
-    File getEngageStoragePath() {
-        return engageStoragePath;
-    }
-    
-    // FIXME should not be exposed
-    public NetworkManager getNetworkManager() {
-        return network;
-    }
-    
-    public DDNA register(EventListener listener) {
-        eventListeners.add(listener);
-        return this;
-    }
-    
-    public DDNA unregister(EventListener listener) {
-        eventListeners.remove(listener);
-        return this;
-    }
-    
-    Map<String, Integer> getIso4217() {
-        return iso4217;
-    }
-    
-    /**
-     * Fires the default events, should only be called from
-     * {@link #startSdk(String)}.
-     */
-    private void triggerDefaultEvents() {
-        if (    settings.onFirstRunSendNewPlayerEvent()
-                && preferences.getFirstRun() > 0) {
-            
-            Log.d(BuildConfig.LOG_TAG, "Recording 'newPlayer' event");
-            
-            recordEvent(new Event("newPlayer").putParam(
-                    "userCountry", ClientInfo.countryCode()));
-            
-            preferences.setFirstRun(0);
-        }
-        
-        if (settings.onInitSendGameStartedEvent()) {
-            Log.d(BuildConfig.LOG_TAG, "Recording 'gameStarted' event");
-            
-            final Event event = new Event("gameStarted")
-                    .putParam("userLocale", ClientInfo.locale());
-            if (!TextUtils.isEmpty(clientVersion)) {
-                event.putParam("clientVersion", clientVersion);
-            }
-            if (getRegistrationId() != null) {
-                event.putParam("androidRegistrationID", getRegistrationId());
-            }
-            
-            recordEvent(event);
-        }
-        
-        if (settings.onInitSendClientDeviceEvent()) {
-            Log.d(BuildConfig.LOG_TAG, "Recording 'clientDevice' event");
-            
-            recordEvent(new Event("clientDevice")
-                    .putParam("deviceName", ClientInfo.deviceName())
-                    .putParam("deviceType", ClientInfo.deviceType())
-                    .putParam("hardwareVersion", ClientInfo.deviceModel())
-                    .putParam("operatingSystem", ClientInfo.operatingSystem())
-                    .putParam("operatingSystemVersion", ClientInfo.operatingSystemVersion())
-                    .putParam("manufacturer", ClientInfo.manufacturer())
-                    .putParam("timezoneOffset", ClientInfo.timezoneOffset())
-                    .putParam("userLanguage", ClientInfo.languageCode()));
-        }
-    }
-    
-    DDNA(   Application application,
-            String environmentKey,
-            String collectUrl,
-            String engageUrl,
-            Settings settings,
-            @Nullable String hashSecret,
-            @Nullable String clientVersion,
-            @Nullable String userId,
-            @Nullable String platform) {
-        
-        this.settings = settings;
-        this.clientVersion = clientVersion;
-        this.platform = (platform == null)
-                ? ClientInfo.platform()
-                : platform;
-        
-        final Location location;
-        if (settings.isUseInternalStorageForEngage()) {
-            location = Location.INTERNAL;
-        } else if (Location.EXTERNAL.available()) {
-            location = Location.EXTERNAL;
-        } else {
-            Log.w(BuildConfig.LOG_TAG, String.format(
-                    Locale.US,
-                    "%s not available, falling back to %s",
-                    Location.EXTERNAL,
-                    Location.INTERNAL));
-            location = Location.INTERNAL;
-        }
-        engageStoragePath = location.directory(application, ENGAGE_DIRECTORY);
-        final File legacyPath;
-        if (application.getExternalFilesDir(null) != null) {
-            final String path = application.getExternalFilesDir(null).getPath();
-            legacyPath = new File(String.format(
-                    Locale.US,
-                    ENGAGE_PATH_LEGACY,
-                    (path != null) ? path : ""));
-        } else {
-            Log.d(BuildConfig.LOG_TAG, "Legacy engage storage path not found");
-            legacyPath = null;
-        }
-        
-        preferences = new Preferences(application);
-        store = new EventStore(application, settings, preferences);
-        archive = new EngageArchive(engageStoragePath, legacyPath);
-        engageFactory = new EngageFactory(this);
-        
-        sessionHandler = new SessionRefreshHandler(
-                application,
-                settings,
-                new SessionRefreshHandler.Listener() {
-                    @Override
-                    public void onExpired() {
-                        Log.d(  BuildConfig.LOG_TAG,
-                                "Session expired, updating id");
-                        newSession(true);
-                    }
-                });
-        eventHandler = new EventHandler(
-                store,
-                archive,
-                network = new NetworkManager(
-                        environmentKey,
-                        collectUrl,
-                        engageUrl,
-                        settings,
-                        hashSecret));
-        
-        final Map<String, Integer> temp = new HashMap<>();
-        try {
-            final XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-            final XmlPullParser xpp = factory.newPullParser();
-            xpp.setInput(new InputStreamReader(
-                    application.getResources().openRawResource(R.raw.iso_4217)));
-
-            boolean expectingCode = false;
-            boolean expectingValue = false;
-            String pulledCode = null;
-            String pulledValue = null;
-
-            int eventType;
-            while ((eventType = xpp.next()) != XmlPullParser.END_DOCUMENT) {
-                switch (eventType) {
-                    case XmlPullParser.START_TAG:
-                        switch (xpp.getName()) {
-                            case "Ccy":
-                                expectingCode = true;
-                                break;
-
-                            case "CcyMnrUnts":
-                                expectingValue = true;
-                                break;
-                        }
-                        break;
-
-                    case XmlPullParser.TEXT:
-                        if (expectingCode) {
-                            pulledCode = xpp.getText();
-                        } else if (expectingValue) {
-                            pulledValue = xpp.getText();
-                        }
-                        break;
-
-                    case XmlPullParser.END_TAG:
-                        switch (xpp.getName()) {
-                            case "Ccy":
-                                expectingCode = false;
-                                break;
-
-                            case "CcyMnrUnts":
-                                expectingValue = false;
-                                break;
-
-                            case "CcyNtry":
-                                if (!TextUtils.isEmpty(pulledCode)
-                                        && !TextUtils.isEmpty(pulledValue)) {
-                                    int value;
-                                    try {
-                                        value = Integer.parseInt(pulledValue);
-                                    } catch (NumberFormatException ignored) {
-                                        value = 0;
-                                    }
-
-                                    temp.put(pulledCode, value);
-                                }
-
-                                expectingCode = false;
-                                expectingValue = false;
-                                pulledCode = null;
-                                pulledValue = null;
-                                break;
-                        }
-                }
-            }
-        } catch (Resources.NotFoundException e) {
-            Log.w(BuildConfig.LOG_TAG, "Failed to find ISO 4217 resource", e);
-        } catch (XmlPullParserException | IOException e) {
-            Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
-        } finally {
-            iso4217 = Collections.unmodifiableMap(temp);
-        }
-        
-        setUserId(userId);
-    }
-    
-    private static String fixUrl(String url) {
-        if (    !url.toLowerCase(Locale.US).startsWith("http://")
-                && !url.toLowerCase(Locale.US).startsWith("https://")) {
-            return "https://" + url;
-        } else if (url.toLowerCase(Locale.US).startsWith("http://")) {
-            Log.w(BuildConfig.LOG_TAG, "Changing " + url + " to use HTTPS");
-            return "https://" + url.substring("http://".length(), url.length());
-        } else {
-            return url;
-        }
-    }
-    
-    private static String getCurrentTimestamp() {
+    static String getCurrentTimestamp() {
         return TIMESTAMP_FORMAT.format(new Date());
     }
     
@@ -817,21 +451,21 @@ public final class DDNA {
      */
     public static final class Configuration {
         
-        private final Application application;
-        private final String environmentKey;
-        private final String collectUrl;
-        private final String engageUrl;
+        protected final Application application;
+        final String environmentKey;
+        final String collectUrl;
+        final String engageUrl;
         
         @Nullable
-        private String hashSecret;
+        String hashSecret;
         @Nullable
-        private String clientVersion;
+        String clientVersion;
         @Nullable
-        private String userId;
+        String userId;
         @Nullable
-        private String platform;
+        String platform;
         
-        private final Settings settings;
+        protected final Settings settings;
         
         public Configuration(
                 Application application,
@@ -931,9 +565,21 @@ public final class DDNA {
             modifier.modify(settings);
             return this;
         }
+        
+        private static String fixUrl(String url) {
+            if (    !url.toLowerCase(Locale.US).startsWith("http://")
+                    && !url.toLowerCase(Locale.US).startsWith("https://")) {
+                return "https://" + url;
+            } else if (url.toLowerCase(Locale.US).startsWith("http://")) {
+                Log.w(BuildConfig.LOG_TAG, "Changing " + url + " to use HTTPS");
+                return "https://" + url.substring("http://".length(), url.length());
+            } else {
+                return url;
+            }
+        }
     }
     
-    public interface SettingsModifier {
+    interface SettingsModifier {
         
         void modify(Settings settings);
     }

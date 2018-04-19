@@ -27,7 +27,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
-class DDNATest {
+class DDNAImplTest {
     
     private var uut = createUut()
     
@@ -84,7 +84,16 @@ class DDNATest {
         }
     }
     
-    private fun createUut() = DDNA(
+    @Test
+    fun forgetMeStopsSdk() {
+        uut.startSdk()
+        assertThat(uut.isStarted).isTrue()
+        
+        uut.forgetMe()
+        assertThat(uut.isStarted).isFalse()
+    }
+    
+    private fun createUut() = DDNAImpl(
             RuntimeEnvironment.application,
             "environmentKey",
             "collectUrl",

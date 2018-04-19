@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright (c) 2018 deltaDNA Ltd. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+!-->
+
+<resources>
+    <string name="app_name">deltaDNA SDK Forget Me Example</string>
+    
+    <string name="user_id">User ID: %s</string>
+    <string name="forget_me">Forget me</string>
+    <string name="clear_persistent_data">Clear persistent data</string>
+    <string name="upload_events">Upload events</string>
+    <string name="simple_event">Simple event</string>
+    <string name="engage">Engage</string>
+    <string name="image_message">Image Message</string>
+    <string name="start_sdk">Start SDK</string>
+    <string name="start_sdk_user_id">Start SDK with user ID</string>
+    <string name="stop_sdk">Stop SDK</string>
+</resources>
