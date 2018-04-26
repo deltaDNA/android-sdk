@@ -145,6 +145,11 @@ class DDNADelegate extends DDNA {
     }
     
     @Override
+    ImageMessageStore getImageMessageStore() {
+        return getDelegate().getImageMessageStore();
+    }
+    
+    @Override
     File getEngageStoragePath() {
         return getDelegate().getEngageStoragePath();
     }

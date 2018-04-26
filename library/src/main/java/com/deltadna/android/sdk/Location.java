@@ -25,9 +25,16 @@ enum Location {
     
     INTERNAL {
         @Override
-        File directory(Context context, String subdirectory) {
+        File storage(Context context, String subdirectory) {
             return new File(
                     context.getFilesDir(),
+                    DIRECTORY + subdirectory);
+        }
+        
+        @Override
+        File cache(Context context, String subdirectory) {
+            return new File(
+                    context.getCacheDir(),
                     DIRECTORY + subdirectory);
         }
     },
@@ -39,9 +46,16 @@ enum Location {
         }
         
         @Override
-        File directory(Context context, String subdirectory) {
+        File storage(Context context, String subdirectory) {
             return new File(
                     context.getExternalFilesDir(null),
+                    DIRECTORY + subdirectory);
+        }
+        
+        @Override
+        File cache(Context context, String subdirectory) {
+            return new File(
+                    context.getExternalCacheDir(),
                     DIRECTORY + subdirectory);
         }
     };
@@ -50,7 +64,8 @@ enum Location {
         return true;
     }
     
-    abstract File directory(Context context, String subdirectory);
+    abstract File storage(Context context, String subdirectory);
+    abstract File cache(Context context, String subdirectory);
     
     private static final String DIRECTORY =
             "com.deltadna.android.sdk" + File.separator;

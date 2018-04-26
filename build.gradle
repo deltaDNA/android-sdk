@@ -122,6 +122,7 @@ subprojects {
             testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+            testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
             testImplementation 'org.json:json:20171018'
             testImplementation 'org.mockito:mockito-core:2.16.0'
             testImplementation 'org.robolectric:robolectric:3.8'

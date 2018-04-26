@@ -60,7 +60,8 @@ final class DDNAImpl extends DDNA {
     @Nullable
     private final String clientVersion;
     
-    private final EventStore store;
+    private final EventStore eventStore;
+    private final ImageMessageStore imageMessageStore;
     private final EngageArchive archive;
     
     private final SessionRefreshHandler sessionHandler;
@@ -121,9 +122,9 @@ final class DDNAImpl extends DDNA {
             
             sessionHandler.unregister();
             eventHandler.stop(true);
-            if (archive != null) {
-                archive.save();
-            }
+            
+            imageMessageStore.cleanUp();
+            archive.save();
             
             started = false;
             
@@ -280,7 +281,8 @@ final class DDNAImpl extends DDNA {
         stopSdk();
         
         preferences.clear();
-        store.clear();
+        eventStore.clear();
+        imageMessageStore.clear();
         archive.clear();
         
         return this;
@@ -289,6 +291,11 @@ final class DDNAImpl extends DDNA {
     @Override
     public DDNA forgetMe() {
         return stopSdk();
+    }
+    
+    @Override
+    ImageMessageStore getImageMessageStore() {
+        return imageMessageStore;
     }
     
     @Override
@@ -381,7 +388,7 @@ final class DDNAImpl extends DDNA {
                     Location.INTERNAL));
             location = Location.INTERNAL;
         }
-        engageStoragePath = location.directory(application, ENGAGE_DIRECTORY);
+        engageStoragePath = location.storage(application, ENGAGE_DIRECTORY);
         final File legacyPath;
         if (application.getExternalFilesDir(null) != null) {
             final String path = application.getExternalFilesDir(null).getPath();
@@ -394,7 +401,17 @@ final class DDNAImpl extends DDNA {
             legacyPath = null;
         }
         
-        store = new EventStore(application, settings, preferences);
+        final DatabaseHelper database = new DatabaseHelper(application);
+        eventStore = new EventStore(
+                application,
+                database,
+                settings,
+                preferences);
+        imageMessageStore = new ImageMessageStore(
+                application,
+                database,
+                network,
+                settings);
         archive = new EngageArchive(engageStoragePath, legacyPath);
         
         sessionHandler = new SessionRefreshHandler(
@@ -408,7 +425,7 @@ final class DDNAImpl extends DDNA {
                         newSession(true);
                     }
                 });
-        eventHandler = new EventHandler(store, archive, network);
+        eventHandler = new EventHandler(eventStore, archive, network);
         
         final Map<String, Integer> temp = new HashMap<>();
         try {

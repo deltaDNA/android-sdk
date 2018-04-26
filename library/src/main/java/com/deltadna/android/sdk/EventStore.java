@@ -17,19 +17,16 @@
 package com.deltadna.android.sdk;
 
 import android.content.BroadcastReceiver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
-import android.provider.BaseColumns;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.deltadna.android.sdk.DatabaseHelper.Events;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.util.CloseableIterator;
 
@@ -56,7 +53,7 @@ class EventStore extends BroadcastReceiver {
             + EventStore.class.getSimpleName();
     private static final String DIRECTORY = "events" + File.separator;
     private static final Charset UTF8 = Charset.forName("UTF-8");
-    private static final int EVENTS_LIMIT = 1024 * 1024;
+    static final int EVENTS_LIMIT = 1024 * 1024;
     private static final int STORE_LIMIT = 5 * EVENTS_LIMIT;
     
     private static final IntentFilter FILTER;
@@ -71,20 +68,23 @@ class EventStore extends BroadcastReceiver {
     private static final Lock LEGACY_MIGRATION_LOCK = new ReentrantLock();
     
     private final Context context;
+    private final DatabaseHelper db;
     private final Settings settings;
     private final Preferences prefs;
-    
-    private final DbHelper db;
     
     @Nullable
     private final MessageDigest sha1;
     
-    EventStore(Context context, Settings settings, Preferences prefs) {
+    EventStore(
+            Context context,
+            DatabaseHelper db,
+            Settings settings,
+            Preferences prefs) {
+        
         this.context = context;
+        this.db = db;
         this.settings = settings;
         this.prefs = prefs;
-        
-        db = new DbHelper(context);
         
         MessageDigest digest = null;
         try {
@@ -137,7 +137,7 @@ class EventStore extends BroadcastReceiver {
         db.removeEventRows();
         for (final Location location : Location.values()) {
             if (location.available()) {
-                final File dir = location.directory(context, DIRECTORY);
+                final File dir = location.storage(context, DIRECTORY);
                 for (final File file : dir.listFiles()) {
                     if (!file.delete()) {
                         Log.w(TAG, "Failed to clear " + file);
@@ -152,7 +152,7 @@ class EventStore extends BroadcastReceiver {
     private void prepare() {
         for (final Location location : Location.values()) {
             if (location.available()) {
-                final File dir = location.directory(context, DIRECTORY);
+                final File dir = location.storage(context, DIRECTORY);
                 if (!dir.exists()) {
                     if (!dir.mkdirs()) {
                         Log.w(TAG, "Failed creating " + dir);
@@ -271,7 +271,7 @@ class EventStore extends BroadcastReceiver {
             final String hash = md5(content);
             
             final File file = new File(
-                    location.directory(context, DIRECTORY),
+                    location.storage(context, DIRECTORY),
                     name);
             FileOutputStream out = null;
             try {
@@ -304,112 +304,16 @@ class EventStore extends BroadcastReceiver {
             return null;
         }
     }
-    
-    private static final class DbHelper extends SQLiteOpenHelper {
-        
-        private static final String TABLE_EVENTS = "Events";
-        
-        private static final String EVENTS_ID = BaseColumns._ID;
-        private static final String EVENTS_TIME = "Time";
-        private static final String EVENTS_NAME = "Name";
-        private static final String EVENTS_LOCATION = "Location";
-        private static final String EVENTS_HASH = "Hash";
-        private static final String EVENTS_SIZE = "Size";
-        
-        DbHelper(Context context) {
-            super(context, "com.deltadna.android.sdk", null, 1);
-        }
-        
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE " + TABLE_EVENTS + "("
-                    + EVENTS_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + EVENTS_TIME + " INTEGER NOT NULL, "
-                    + EVENTS_LOCATION + " TEXT NOT NULL, "
-                    + EVENTS_NAME + " TEXT NOT NULL UNIQUE, "
-                    + EVENTS_HASH + " TEXT, "
-                    + EVENTS_SIZE + " INTEGER NOT NULL)");
-        }
-        
-        @Override
-        public void onUpgrade(
-                SQLiteDatabase db,
-                int oldVersion,
-                int newVersion) {}
-        
-        long getEventsSize() {
-            Cursor cursor = null;
-            try {
-                cursor = getReadableDatabase().rawQuery(
-                        "SELECT SUM(" + EVENTS_SIZE + ") " +
-                        "FROM " + TABLE_EVENTS + ";",
-                        new String[] {});
-                
-                return (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
-            } finally {
-                if (cursor != null) cursor.close();
-            }
-        }
-        
-        Cursor getEventRows() {
-            return getReadableDatabase().rawQuery(
-                    String.format(
-                            Locale.US,
-                            "SELECT e.%s, e.%s, e.%s, e.%s, e.%s, SUM(e1.%s) AS Total "
-                                    + "FROM %s e "
-                                    + "JOIN %s e1 ON e1.%s <= e.%s "
-                                    + "GROUP BY e.%s "
-                                    + "HAVING SUM(e1.%s) <= %d "
-                                    + "ORDER BY e.%s ASC;",
-                            EVENTS_ID, EVENTS_TIME, EVENTS_LOCATION, EVENTS_NAME, EVENTS_SIZE, EVENTS_SIZE,
-                            TABLE_EVENTS,
-                            TABLE_EVENTS, EVENTS_ID, EVENTS_ID,
-                            EVENTS_ID,
-                            EVENTS_SIZE, EVENTS_LIMIT,
-                            EVENTS_TIME),
-                    new String[]{});
-        }
-        
-        boolean insertEventRow(
-                long time,
-                Location location,
-                String name,
-                @Nullable String hash,
-                long size) {
-            
-            final ContentValues values = new ContentValues(4);
-            values.put(EVENTS_TIME, time);
-            values.put(EVENTS_LOCATION, location.name());
-            values.put(EVENTS_NAME, name);
-            values.put(EVENTS_HASH, hash);
-            values.put(EVENTS_SIZE, size);
-            
-            return (getWritableDatabase().insert(TABLE_EVENTS, null, values)
-                    != -1);
-        }
-        
-        boolean removeEventRow(long id) {
-            return (getWritableDatabase().delete(
-                    TABLE_EVENTS,
-                    EVENTS_ID + " = ?",
-                    new String[] { Long.toString(id) })
-                    == 1);
-        }
-        
-        void removeEventRows() {
-            getWritableDatabase().delete(TABLE_EVENTS, null, null);
-        }
-    }
-    
+
     private static final class EventIterator implements
             CloseableIterator<EventStoreItem> {
         
-        private final DbHelper db;
+        private final DatabaseHelper db;
         private final Context context;
         
         private final Cursor cursor;
         
-        EventIterator(DbHelper db, Context context) {
+        EventIterator(DatabaseHelper db, Context context) {
             this.db = db;
             this.context = context;
             
@@ -437,7 +341,7 @@ class EventStore extends BroadcastReceiver {
                 @Nullable
                 public String get() {
                     final File file = new File(
-                            location.directory(context, DIRECTORY),
+                            location.storage(context, DIRECTORY),
                             getCurrentName());
                     final StringBuilder builder = new StringBuilder();
                     BufferedReader reader = null;
@@ -505,17 +409,17 @@ class EventStore extends BroadcastReceiver {
         
         private long getCurrentId() {
             return cursor.getLong(
-                    cursor.getColumnIndex(DbHelper.EVENTS_ID));
+                    cursor.getColumnIndex(Events.Column.ID.toString()));
         }
         
         private Location getCurrentLocation() {
             return Location.valueOf(cursor.getString(
-                    cursor.getColumnIndex(DbHelper.EVENTS_LOCATION)));
+                    cursor.getColumnIndex(Events.Column.LOCATION.toString())));
         }
         
         private String getCurrentName() {
             return cursor.getString(
-                    cursor.getColumnIndex(DbHelper.EVENTS_NAME));
+                    cursor.getColumnIndex(Events.Column.NAME.toString()));
         }
         
         private void removeRow() {
@@ -524,7 +428,7 @@ class EventStore extends BroadcastReceiver {
             }
             
             final File file = new File(
-                    getCurrentLocation().directory(context, DIRECTORY),
+                    getCurrentLocation().storage(context, DIRECTORY),
                     getCurrentName());
             if (!file.delete()) {
                 Log.w(TAG, "Failed deleting " + file);

@@ -57,7 +57,7 @@ final class Request<T> implements Callable<Response<T>> {
     final int retryDelay;
     @Nullable
     RequestListener<T> listener;
-    int runs;
+    private int runs;
     
     private Request(
             URL url,

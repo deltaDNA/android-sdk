@@ -21,6 +21,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 import com.google.common.truth.Truth.assertThat
+import org.json.JSONObject
 
 @RunWith(JUnit4::class)
 class ObjectsTest {
@@ -34,5 +35,18 @@ class ObjectsTest {
         assertThat(Objects.equals(null, Object())).isFalse()
         assertThat(Objects.equals(Object(), null)).isFalse()
         assertThat(Objects.equals(Object(), Object())).isFalse()
+    }
+    
+    @Test
+    fun extract() {
+        assertThat(Objects.extract(null, "a")).isNull()
+        assertThat(Objects.extract(JSONObject("{\"a\":null}"), "a"))
+                .isNull()
+        assertThat(Objects.extract(JSONObject("{\"a\":{}}"), "a").toString())
+                .isEqualTo("{}")
+        assertThat(Objects.extract(JSONObject("{\"a\":{\"b\":{}}}"), "a").toString())
+                .isEqualTo("{\"b\":{}}")
+        assertThat(Objects.extract(JSONObject("{\"a\":{\"b\":{}}}"), "a", "b").toString())
+                .isEqualTo("{}")
     }
 }
