@@ -140,11 +140,13 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
         return name;
     }
     
-    void setResponse(Response<JSONObject> response) {
+    T setResponse(Response<JSONObject> response) {
         this.response = response;
         // unpack response for easy access
         this.statusCode = response.code;
         this.json = response.body;
         this.error = response.error;
+        
+        return (T) this;
     }
 }
