@@ -34,7 +34,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 @RunWith(RobolectricTestRunner::class)
 class DDNANonTrackingTest {
@@ -178,8 +178,15 @@ class DDNANonTrackingTest {
             }
             
             Robolectric.getForegroundThreadScheduler().runOneTask()
-            // needed to refresh the preferences :/
-            Robolectric.getForegroundThreadScheduler().advanceBy(500, TimeUnit.MILLISECONDS)
+            
+            /*
+             * Robolectric seems to have some issues with refreshing
+             * SharedPreference values. For some reason the following two lines
+             * seem to cause the value to get refreshed so that it's in the
+             * correct state for the following assertions :/
+             */
+            Logger.getGlobal().info(preferences.isForgotten.toString())
+            Robolectric.getForegroundThreadScheduler().runOneTask()
         }
         assertThat(preferences.isForgetMe).isTrue()
         assertThat(preferences.isForgotten).isTrue()
