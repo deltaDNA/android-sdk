@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.8.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.0) (YYYY-MM-DD)
+## [4.8.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.0) (2018-05-18)
 Added API for forgetting the user and stopping tracking (GDPR).  
 
 ## [4.7.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.7.0) (2018-04-17)
