@@ -31,6 +31,8 @@ final class Preferences {
     private static final String KEY_FIRST_RUN = "DDSDK_FIRST_RUN";
     private static final String KEY_REGISTRATION_ID =
             "DDSDK_ANDROID_REGISTRATION_ID";
+    private static final String KEY_FORGET_ME = "DDSDK_FORGET_ME";
+    private static final String KEY_FORGOTTEN = "DDSDK_FORGOTTEN";
     
     private final SharedPreferences prefs;
     
@@ -71,6 +73,32 @@ final class Preferences {
         prefs.edit().putString(
                 KEY_REGISTRATION_ID,
                 registrationId)
+                .apply();
+        return this;
+    }
+    
+    boolean isForgetMe() {
+        return prefs.getBoolean(KEY_FORGET_ME, false);
+    }
+    
+    Preferences setForgetMe(boolean value) {
+        prefs.edit().putBoolean(KEY_FORGET_ME, value).apply();
+        return this;
+    }
+    
+    boolean isForgotten() {
+        return prefs.getBoolean(KEY_FORGOTTEN, false);
+    }
+    
+    Preferences setForgotten(boolean value) {
+        prefs.edit().putBoolean(KEY_FORGOTTEN, value).apply();
+        return this;
+    }
+    
+    Preferences clearForgetMeAndForgotten() {
+        prefs   .edit()
+                .remove(KEY_FORGET_ME)
+                .remove(KEY_FORGOTTEN)
                 .apply();
         return this;
     }

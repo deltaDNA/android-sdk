@@ -31,7 +31,7 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class ProductTest {
     
-    private val ddna = DDNA(
+    private val ddna = DDNAImpl(
             RuntimeEnvironment.application,
             "environmentKey",
             "collectUrl",

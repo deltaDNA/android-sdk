@@ -19,6 +19,7 @@
  * [Transactions](#transactions)
 * [Engage](#engage)
  * [Image Messaging](#image-messaging)
+* [Forgetting a user](#forgetting-a-user-(gdpr))
 * [Push notifications](#push-notifications)
 * [Settings](#settings)
 * [ProGuard](#proguard)
@@ -44,7 +45,7 @@ allprojects {
 ```
 In your app's build script
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.7.0'
+compile 'com.deltadna.android:deltadna-sdk:4.8.0-SNAPSHOT'
 ```
 
 ## Initialising
@@ -293,6 +294,11 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
     }
 }
 ```
+
+## Forgetting a user (GDPR)
+If a user no longer wishes to be tracked and would like to be forgotten the `forgetMe()` API can be used. This will stop the SDK from sending/receiving any further information to/from the Platform, as well as initiating a data deletion request on behalf of the user. The SDK will continue to work as it normally would, without any additional work required.
+
+If the game supports changing of users then calling `startSdk(userId)` with a new user ID or `clearPersistentData()` will restore the previous SDK functionality. 
 
 ## Push notifications
 The SDK can store the Android Registration Id for the device and send it to deltaDNA so that you may send targeted push notification messages to players.
