@@ -18,5 +18,5 @@ android {}
 
 dependencies {
     api "com.android.support:support-annotations:$supportVersion"
-    api "com.android.support:support-v4:$supportVersion"
+    api "com.android.support:support-core-utils:$supportVersion"
 }
