@@ -330,6 +330,8 @@ public abstract class DDNA {
      */
     public abstract DDNA forgetMe();
     
+    abstract ImageMessageStore getImageMessageStore();
+    
     abstract File getEngageStoragePath();
     
     abstract Map<String, Integer> getIso4217();

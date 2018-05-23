@@ -22,16 +22,13 @@ import android.content.res.Configuration;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.CancelableRequest;
-import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Locale;
@@ -58,11 +55,10 @@ public final class ImageMessage implements Serializable {
     private static final int METRICTYPE_PERCENTAGE = 1;
     
     final String eventParams;
-    private final String transactionId;
     private final String parameters;
     
     private final String imageUrl;
-    private String imageFormat;
+    private File imageFile;
     
     final Background background;
     private final Vector<Button> buttons;
@@ -80,14 +76,12 @@ public final class ImageMessage implements Serializable {
      */
     public ImageMessage(JSONObject json) throws JSONException {
         eventParams = json.getJSONObject("eventParams").toString();
-        transactionId = json.getString("transactionID");
         parameters = (json.has("parameters")
                 ? json.optJSONObject("parameters")
                 : new JSONObject()).toString();
         
         final JSONObject image = json.getJSONObject("image");
         imageUrl = image.getString("url");
-        imageFormat = image.getString("format");
         
         final JSONObject layout = image.getJSONObject("layout");
         final JSONObject spritemap = image.getJSONObject("spritemap");
@@ -147,43 +141,26 @@ public final class ImageMessage implements Serializable {
         if (prepared) {
             listener.onPrepared(this);
         } else {
-            // do we have an image?
-            final File file = getImageFile();
-            if (!file.exists() && request == null) {
-                if (!file.getParentFile().exists()) {
-                    if (!file.getParentFile().mkdirs()) {
-                        Log.w(  TAG,
-                                "Failed to create path for " + file);
-                        listener.onError(new IOException(
-                                "Failed to create path for " + file));
-                        return;
-                    }
-                }
-                
-                request = DDNA.instance().getNetworkManager().fetch(
-                        imageUrl,
-                        file,
-                        new RequestListener<File>() {
-                            @Override
-                            public void onCompleted(Response<File> result) {
+            DDNA.instance().getImageMessageStore().getAsync(
+                    imageUrl,
+                    new ImageMessageStore.Callback<File>() {
+                        @Override
+                        public void onCompleted(@Nullable File value) {
+                            if (value != null) {
+                                imageFile = value;
                                 prepared = true;
                                 request = null;
                                 
                                 listener.onPrepared(ImageMessage.this);
-                            }
-                            
-                            @Override
-                            public void onError(Throwable t) {
+                            } else {
+                                imageFile = null;
                                 prepared = false;
                                 request = null;
                                 
-                                listener.onError(t);
+                                listener.onError();
                             }
-                        });
-            } else {
-                prepared = true;
-                listener.onPrepared(this);
-            }
+                        }
+                    });
         }
     }
     
@@ -212,11 +189,6 @@ public final class ImageMessage implements Serializable {
      */
     public void cleanUp() {
         if (request != null) request.cancel();
-        
-        final File file = getImageFile();
-        if (file.exists() && !file.delete()) {
-            Log.w(TAG, "Failed to cleanup " + file);
-        }
     }
     
     /**
@@ -265,13 +237,7 @@ public final class ImageMessage implements Serializable {
      * @return the local image file.
      */
     File getImageFile() {
-        return new File(
-                DDNA.instance().getEngageStoragePath(),
-                String.format(
-                        Locale.US,
-                        "engageimg_%s.%s",
-                        transactionId,
-                        imageFormat));
+        return imageFile;
     }
     
     /**
@@ -320,10 +286,8 @@ public final class ImageMessage implements Serializable {
          * <p>
          * If this method is called {@link #onPrepared(ImageMessage)} will not
          * be called.
-         *
-         * @param cause the cause of the error
          */
-        void onError(Throwable cause);
+        void onError();
     }
     
     /**

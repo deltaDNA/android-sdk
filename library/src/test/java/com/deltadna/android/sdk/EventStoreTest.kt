@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk
 
-import android.content.Context
 import android.os.Environment
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.util.CloseableIterator
@@ -26,29 +25,29 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowEnvironment
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
-@Config(manifest = Config.NONE)
 class EventStoreTest {
     
-    private var application: Context? = null
-    private var settings: Settings? = null
-    private var prefs: Preferences? = null
+    private val application by lazy { RuntimeEnvironment.application }
     
-    private var uut: EventStore? = null
+    private lateinit var database: DatabaseHelper
+    private lateinit var settings: Settings
+    private lateinit var prefs: Preferences
+    
+    private lateinit var uut: EventStore
     
     @Before
     fun before() {
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
         
-        application = RuntimeEnvironment.application
+        database = DatabaseHelper(application)
         settings = Settings()
         prefs = Preferences(application)
         
-        uut = EventStore(application, settings, prefs)
+        uut = EventStore(application, database, settings, prefs)
     }
     
     @Test
@@ -63,11 +62,11 @@ class EventStoreTest {
         legacy.swap()
         legacy.push("1")
         
-        uut = EventStore(application, settings, prefs)
+        uut = EventStore(application, database, settings, prefs)
         pause()
         
         assertThat(legacy.read().size).isEqualTo(0)
-        with(uut!!.items()) {
+        with(uut.items()) {
             assertThat(next().get()).isEqualTo("1")
             assertThat(hasNext()).isFalse()
         }
@@ -76,7 +75,7 @@ class EventStoreTest {
     @Test
     fun itemsAddedAndRetrievable() {
         val items = listOf("1", "2", "3")
-        with(uut!!) {
+        with(uut) {
             items.forEach { add(it) }
             pause()
             
@@ -95,10 +94,10 @@ class EventStoreTest {
     
     @Test
     fun itemAddedOnInternal() {
-        settings!!.isUseInternalStorageForEvents = true
+        settings.isUseInternalStorageForEvents = true
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_UNMOUNTED)
         
-        with(uut!!) {
+        with(uut) {
             add("1")
             pause()
             
@@ -117,7 +116,7 @@ class EventStoreTest {
     fun itemAddedWhenExternalNotAvailable() {
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_UNMOUNTED)
         
-        with(uut!!) {
+        with(uut) {
             add("1")
             pause()
             
@@ -134,7 +133,7 @@ class EventStoreTest {
     
     @Test
     fun itemNotAvailableOnExternalUnmounted() {
-        with(uut!!) {
+        with(uut) {
             add("1")
             pause()
             ShadowEnvironment.setExternalStorageState(Environment.MEDIA_UNMOUNTED)
@@ -149,7 +148,7 @@ class EventStoreTest {
     @Test
     fun itemsRetrievedUpToLimit() {
         val items = listOf(512*1024, 512*1024, 512*1024, 1024*1024)
-        with(uut!!) {
+        with(uut) {
             items.forEach {
                 with(CharArray(it)) {
                     fill('a')
@@ -186,7 +185,7 @@ class EventStoreTest {
     
     @Test
     fun oversizeItemNotAdded() {
-        with(uut!!) {
+        with(uut) {
             with(CharArray(1024*1024+1)) {
                 fill('a')
                 add(String(this))
@@ -199,7 +198,7 @@ class EventStoreTest {
     
     @Test
     fun itemNotAddedWhenFull() {
-        with(uut!!) {
+        with(uut) {
             (0..5).forEach {
                 with(CharArray(1024*1024)) {
                     fill('a')
@@ -223,7 +222,7 @@ class EventStoreTest {
     @Test
     fun itemsNotRemovedOnCloseWithoutClear() {
         val items = listOf("1", "2", "3")
-        with(uut!!) {
+        with(uut) {
             items.forEach { add(it) }
             pause()
             items().close(CloseableIterator.Mode.NONE)
@@ -243,7 +242,7 @@ class EventStoreTest {
     
     @Test
     fun itemsRemovedOnCloseWithClearAll() {
-        with(uut!!) {
+        with(uut) {
             listOf("1", "2", "3").forEach { add(it) }
             pause()
             items().close(CloseableIterator.Mode.ALL)
@@ -254,7 +253,7 @@ class EventStoreTest {
     
     @Test
     fun itemsRemovedOnCloseWithClearUpToCurrent() {
-        with(uut!!) {
+        with(uut) {
             listOf("1", "2", "3").forEach { add(it) }
             pause()
             
@@ -275,7 +274,7 @@ class EventStoreTest {
     
     @Test
     fun clear() {
-        with(uut!!) {
+        with(uut) {
             listOf("1", "2", "3").forEach { add(it) }
             clear()
             

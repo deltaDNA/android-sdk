@@ -71,6 +71,7 @@ public class Settings{
     
     private boolean useInternalStorageForEvents;
     private boolean useInternalStorageForEngage;
+    private boolean useInternalStorageForImageMessages;
     
 	/**
 	 * TRUE to send new player event on first run of application.
@@ -326,5 +327,13 @@ public class Settings{
     
     public void setUseInternalStorageForEngage(boolean useInternal) {
         useInternalStorageForEngage = useInternal;
+    }
+    
+    public boolean isUseInternalStorageForImageMessages() {
+        return useInternalStorageForImageMessages;
+    }
+    
+    public void setUseInternalStorageForImageMessages(boolean useInternal) {
+        useInternalStorageForImageMessages = useInternal;
     }
 }

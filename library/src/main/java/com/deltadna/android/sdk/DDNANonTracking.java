@@ -169,6 +169,12 @@ final class DDNANonTracking extends DDNA {
     }
     
     @Override
+    ImageMessageStore getImageMessageStore() {
+        // ok as we should never get far enough to use the store
+        return null;
+    }
+    
+    @Override
     File getEngageStoragePath() {
         return engageStoragePath;
     }

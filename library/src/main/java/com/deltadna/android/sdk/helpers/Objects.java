@@ -16,6 +16,10 @@
 
 package com.deltadna.android.sdk.helpers;
 
+import android.support.annotation.Nullable;
+
+import org.json.JSONObject;
+
 /**
  * Helper functions that can operate on any {@link Object}.
  */
@@ -27,6 +31,20 @@ public final class Objects {
         } else {
             return (a == null && b == null);
         }
+    }
+    
+    @Nullable
+    public static JSONObject extract(@Nullable JSONObject from, String... path) {
+        if (from == null) return null;
+        
+        JSONObject object = from;
+        for (final String segment : path) {
+            if (object == null) return null;
+            
+            object = object.optJSONObject(segment);
+        }
+        
+        return object;
     }
     
     public static final class ToStringHelper {

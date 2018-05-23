@@ -263,7 +263,7 @@ class MyPrepareListener implements ImageMessage.PrepareListener {
     }
     
     @Override
-    public void onError(Throwable cause) {
+    public void onError() {
         // act on error
     }
 }

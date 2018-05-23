@@ -202,10 +202,8 @@ public class ExampleActivity extends AppCompatActivity {
         }
         
         @Override
-        public void onError(Throwable cause) {
-            Log.w(  BuildConfig.LOG_TAG,
-                    "Image Message preparation error",
-                    cause);
+        public void onError() {
+            Log.w(BuildConfig.LOG_TAG, "Image Message preparation error");
         }
     }
 }
