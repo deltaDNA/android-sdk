@@ -145,20 +145,21 @@ public final class ImageMessage implements Serializable {
                     imageUrl,
                     new ImageMessageStore.Callback<File>() {
                         @Override
-                        public void onCompleted(@Nullable File value) {
-                            if (value != null) {
-                                imageFile = value;
-                                prepared = true;
-                                request = null;
-                                
-                                listener.onPrepared(ImageMessage.this);
-                            } else {
-                                imageFile = null;
-                                prepared = false;
-                                request = null;
-                                
-                                listener.onError();
-                            }
+                        public void onCompleted(File value) {
+                            imageFile = value;
+                            prepared = true;
+                            request = null;
+                            
+                            listener.onPrepared(ImageMessage.this);
+                        }
+                        
+                        @Override
+                        public void onFailed(Throwable reason) {
+                            imageFile = null;
+                            prepared = false;
+                            request = null;
+                            
+                            listener.onError(reason);
                         }
                     });
         }
@@ -286,8 +287,10 @@ public final class ImageMessage implements Serializable {
          * <p>
          * If this method is called {@link #onPrepared(ImageMessage)} will not
          * be called.
+         *
+         * @param reason the reason for the error
          */
-        void onError();
+        void onError(Throwable reason);
     }
     
     /**

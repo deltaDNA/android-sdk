@@ -77,6 +77,7 @@ class NetworkDispatcherTest {
         assertThat(server!!.requestCount).isEqualTo(1)
         verify(listener).onCompleted(eq(Response(
                 200,
+                false,
                 responseBody.toByteArray(),
                 responseBody,
                 null)))

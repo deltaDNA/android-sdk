@@ -35,12 +35,14 @@ class ResponseTest {
     @Test
     fun ctor() {
         val code = 1
+        val cached = true
         val bytes = byteArrayOf(1)
         val body = Object()
         val error = "error"
-        val uut = Response(code, bytes, body, error)
+        val uut = Response(code, cached, bytes, body, error)
         
         assertThat(uut.code).isSameAs(code)
+        assertThat(uut.cached).isSameAs(cached)
         assertThat(uut.bytes).isSameAs(bytes)
         assertThat(uut.body).isSameAs(body)
         assertThat(uut.error).isSameAs(error)
@@ -48,20 +50,20 @@ class ResponseTest {
     
     @Test
     fun isSuccessful() {
-        assertThat(Response(Integer.MIN_VALUE, null, null, null).isSuccessful)
+        assertThat(Response(Integer.MIN_VALUE, false, null, null, null).isSuccessful)
                 .isFalse()
         
-        assertThat(Response(199, null, null, null).isSuccessful)
+        assertThat(Response(199, false, null, null, null).isSuccessful)
                 .isFalse()
-        assertThat(Response(200, null, null, null).isSuccessful)
+        assertThat(Response(200, false, null, null, null).isSuccessful)
                 .isTrue()
         
-        assertThat(Response(299, null, null, null).isSuccessful)
+        assertThat(Response(299, false, null, null, null).isSuccessful)
                 .isTrue()
-        assertThat(Response(300, null, null, null).isSuccessful)
+        assertThat(Response(300, false, null, null, null).isSuccessful)
                 .isFalse()
         
-        assertThat(Response(Integer.MAX_VALUE, null, null, null).isSuccessful)
+        assertThat(Response(Integer.MAX_VALUE, false, null, null, null).isSuccessful)
                 .isFalse()
     }
     

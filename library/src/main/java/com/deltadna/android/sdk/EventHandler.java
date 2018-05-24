@@ -200,6 +200,7 @@ final class EventHandler {
                             engagement.setResponse(
                                     new Response<>(
                                             engagement.getStatusCode(),
+                                            true,
                                             null,
                                             json,
                                             engagement.getError()));
@@ -225,7 +226,7 @@ final class EventHandler {
                                 archive.get(engagement.name, engagement.flavour))
                                 .put("isCachedResponse", true);
                         engagement.setResponse(
-                                new Response<>(200, null, json, null));
+                                new Response<>(200, true, null, json, null));
                         
                         Log.d(TAG, "Using cached engage " + json);
                         

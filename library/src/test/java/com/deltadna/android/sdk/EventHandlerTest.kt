@@ -59,13 +59,13 @@ class EventHandlerTest {
         withStoreEvents(
                 listOf("{\"value\":0}", "{\"value\":1}"),
                 listOf("{\"value\":0}"))
-        withListeners { onCompleted(Response(200, null, null, null)) }
+        withListeners { onCompleted(Response(200, false, null, null, null)) }
         
         uut.start(0, 1)
         Thread.sleep(2200)
         
         verify(store, times(3)).items()
-        var run: Int = 0
+        var run = 0
         verify(network, times(2)).collect(
                 argThat {
                     assertThat(toString()).isEqualTo(
@@ -93,7 +93,7 @@ class EventHandlerTest {
     @Test
     fun stopAndDispatch() {
         withStoreEvents(listOf("0")) {
-            withListeners { onCompleted(Response(200, null, null, null)) }
+            withListeners { onCompleted(Response(200, false, null, null, null)) }
             
             uut.start(1, 1)
             uut.stop(true)
@@ -122,7 +122,7 @@ class EventHandlerTest {
         val result = JSONObject().put("result", 1)
         whenever(network.engage(any(), any())).thenAnswer {
             (it.arguments[1] as RequestListener<JSONObject>)
-                    .onCompleted(Response(200, null, result, null))
+                    .onCompleted(Response(200, false, null, result, null))
             null
         }
         
@@ -142,6 +142,7 @@ class EventHandlerTest {
         verify(listener).onCompleted( argThat {
             assertThat(this).isSameAs(engagement)
             assertThat(this.statusCode).isEqualTo(200)
+            assertThat(this.isCached).isFalse()
             assertThat(this.json.toString()).isEqualTo(result.toString())
             assertThat(this.error).isNull()
             true
@@ -180,6 +181,7 @@ class EventHandlerTest {
         verify(listener).onCompleted(argThat {
             assertThat(this).isSameAs(engagement)
             assertThat(this.statusCode).isEqualTo(200)
+            assertThat(this.isCached).isTrue()
             assertThat(this.json.toString()).isEqualTo(cached.toString())
             assertThat(this.error).isNull()
             true
@@ -213,7 +215,7 @@ class EventHandlerTest {
     @Test
     fun itemsClearedOnSuccess() {
         withStoreEvents(listOf("0")) {
-            withListeners { onCompleted(Response(200, null, null, null)) }
+            withListeners { onCompleted(Response(200, false, null, null, null)) }
             
             uut.start(0, 1)
             Thread.sleep(500)
@@ -225,7 +227,7 @@ class EventHandlerTest {
     @Test
     fun itemsClearedOnCorruption() {
         withStoreEvents(listOf("0")) {
-            withListeners { onCompleted(Response(400, null, null, null)) }
+            withListeners { onCompleted(Response(400, false, null, null, null)) }
             
             uut.start(0, 1)
             Thread.sleep(500)
@@ -261,7 +263,7 @@ class EventHandlerTest {
         withStoreEventsAndAvailability(
                 listOf("0", "1", "2"),
                 listOf(true, false, true)) {
-            withListeners { onCompleted(Response(200, null, null, null)) }
+            withListeners { onCompleted(Response(200, false, null, null, null)) }
             
             uut.start(0, 1)
             Thread.sleep(500)
@@ -274,7 +276,7 @@ class EventHandlerTest {
     @Test
     fun skipsMissingItems() {
         withStoreEventsAndAvailability(listOf("0", null, "2")) {
-            withListeners { onCompleted(Response(200, null, null, null)) }
+            withListeners { onCompleted(Response(200, false, null, null, null)) }
             
             uut.start(0, 1)
             Thread.sleep(500)
@@ -320,7 +322,7 @@ class EventHandlerTest {
             backingAvailabilities: List<Boolean> = listOf()) :
             CloseableIterator<EventStoreItem> {
         
-        private val backing: List<EventStoreItemImpl> = (0..backingValues.size - 1)
+        private val backing: List<EventStoreItemImpl> = (0 until backingValues.size)
                 .map { EventStoreItemImpl(
                         backingValues[it],
                         backingAvailabilities.getOrElse(it, { true }))

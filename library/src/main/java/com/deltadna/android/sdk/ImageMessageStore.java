@@ -32,12 +32,18 @@ import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.deltadna.android.sdk.DatabaseHelper.ImageMessages.Column.ID;
 import static com.deltadna.android.sdk.DatabaseHelper.ImageMessages.Column.LOCATION;
@@ -48,7 +54,7 @@ class ImageMessageStore {
     private static final String TAG = BuildConfig.LOG_TAG + ' ' + "IMStore";
     private static final String SUBDIRECTORY = "image_messages";
     
-    private final Executor executor = Executors.newFixedThreadPool(4);
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
     private final Handler handler = new Handler(Looper.getMainLooper());
     
     private final Context context;
@@ -79,11 +85,8 @@ class ImageMessageStore {
     
     @AnyThread
     final boolean contains(String url) {
-        final Cursor cursor = database.getImageMessage(url);
-        try {
-            return cursor.getCount() > 0; 
-        } finally {
-            cursor.close();
+        try (Cursor cursor = database.getImageMessage(url)) {
+            return cursor.getCount() > 0;
         }
     }
     
@@ -92,8 +95,7 @@ class ImageMessageStore {
     final File getOnlyIfCached(String url) {
         File file = null;
         
-        final Cursor cursor = database.getImageMessage(url);
-        try {
+        try (Cursor cursor = database.getImageMessage(url)) {
             if (cursor.moveToFirst()) {
                 final Location location = Location.valueOf(cursor.getString(
                         cursor.getColumnIndex(LOCATION.toString())));
@@ -114,7 +116,7 @@ class ImageMessageStore {
                     
                     database.removeImageMessage(cursor.getLong(
                             cursor.getColumnIndex(ID.toString())));
-                    return null;
+                    file = null;
                 } else {
                     Log.v(TAG, String.format(
                             Locale.ENGLISH,
@@ -122,40 +124,28 @@ class ImageMessageStore {
                             file,
                             url));
                 }
+            } else {
+                Log.v(TAG, String.format(
+                        Locale.ENGLISH,
+                        "Failed to find %s in storage",
+                        url));
             }
-        } finally {
-            cursor.close();
         }
         
         return file;
     }
     
     @WorkerThread
-    @Nullable
-    File get(String url) {
+    File get(String url) throws FetchingException {
         File file = getOnlyIfCached(url);
         
         if (file == null) {
-            Log.v(TAG, String.format(
-                    Locale.ENGLISH,
-                    "Failed to find %s in storage, fetching",
-                    url));
-            
             file = fetch(
                     url,
                     settings.isUseInternalStorageForImageMessages() || !Location.EXTERNAL.available()
                             ? Location.INTERNAL
                             : Location.EXTERNAL,
                     Uri.parse(url).getLastPathSegment());
-            if (file == null || !file.exists()) {
-                return null;
-            }
-        } else {
-            Log.v(TAG, String.format(
-                    Locale.ENGLISH,
-                    "Found %s for %s",
-                    file,
-                    url));
         }
         
         return file;
@@ -163,48 +153,41 @@ class ImageMessageStore {
     
     @AnyThread
     void getAsync(final String url, final Callback<File> callback) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
+        executor.execute(() -> {
+            try {
                 final File file = get(url);
-                
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onCompleted(file);
-                    }
-                });
+                handler.post(() -> callback.onCompleted(file));
+            } catch (FetchingException e) {
+                handler.post(() -> callback.onFailed(e));
             }
         });
     }
     
     @AnyThread
     void prefetch(final Callback<Void> callback, String... urls) {
-        Log.v(TAG, "Prefetching " + Arrays.toString(urls));
-        
-        final CountDownLatch latch = new CountDownLatch(urls.length);
-        
-        for (final String url : urls) {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    get(url);
-                    latch.countDown();
-                }
-            });
+        if (urls == null || urls.length == 0) {
+            handler.post(() -> callback.onCompleted(null));
+            return;
         }
         
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    latch.await();
-                    Log.v(TAG, "Prefetching completed successfully");
-                } catch (InterruptedException e) {
-                    Log.w(TAG, "Interrupted while waiting for prefetching", e);
-                } finally {
-                    callback.onCompleted(null);
+        Log.v(TAG, "Prefetching " + Arrays.toString(urls));
+        
+        final List<Callable<File>> tasks = new ArrayList<>(urls.length);
+        for (final String url : urls) { tasks.add(() -> get(url)); }
+        
+        executor.execute(() -> {
+            try {
+                for (final Future<File> result : executor.invokeAll(tasks)) {
+                    result.get();
                 }
+                
+                handler.post(() -> callback.onCompleted(null));
+            } catch (InterruptedException e) {
+                Log.w(TAG, "Interrupted while prefetching", e);
+                handler.post(() -> callback.onFailed(e));
+            } catch (ExecutionException e) { // fail if any single one fails
+                Log.w(TAG, "Failed to prefetch", e.getCause());
+                handler.post(() -> callback.onFailed(e.getCause()));
             }
         });
     }
@@ -222,15 +205,15 @@ class ImageMessageStore {
     }
     
     @WorkerThread
-    @Nullable
     private File fetch(
             final String url,
             final Location location,
-            final String name) {
+            final String name) throws FetchingException {
         
         final CountDownLatch latch = new CountDownLatch(1);
         
         final File file = new File(location.cache(context, SUBDIRECTORY), name);
+        final AtomicReference<FetchingException> error = new AtomicReference<>();
         final RequestListener<File> listener = new RequestListener<File>() {
             @Override
             public void onCompleted(Response<File> response) {
@@ -246,7 +229,13 @@ class ImageMessageStore {
                             file.length(),
                             new Date());
                 } else {
-                    Log.w(TAG, "Failed fetching " + url);
+                    Log.w(TAG, String.format(
+                            Locale.ENGLISH,
+                            "Failed fetching %s due to %d: %s",
+                            url,
+                            response.code,
+                            response.error));
+                    error.set(new FetchingException(url, file, response));
                 }
                 
                 latch.countDown();
@@ -254,7 +243,14 @@ class ImageMessageStore {
             
             @Override
             public void onError(Throwable t) {
-                Log.w(TAG, "Failed fetching " + url, t);
+                Log.w(  TAG,
+                        String.format(
+                                Locale.ENGLISH,
+                                "Error while fetching %s to %s",
+                                url,
+                                file),
+                        t);
+                error.set(new FetchingException(url, file, t));
                 latch.countDown();
             }
         };
@@ -264,15 +260,59 @@ class ImageMessageStore {
         try {
             latch.await();
         } catch (InterruptedException e) {
-            Log.w(TAG, "Interrupted while fetching " + url, e);
+            Log.w(  TAG,
+                    String.format(
+                            Locale.ENGLISH,
+                            "Interrupted while fetching %s to %s",
+                            url,
+                            file),
+                    e);
+            error.set(new FetchingException(url, file, e));
         }
         
-        return file.exists() ? file : null;
+        if (error.get() != null) {
+            throw error.get();
+        } else if (file.exists()) {
+            return file;
+        } else {
+            throw new FetchingException(url, file);
+        }
     }
     
     interface Callback<V> {
         
-        void onCompleted(@Nullable V value);
+        void onCompleted(V value);
+        void onFailed(Throwable reason);
+    }
+    
+    static final class FetchingException extends Exception {
+        
+        FetchingException(String url, File file, Response response) {
+            super(String.format(
+                    Locale.ENGLISH,
+                    "Failed fetching %s to %s due to %d: %s",
+                    url,
+                    file,
+                    response.code,
+                    response.error));
+        }
+        
+        FetchingException(String url, File file) {
+            super(String.format(
+                    Locale.ENGLISH,
+                    "Failed fetching %s to %s",
+                    url,
+                    file));
+        }
+        
+        FetchingException(String url, File file, Throwable cause) {
+            super(  String.format(
+                            Locale.ENGLISH,
+                            "Failed fetching %s to %s",
+                            url,
+                            file),
+                    cause);
+        }
     }
     
     private final class CleanUp implements Runnable {
@@ -281,8 +321,7 @@ class ImageMessageStore {
             Log.d(TAG, "Running cleanup task");
             
             int count = 0;
-            final Cursor cursor = database.getImageMessages();
-            try {
+            try (Cursor cursor = database.getImageMessages()) {
                 while (!cursor.isAfterLast()) {
                     final Location location = Location.valueOf(cursor.getString(
                             cursor.getColumnIndex(LOCATION.toString())));
@@ -294,7 +333,7 @@ class ImageMessageStore {
                                 name);
                         if (!file.exists()) {
                             Log.v(TAG, "Removing database entry for missing " + file);
-                            
+
                             database.removeImageMessage(cursor.getLong(
                                     cursor.getColumnIndex(ID.toString())));
                             count++;
@@ -305,8 +344,6 @@ class ImageMessageStore {
                 }
                 
                 Log.d(TAG, "Finished cleanup task with " + count + " removed");
-            } finally {
-                cursor.close();
             }
         }
     }

@@ -22,6 +22,7 @@ import android.os.Bundle
 import android.support.v4.content.LocalBroadcastManager
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
+import com.deltadna.android.sdk.listeners.EventListener
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import com.squareup.okhttp.mockwebserver.MockResponse
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 @RunWith(RobolectricTestRunner::class)
@@ -129,6 +131,35 @@ class DDNANonTrackingTest {
                 json.toString() == "{}"
             })
         }
+    }
+    
+    @Test
+    fun requestSessionConfiguration() {
+        with(mock<EventListener>()) {
+            uut.register(this)
+            uut.requestSessionConfiguration()
+            
+            verify(this).onSessionConfigured(eq(false))
+            verify(this).onImageCachePopulated()
+        }
+    }
+    
+    fun upload() {
+        uut.upload()
+        
+        assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
+    }
+    
+    fun downloadImageAssets() {
+        with(mock<EventListener>()) {
+            uut.register(this)
+            uut.downloadImageAssets()
+            
+            verify(this).onImageCachePopulated()
+            verifyNoMoreInteractions(this)
+        }
+        
+        assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
     }
     
     @Test

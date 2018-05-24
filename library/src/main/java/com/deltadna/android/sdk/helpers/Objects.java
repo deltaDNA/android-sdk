@@ -18,7 +18,10 @@ package com.deltadna.android.sdk.helpers;
 
 import android.support.annotation.Nullable;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.Arrays;
 
 /**
  * Helper functions that can operate on any {@link Object}.
@@ -45,6 +48,16 @@ public final class Objects {
         }
         
         return object;
+    }
+    
+    public static JSONArray extractArray(@Nullable JSONObject from, String... path) {
+        final JSONObject parent = extract(
+                from,
+                Arrays.copyOfRange(path, 0, path.length - 1));
+        
+        return (parent != null)
+                ? parent.optJSONArray(path[path.length - 1])
+                : null;
     }
     
     public static final class ToStringHelper {

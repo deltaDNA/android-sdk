@@ -66,6 +66,7 @@ class RequestTest {
         
         assertThat(response).isEqualTo(Response(
                 200,
+                false,
                 byteArrayOf(),
                 null,
                 null))
@@ -97,6 +98,7 @@ class RequestTest {
         
         assertThat(response).isEqualTo(Response(
                 200,
+                false,
                 responseBody.toByteArray(),
                 responseBody,
                 null))
@@ -119,6 +121,7 @@ class RequestTest {
         
         assertThat(response).isEqualTo(Response<Void>(
                 404,
+                false,
                 responseBody.toByteArray(),
                 null,
                 responseBody))

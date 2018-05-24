@@ -31,7 +31,7 @@ class ImageMessageTest {
     @Test
     fun createWithImage() {
         with(KEngagement("point")) {
-            setResponse(Response(200, null, IMAGE, null))
+            setResponse(Response(200, false, null, IMAGE, null))
             
             assertThat(ImageMessage.create(this)).isNotNull()
         }
@@ -40,7 +40,7 @@ class ImageMessageTest {
     @Test
     fun createWithFailure() {
         with(KEngagement("point")) {
-            setResponse(Response(300, null, null, "error"))
+            setResponse(Response(300, false, null, null, "error"))
             
             assertThat(ImageMessage.create(this)).isNull()
         }
@@ -49,7 +49,7 @@ class ImageMessageTest {
     @Test
     fun createWithoutImage() {
         with(KEngagement("point")) {
-            setResponse(Response(200, null, JSONObject(), null))
+            setResponse(Response(200, false, null, JSONObject(), null))
             
             assertThat(ImageMessage.create(this)).isNull()
         }
