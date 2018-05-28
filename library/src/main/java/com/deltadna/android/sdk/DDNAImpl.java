@@ -44,13 +44,17 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 
 /**
@@ -86,6 +90,7 @@ final class DDNAImpl extends DDNA {
     private Set<String> whitelistDps = Collections.emptySet();
     private Set<String> whitelistEvents = Collections.emptySet();
     private Set<String> cacheImages = Collections.emptySet();
+    private Map<String, SortedSet<EventTrigger>> eventTriggers = Collections.emptyMap();
     
     @Override
     public DDNA startSdk() {
@@ -153,16 +158,16 @@ final class DDNAImpl extends DDNA {
     }
     
     @Override
-    public DDNA recordEvent(String name) {
+    public EventAction recordEvent(String name) {
         return recordEvent(new Event(name));
     }
     
     @Override
-    public DDNA recordEvent(Event event) {
+    public EventAction recordEvent(Event event) {
         Preconditions.checkArg(event != null, "event cannot be null");
         if (!whitelistEvents.isEmpty() && !whitelistEvents.contains(event.name)) {
             Log.d(TAG, "Event " + event.name + " is not whitelisted, ignoring");
-            return this;
+            return EventAction.EMPTY;
         }
         
         Log.v(TAG, "Recording event " + event.name);
@@ -191,11 +196,15 @@ final class DDNAImpl extends DDNA {
         
         eventHandler.handleEvent(jsonEvent);
         
-        return this;
+        return new EventAction(
+                event,
+                eventTriggers.containsKey(event.name)
+                        ? eventTriggers.get(event.name)
+                        : Collections.unmodifiableSortedSet(new TreeSet<>()));
     }
     
     @Override
-    public DDNA recordNotificationOpened(boolean launch, Bundle payload) {
+    public EventAction recordNotificationOpened(boolean launch, Bundle payload) {
         final Event event = new Event("notificationOpened");
         
         if (payload.containsKey("_ddId"))
@@ -227,7 +236,7 @@ final class DDNAImpl extends DDNA {
     }
     
     @Override
-    public DDNA recordNotificationDismissed(Bundle payload) {
+    public EventAction recordNotificationDismissed(Bundle payload) {
         return recordNotificationOpened(false, payload);
     }
     
@@ -327,12 +336,12 @@ final class DDNAImpl extends DDNA {
     public DDNA setRegistrationId(@Nullable String registrationId) {
         if (!Objects.equals(registrationId, preferences.getRegistrationId())) {
             preferences.setRegistrationId(registrationId);
-            return recordEvent(new Event("notificationServices").putParam(
+            recordEvent(new Event("notificationServices").putParam(
                     "androidRegistrationID",
                     (registrationId == null) ? "" : registrationId));
-        } else {
-            return this;
         }
+        
+        return this;
     }
     
     @Override
@@ -424,14 +433,15 @@ final class DDNAImpl extends DDNA {
     
     DDNAImpl(
             Application application,
-             String environmentKey,
-             String collectUrl,
-             String engageUrl,
-             Settings settings,
-             @Nullable String hashSecret,
-             @Nullable String clientVersion,
-             @Nullable String userId,
-             @Nullable String platform) {
+            String environmentKey,
+            String collectUrl,
+            String engageUrl,
+            Settings settings,
+            @Nullable String hashSecret,
+            @Nullable String clientVersion,
+            @Nullable String userId,
+            @Nullable String platform,
+            Set<EventListener> eventListeners) {
         
         super(  application,
                 environmentKey,
@@ -439,7 +449,8 @@ final class DDNAImpl extends DDNA {
                 engageUrl,
                 settings,
                 hashSecret,
-                platform);
+                platform,
+                eventListeners);
         
         this.clientVersion = clientVersion;
         
@@ -588,7 +599,9 @@ final class DDNAImpl extends DDNA {
                         try {
                             toBeWhitelisted.add(dpWhitelist.getString(i));
                         } catch (JSONException e) {
-                            Log.w(TAG, "Failed deserialising session configuration", e);
+                            Log.w(  TAG,
+                                    "Failed deserialising decision point whitelist",
+                                    e);
                         }
                     }
                     
@@ -606,11 +619,51 @@ final class DDNAImpl extends DDNA {
                         try {
                             toBeWhitelisted.add(eventsWhitelist.getString(i));
                         } catch (JSONException e) {
-                            Log.w(TAG, "Failed deserialising session configuration", e);
+                            Log.w(  TAG,
+                                    "Failed deserialising event whitelist",
+                                    e);
                         }
                     }
                     
                     whitelistEvents = Collections.unmodifiableSet(toBeWhitelisted);
+                }
+                
+                final JSONArray triggers = Objects.extractArray(
+                        engagement.getJson(),
+                        "parameters",
+                        "triggers");
+                if (triggers != null) {
+                    final List<EventTrigger> toBeSaved = new ArrayList<>(triggers.length());
+                    for (int i = 0; i < triggers.length(); i++) {
+                        try {
+                            toBeSaved.add(new EventTrigger(
+                                    DDNAImpl.this,
+                                    triggers.getJSONObject(i)));
+                        } catch (JSONException e) {
+                            Log.w(TAG, "Failed deserialising event trigger", e);
+                        }
+                    }
+                    
+                    // put the triggers into buckets based on event names
+                    eventTriggers = new HashMap<>();
+                    for (final EventTrigger trigger : toBeSaved) {
+                        if (eventTriggers.containsKey(trigger.getEventName())) {
+                            eventTriggers.get(trigger.getEventName()).add(trigger);
+                        } else {
+                            final SortedSet<EventTrigger> set = new TreeSet<>();
+                            set.add(trigger);
+                            
+                            eventTriggers.put(trigger.getEventName(), set);
+                        }
+                    }
+                    // make the collections read-only
+                    for (final String key : eventTriggers.keySet()) {
+                        eventTriggers.put(
+                                key,
+                                Collections.unmodifiableSortedSet(eventTriggers.get(key)));
+                    }
+                    DDNAImpl.this.eventTriggers =
+                            Collections.unmodifiableMap(eventTriggers);
                 }
                 
                 final JSONArray imageCache = Objects.extractArray(

@@ -17,6 +17,7 @@
  * [Simple event](#simple-event)
  * [Complex event](#complex-event)
  * [Transactions](#transactions)
+ * [Event triggers](#event-triggers)
 * [Engage](#engage)
  * [Image Messaging](#image-messaging)
 * [Forgetting a user](#forgetting-a-user-(gdpr))
@@ -187,6 +188,20 @@ It is also worth noting that the currency value is always sent as an integer in 
 
 This event may be more complex, but the structure is logical, flexible, and provides a mechanism for players spending or receiving any combination of currencies and items.
 
+### Event triggers
+All `recordEvent()` methods return an `EventAction` instance on which `EventActionHandler`s can be registered through the `add()` method, for handling triggers which match the conditions setup on the Platform for event-triggered campaigns. Once all the handlers have been registered `run()` needs to be called in order for the event triggers to be evaluated and a matching handler to be run. This happens on the client without any network use and as such it is instantaneous.
+```java
+recordEvent("missionStarted").putParam("missionLevel", 1)
+        .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
+            // do something with the game parameters
+        }))
+        .add(new EventActionHandler.ImageMessageHandler(imageMessage -> {
+            // the image message is already prepared so it will show instantly
+            imageMessage.show(MyActivity.this, MY_REQUEST_CODE);
+        }))
+        .run();
+``` 
+
 ## Engage
 An Engage request can be performed by calling `requestEngagement(Engagement, EngageListener)`, providing your `Engagement` and a an `EngageListener` for listening to the completion or error.
 ```java
@@ -331,6 +346,8 @@ Can be found [here](CHANGELOG.md).
 * [Version 4.0](docs/migrations/4.0.md)
 * [Version 4.1](docs/migrations/4.1.md)
 * [Version 4.3](docs/migrations/4.3.md)
+* Version 4.9  
+  `recordEvent()` methods have been changed to to return an `EventAction` object, which can be used for Event Triggered Engage. This means that chaining calls on the `DDNA` SDK instance after calling `recordEvent()` is no longer supported.
 
 ## License
 The sources are available under the Apache 2.0 license.

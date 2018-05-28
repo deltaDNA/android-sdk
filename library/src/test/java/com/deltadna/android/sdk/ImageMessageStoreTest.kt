@@ -26,8 +26,6 @@ import com.deltadna.android.sdk.listeners.RequestListener
 import com.deltadna.android.sdk.net.CancelableRequest
 import com.deltadna.android.sdk.net.NetworkManager
 import com.deltadna.android.sdk.net.Response
-import com.deltadna.android.sdk.test.runTasks
-import com.deltadna.android.sdk.test.waitAndRunTasks
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import kotlinx.coroutines.experimental.launch
@@ -220,7 +218,7 @@ class ImageMessageStoreTest {
     fun prefetchNothing() {
         with(mock<ImageMessageStore.Callback<Void>>()) {
             uut.prefetch(this)
-            
+
             runTasks()
             verify(this).onCompleted(isNull())
         }
@@ -261,7 +259,7 @@ class ImageMessageStoreTest {
         uut.prefetch(
                 callback,
                 *items.map { "http://host.net/path/$it" }.toTypedArray())
-        
+
         waitAndRunTasks()
         verify(callback).onCompleted(isNull())
         verify(network, never()).fetch(
@@ -299,7 +297,7 @@ class ImageMessageStoreTest {
         uut.prefetch(
                 callback,
                 *items.map { "http://host.net/path/$it" }.toTypedArray())
-        
+
         waitAndRunTasks()
         verify(callback).onFailed(any())
     }

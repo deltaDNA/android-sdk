@@ -37,6 +37,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -56,7 +57,8 @@ final class DDNANonTracking extends DDNA {
             String engageUrl,
             Settings settings,
             @Nullable String hashSecret,
-            @Nullable String platform) {
+            @Nullable String platform,
+            Set<EventListener> eventListeners) {
         
         super(  application,
                 environmentKey,
@@ -64,7 +66,8 @@ final class DDNANonTracking extends DDNA {
                 engageUrl,
                 settings,
                 hashSecret,
-                platform);
+                platform,
+                eventListeners);
         
         broadcasts = LocalBroadcastManager.getInstance(application);
         engageStoragePath = application.getCacheDir();
@@ -96,23 +99,23 @@ final class DDNANonTracking extends DDNA {
     }
     
     @Override
-    public DDNA recordEvent(String name) {
-        return this;
+    public EventAction recordEvent(String name) {
+        return EventAction.EMPTY;
     }
     
     @Override
-    public DDNA recordEvent(Event event) {
-        return this;
+    public EventAction recordEvent(Event event) {
+        return EventAction.EMPTY;
     }
     
     @Override
-    public DDNA recordNotificationOpened(boolean launch, Bundle payload) {
-        return this;
+    public EventAction recordNotificationOpened(boolean launch, Bundle payload) {
+        return EventAction.EMPTY;
     }
     
     @Override
-    public DDNA recordNotificationDismissed(Bundle payload) {
-        return this;
+    public EventAction recordNotificationDismissed(Bundle payload) {
+        return EventAction.EMPTY;
     }
     
     @Override

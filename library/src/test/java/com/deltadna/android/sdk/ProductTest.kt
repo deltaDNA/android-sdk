@@ -17,7 +17,6 @@
 package com.deltadna.android.sdk
 
 import com.deltadna.android.sdk.helpers.Settings
-import com.deltadna.android.sdk.test.assertThrown
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONException
 import org.json.JSONObject
@@ -40,7 +39,8 @@ class ProductTest {
             null,
             null,
             null,
-            null)
+            null,
+            mutableSetOf())
     
     private var uut: Product<*>? = null
     

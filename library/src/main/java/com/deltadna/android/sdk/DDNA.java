@@ -60,14 +60,21 @@ public abstract class DDNA {
     
     static final String SDK_VERSION =
             "Android SDK v" + BuildConfig.VERSION_NAME;
-    
-    private static final SimpleDateFormat TIMESTAMP_FORMAT;
+    static final SimpleDateFormat TIMESTAMP_FORMAT;
     static {
         final SimpleDateFormat format = new SimpleDateFormat(
-                "yyyy-MM-dd HH:mm:ss.SSS", Locale.US);
+                "yyyy-MM-dd HH:mm:ss.SSS", Locale.ENGLISH);
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         
         TIMESTAMP_FORMAT = format;
+    }
+    static final SimpleDateFormat TIMESTAMP_FORMAT_ISO;
+    static {
+        final SimpleDateFormat format = new SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        
+        TIMESTAMP_FORMAT_ISO = format;
     }
     
     private static DDNA instance;
@@ -78,8 +85,12 @@ public abstract class DDNA {
                 "configuration cannot be null");
         
         if (instance == null) {
+            final Set<EventListener> eventListeners = Collections.newSetFromMap(
+                    new WeakHashMap<EventListener, Boolean>());
+            
             instance = new DDNADelegate(
                     configuration,
+                    eventListeners,
                     new DDNAImpl(
                             configuration.application,
                             configuration.environmentKey,
@@ -89,7 +100,8 @@ public abstract class DDNA {
                             configuration.hashSecret,
                             configuration.clientVersion,
                             configuration.userId,
-                            configuration.platform),
+                            configuration.platform,
+                            eventListeners),
                     new DDNANonTracking(
                             configuration.application,
                             configuration.environmentKey,
@@ -97,7 +109,8 @@ public abstract class DDNA {
                             configuration.engageUrl,
                             configuration.settings,
                             configuration.hashSecret,
-                            configuration.platform));
+                            configuration.platform,
+                            eventListeners));
         } else {
             Log.w(BuildConfig.LOG_TAG, "SDK has already been initialised");
         }
@@ -115,13 +128,11 @@ public abstract class DDNA {
     
     final Settings settings;
     final String platform;
+    final Set<EventListener> eventListeners;
     
     final Preferences preferences;
     final NetworkManager network;
     private final EngageFactory engageFactory;
-    
-    final Set<EventListener> eventListeners = Collections.newSetFromMap(
-            new WeakHashMap<EventListener, Boolean>(1));
     
     String sessionId = UUID.randomUUID().toString();
     
@@ -131,10 +142,12 @@ public abstract class DDNA {
             String engageUrl,
             Settings settings,
             @Nullable String hashSecret,
-            @Nullable String platform) {
+            @Nullable String platform,
+            Set<EventListener> eventListeners) {
         
         this.settings = settings;
         this.platform = (platform == null) ? ClientInfo.platform() : platform;
+        this.eventListeners = eventListeners;
         
         preferences = new Preferences(application);
         network = new NetworkManager(
@@ -191,22 +204,22 @@ public abstract class DDNA {
      *
      * @param name the name of the event
      *
-     * @return this {@link DDNA} instance
+     * @return the {@link EventAction} for this event
      *
      * @throws IllegalArgumentException if the {@code name} is null or empty
      */
-    public abstract DDNA recordEvent(String name);
+    public abstract EventAction recordEvent(String name);
     
     /**
      * Records an event with Collect.
      *
      * @param event the event
      *
-     * @return this {@link DDNA} instance
+     * @return the {@link EventAction} for this event
      *
      * @throws IllegalArgumentException if the {@code event} is null
      */
-    public abstract DDNA recordEvent(Event event);
+    public abstract EventAction recordEvent(Event event);
     
     /**
      * Record when a push notification has been opened.
@@ -214,18 +227,18 @@ public abstract class DDNA {
      * @param launch    whether the notification launched the app
      * @param payload   the payload of the push notification
      *
-     * @return this {@link DDNA} instance
+     * @return the {@link EventAction} for this event
      */
-    public abstract DDNA recordNotificationOpened(boolean launch, Bundle payload);
+    public abstract EventAction recordNotificationOpened(boolean launch, Bundle payload);
     
     /**
      * Record when a push notification has been dismissed.
      *
      * @param payload the payload of the push notification
      *
-     * @return this {@link DDNA} instance
+     * @return the {@link EventAction} for this event
      */
-    public abstract DDNA recordNotificationDismissed(Bundle payload);
+    public abstract EventAction recordNotificationDismissed(Bundle payload);
     
     /**
      * Makes an Engage request.
@@ -617,7 +630,7 @@ public abstract class DDNA {
         }
     }
     
-    interface SettingsModifier {
+    public interface SettingsModifier {
         
         void modify(Settings settings);
     }

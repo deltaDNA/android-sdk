@@ -22,8 +22,6 @@ import android.content.res.Configuration;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.deltadna.android.sdk.net.CancelableRequest;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -64,18 +62,18 @@ public final class ImageMessage implements Serializable {
     private final Vector<Button> buttons;
     final Shim shim;
     
-    private boolean prepared;
-    
-    @Nullable
-    private CancelableRequest request;
-    
     /**
      * Creates an instance from a JSON response.
      *
+     * @param json the response
+     *
      * @throws JSONException if the JSON is invalid
      */
-    public ImageMessage(JSONObject json) throws JSONException {
-        eventParams = json.getJSONObject("eventParams").toString();
+    ImageMessage(JSONObject json) throws JSONException {
+        eventParams = (json.has("eventParams")
+                ? json.getJSONObject("eventParams")
+                : new JSONObject())
+                .toString();
         parameters = (json.has("parameters")
                 ? json.optJSONObject("parameters")
                 : new JSONObject()).toString();
@@ -129,7 +127,14 @@ public final class ImageMessage implements Serializable {
      * @return {@code true} if ready to use, else {@code false}
      */
     public boolean prepared() {
-        return prepared;
+        synchronized (this) {
+            if (imageFile == null) {
+                imageFile = DDNA.instance().getImageMessageStore()
+                        .getOnlyIfCached(imageUrl);
+            }
+        }
+        
+        return imageFile != null && imageFile.exists();
     }
     
     /**
@@ -138,7 +143,7 @@ public final class ImageMessage implements Serializable {
      * @param listener  the listener for receiving prepared state
      */
     public void prepare(final PrepareListener listener) {
-        if (prepared) {
+        if (prepared()) {
             listener.onPrepared(this);
         } else {
             DDNA.instance().getImageMessageStore().getAsync(
@@ -146,18 +151,18 @@ public final class ImageMessage implements Serializable {
                     new ImageMessageStore.Callback<File>() {
                         @Override
                         public void onCompleted(File value) {
-                            imageFile = value;
-                            prepared = true;
-                            request = null;
+                            synchronized (this) {
+                                imageFile = value;
+                            }
                             
                             listener.onPrepared(ImageMessage.this);
                         }
                         
                         @Override
                         public void onFailed(Throwable reason) {
-                            imageFile = null;
-                            prepared = false;
-                            request = null;
+                            synchronized (this) {
+                                imageFile = null;
+                            }
                             
                             listener.onError(reason);
                         }
@@ -177,19 +182,12 @@ public final class ImageMessage implements Serializable {
      * @throws IllegalStateException if the Image Message is not prepared
      */
     public void show(Activity activity, int requestCode) {
-        if (!prepared) throw new IllegalStateException(
+        if (!prepared()) throw new IllegalStateException(
                 "image message has not been prepared yet");
         
         activity.startActivityForResult(
                 ImageMessageActivity.createIntent(activity, this),
                 requestCode);
-    }
-    
-    /**
-     * Cleans up associated resources.
-     */
-    public void cleanUp() {
-        if (request != null) request.cancel();
     }
     
     /**

@@ -90,12 +90,12 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     }
     
     @Override
-    public T putParam(String key, JsonParams value) {
+    public T putParam(String key, Object value) {
         return super.putParam(key, value);
     }
     
     @Override
-    public T putParam(String key, Object value) {
+    public T putParam(String key, JsonParams value) {
         return super.putParam(key, value);
     }
     

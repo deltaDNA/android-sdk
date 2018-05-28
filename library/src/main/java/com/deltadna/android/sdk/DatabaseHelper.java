@@ -159,11 +159,24 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     }
     
     Cursor getImageMessage(String url) {
+        final String other;
+        if (url.startsWith("http://")) {
+            other = "https" + url.substring("http".length(), url.length());
+        } else if (url.startsWith("https://")) {
+            other = "http" + url.substring("https".length(), url.length());
+        } else {
+            other = url;
+        }
+        
         return getReadableDatabase().query(
                 ImageMessages.TABLE,
                 ImageMessages.Column.all(),
-                ImageMessages.Column.URL + " = ?",
-                new String[] { url },
+                String.format(
+                        Locale.ENGLISH,
+                        "%s = ? OR %s = ?",
+                        ImageMessages.Column.URL,
+                        ImageMessages.Column.URL),
+                new String[] { url, other },
                 null,
                 null,
                 null);

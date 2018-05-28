@@ -16,9 +16,12 @@
 
 buildscript {
     ext {
-        kotlinVersion = '1.2.31'
-        supportVersion = '26.1.0'
         firebaseVersion = '11.4.2'
+        kotlinVersion = '1.2.41'
+        kotlinxCoroutinesVersion = '0.22.5'
+        kotsonVersion = '2.5.0'
+        mockWebServerVersion = '2.7.5'
+        supportVersion = '26.1.0'
         
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
@@ -31,7 +34,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0-alpha10'
+        classpath 'com.android.tools.build:gradle:3.2.0-alpha18'
         classpath('com.dicedmelon.gradle:jacoco-android:0.1.2') {
             // https://github.com/arturdm/jacoco-android-gradle-plugin/issues/42
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
@@ -114,16 +117,16 @@ subprojects {
     
     if (isLibrary) {
         dependencies {
-            testImplementation 'com.github.salomonbrys.kotson:kotson:2.5.0'
+            testImplementation "com.github.salomonbrys.kotson:kotson:$kotsonVersion"
             testImplementation 'com.google.truth:truth:0.37'
             testImplementation 'com.nhaarman:mockito-kotlin:1.5.0'
-            testImplementation 'com.squareup.okhttp:mockwebserver:2.7.5'
+            testImplementation "com.squareup.okhttp:mockwebserver:$mockWebServerVersion"
             testImplementation 'junit:junit:4.12'
             testImplementation 'nl.jqno.equalsverifier:equalsverifier:2.3.3'
             testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-            testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.22.5'
+            testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
             testImplementation 'org.json:json:20171018'
             testImplementation 'org.mockito:mockito-core:2.16.0'
             testImplementation 'org.robolectric:robolectric:3.8'
