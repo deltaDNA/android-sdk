@@ -16,6 +16,7 @@
 
 package com.deltadna.android.sdk.test
 
+import org.robolectric.shadows.ShadowLooper
 import kotlin.test.fail
 
 inline fun <reified T: Throwable> assertThrown(block: () -> Unit) {
@@ -30,3 +31,16 @@ inline fun <reified T> Any.read(field: String) =
             it.isAccessible = true
             it.get(this) as T
         }
+
+fun waitAndRunTasks(millis: Long = 500, iterations: Int = 1) {
+    for (i in 0 until iterations) {
+        Thread.sleep(millis)
+        runTasks()
+    }
+}
+
+fun runTasks(iterations: Int = 1) {
+    for (i in 0 until iterations) {
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+    }
+}

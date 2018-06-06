@@ -22,4 +22,30 @@ public interface EventListener {
     void onStopped();
     
     void onNewSession();
+    
+    /**
+     * Will be called when the session configuration will be successfully
+     * retrieved.
+     *
+     * @param cached    {@code true} if the configuration response was cached,
+     *                  else {@code false}
+     */
+    void onSessionConfigured(boolean cached);
+    /**
+     * Will be called when the session configuration will fail to be retrieved.
+     *
+     * @param cause the cause of the failure
+     */
+    void onSessionConfigurationFailed(Throwable cause);
+    
+    /**
+     * Will be called when the image cache will be successfully populated.
+     */
+    void onImageCachePopulated();
+    /**
+     * Will be called when the image cache will fail to be populated.
+     *
+     * @param reason the reason for the failure
+     */
+    void onImageCachingFailed(Throwable reason);
 }

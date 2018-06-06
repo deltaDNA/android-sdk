@@ -27,6 +27,7 @@ import android.util.Log;
 
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
+import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.Response;
 
@@ -117,7 +118,7 @@ final class DDNANonTracking extends DDNA {
     @Override
     public DDNA requestEngagement(String decisionPoint, EngageListener<Engagement> listener) {
         listener.onCompleted(new Engagement(decisionPoint).setResponse(
-                new Response<>(200, new byte[] {}, new JSONObject(), null)));
+                new Response<>(200, false, new byte[] {}, new JSONObject(), null)));
         
         return this;
     }
@@ -125,13 +126,26 @@ final class DDNANonTracking extends DDNA {
     @Override
     public <E extends Engagement> DDNA requestEngagement(E engagement, EngageListener<E> listener) {
         listener.onCompleted((E) engagement.setResponse(
-                new Response<>(200, new byte[] {}, new JSONObject(), null)));
+                new Response<>(200, false, new byte[] {}, new JSONObject(), null)));
         
         return this;
     }
     
     @Override
+    public DDNA requestSessionConfiguration() {
+        performOn(eventListeners, it -> it.onSessionConfigured(false));
+        performOn(eventListeners, EventListener::onImageCachePopulated);
+        return this;
+    }
+    
+    @Override
     public DDNA upload() {
+        return this;
+    }
+    
+    @Override
+    public DDNA downloadImageAssets() {
+        performOn(eventListeners, EventListener::onImageCachePopulated);
         return this;
     }
     

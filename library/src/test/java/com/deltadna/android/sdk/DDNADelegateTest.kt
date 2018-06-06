@@ -95,8 +95,14 @@ class DDNADelegateTest {
             verify(tracking).requestEngagement(same(first), same(second))
         }
         
+        uut.requestSessionConfiguration()
+        verify(tracking).requestSessionConfiguration()
+        
         uut.upload()
         verify(tracking).upload()
+        
+        uut.downloadImageAssets()
+        verify(tracking).downloadImageAssets()
         
         uut.registrationId
         verify(tracking).registrationId
@@ -157,8 +163,14 @@ class DDNADelegateTest {
             verify(nonTracking).requestEngagement(same(first), same(second))
         }
         
+        uut.requestSessionConfiguration()
+        verify(nonTracking).requestSessionConfiguration()
+        
         uut.upload()
         verify(nonTracking).upload()
+        
+        uut.downloadImageAssets()
+        verify(nonTracking).downloadImageAssets()
         
         uut.registrationId
         verify(nonTracking).registrationId

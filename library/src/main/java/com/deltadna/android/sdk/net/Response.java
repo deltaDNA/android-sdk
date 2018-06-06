@@ -40,6 +40,10 @@ public final class Response<T> {
      */
     public final int code;
     /**
+     * Whether the response is from a cache.
+     */
+    public final boolean cached;
+    /**
      * Response in plain bytes, may be the error message if the request was a
      * failure.
      */
@@ -53,8 +57,9 @@ public final class Response<T> {
      */
     public final String error;
     
-    public Response(int code, byte[] bytes, T body, String error) {
+    public Response(int code, boolean cached, byte[] bytes, T body, String error) {
         this.code = code;
+        this.cached = cached;
         this.bytes = bytes;
         this.body = body;
         this.error = error;
@@ -75,6 +80,7 @@ public final class Response<T> {
         final Response other = (Response) o;
         
         return (code == other.code
+                && cached == other.cached
                 && Arrays.equals(bytes, other.bytes)
                 && Objects.equals(body, other.body)
                 && Objects.equals(error, other.error));
@@ -84,6 +90,7 @@ public final class Response<T> {
     public int hashCode() {
         return Arrays.hashCode(new Object[] {
                 code,
+                cached,
                 Arrays.hashCode(bytes),
                 body,
                 error});
@@ -93,6 +100,7 @@ public final class Response<T> {
     public String toString() {
         return new Objects.ToStringHelper(this)
                 .add("code", code)
+                .add("cached", cached)
                 .add("body", body)
                 .add("error", error)
                 .toString();
@@ -135,6 +143,7 @@ public final class Response<T> {
         final byte[] bytes = buffer.toByteArray();
         return new Response<>(
                 code,
+                false,
                 bytes,
                 (isSuccess(code) && converter != null)
                         ? converter.convert(bytes)

@@ -17,16 +17,13 @@
 package com.deltadna.android.sdk.example;
 
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
-import com.deltadna.android.sdk.EngageFactory;
 import com.deltadna.android.sdk.Engagement;
-import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.listeners.EngageListener;
 
 import java.util.UUID;
@@ -83,11 +80,8 @@ public class ExampleActivity extends AppCompatActivity {
     public void onImageMessage(View view) {
         DDNA.instance().getEngageFactory().requestImageMessage(
                 "testImageMessage",
-                new EngageFactory.Callback<ImageMessage>() {
-                    @Override
-                    public void onCompleted(@Nullable ImageMessage action) {
-                        // prepare the action if not null
-                    }
+                action -> {
+                    // prepare the action if not null
                 });
     }
     

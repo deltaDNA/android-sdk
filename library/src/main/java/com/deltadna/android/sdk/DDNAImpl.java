@@ -23,6 +23,7 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.deltadna.android.sdk.exceptions.SessionConfigurationException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.EngageArchive;
 import com.deltadna.android.sdk.helpers.Objects;
@@ -31,6 +32,7 @@ import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
@@ -41,9 +43,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -72,6 +77,10 @@ final class DDNAImpl extends DDNA {
     private final File engageStoragePath;
     
     private boolean started;
+    
+    private Set<String> whitelistDps = Collections.emptySet();
+    private Set<String> whitelistEvents = Collections.emptySet();
+    private Set<String> cacheImages = Collections.emptySet();
     
     @Override
     public DDNA startSdk() {
@@ -103,9 +112,7 @@ final class DDNAImpl extends DDNA {
             triggerDefaultEvents();
             
             Log.d(BuildConfig.LOG_TAG, "SDK started");
-            for (final EventListener listener : eventListeners) {
-                listener.onStarted();
-            }
+            performOn(eventListeners, EventListener::onStarted);
         }
         
         return this;
@@ -129,9 +136,7 @@ final class DDNAImpl extends DDNA {
             started = false;
             
             Log.d(BuildConfig.LOG_TAG, "SDK stopped");
-            for (final EventListener listener : eventListeners) {
-                listener.onStopped();
-            }
+            performOn(eventListeners, EventListener::onStopped);
         }
         
         return this;
@@ -244,8 +249,43 @@ final class DDNAImpl extends DDNA {
     }
     
     @Override
+    public DDNA requestSessionConfiguration() {
+        return requestEngagement(
+                new Engagement("config", "internal")
+                        .putParam(
+                                "timeSinceFirstSession",
+                                new Date().getTime() - preferences.getFirstSession().getTime())
+                        .putParam(
+                                "timeSinceLastSession",
+                                new Date().getTime() - preferences.getLastSession().getTime()),
+                new SessionConfigCallback());
+    }
+    
+    @Override
     public DDNA upload() {
         eventHandler.dispatch();
+        return this;
+    }
+    
+    @Override
+    public DDNA downloadImageAssets() {
+        imageMessageStore.prefetch(
+                new ImageMessageStore.Callback<Void>() {
+                    @Override
+                    public void onCompleted(Void value) {
+                        performOn(
+                                eventListeners,
+                                EventListener::onImageCachePopulated);
+                    }
+                    
+                    @Override
+                    public void onFailed(Throwable reason) {
+                        performOn(
+                                eventListeners,
+                                l -> l.onImageCachingFailed(reason));
+                    }
+                },
+                cacheImages.toArray(new String[0]));
         return this;
     }
     
@@ -502,5 +542,102 @@ final class DDNAImpl extends DDNA {
         }
         
         setUserId(userId);
+    }
+    
+    private final class SessionConfigCallback implements EngageListener<Engagement> {
+        
+        @Override
+        public void onCompleted(Engagement engagement) {
+            Log.v(BuildConfig.LOG_TAG, "Received session configuration");
+            
+            if (engagement.isSuccessful()) {
+                Log.v(BuildConfig.LOG_TAG, "Retrieved session configuration");
+                
+                final JSONArray dpWhitelist = Objects.extractArray(
+                        engagement.getJson(),
+                        "parameters",
+                        "dpWhitelist");
+                if (dpWhitelist != null) {
+                    final Set<String> toBeWhitelisted =
+                            new HashSet<>(dpWhitelist.length());
+                    for (int i = 0; i < dpWhitelist.length(); i++) {
+                        try {
+                            toBeWhitelisted.add(dpWhitelist.getString(i));
+                        } catch (JSONException e) {
+                            Log.w(  BuildConfig.LOG_TAG,
+                                    "Failed deserialising session configuration",
+                                    e);
+                        }
+                    }
+                    
+                    whitelistDps = Collections.unmodifiableSet(toBeWhitelisted);
+                }
+                
+                final JSONArray eventsWhitelist = Objects.extractArray(
+                        engagement.getJson(),
+                        "parameters",
+                        "eventsWhitelist");
+                if (eventsWhitelist != null) {
+                    final Set<String> toBeWhitelisted =
+                            new HashSet<>(eventsWhitelist.length());
+                    for (int i = 0; i < eventsWhitelist.length(); i++) {
+                        try {
+                            toBeWhitelisted.add(eventsWhitelist.getString(i));
+                        } catch (JSONException e) {
+                            Log.w(  BuildConfig.LOG_TAG,
+                                    "Failed deserialising session configuration",
+                                    e);
+                        }
+                    }
+                    
+                    whitelistEvents = Collections.unmodifiableSet(toBeWhitelisted);
+                }
+                
+                final JSONArray imageCache = Objects.extractArray(
+                        engagement.getJson(),
+                        "parameters",
+                        "imageCache");
+                if (imageCache != null) {
+                    final Set<String> toBeCached =
+                            new HashSet<>(imageCache.length());
+                    for (int i = 0; i < imageCache.length(); i++) {
+                        try {
+                            toBeCached.add(imageCache.getString(i));
+                        } catch (JSONException e) {
+                            Log.w(  BuildConfig.LOG_TAG,
+                                    "Failed deserialising session configuration",
+                                    e);
+                        }
+                    }
+                    
+                    cacheImages = Collections.unmodifiableSet(toBeCached);
+                    downloadImageAssets();
+                }
+                
+                Log.v(BuildConfig.LOG_TAG, "Session configured");
+                performOn(eventListeners, it ->
+                        it.onSessionConfigured(engagement.isCached()));
+            } else {
+                Log.w(BuildConfig.LOG_TAG, String.format(
+                        Locale.ENGLISH,
+                        "Failed to retrieve session configuration due to %d/%s",
+                        engagement.getStatusCode(),
+                        engagement.getError()));
+                performOn(eventListeners, it -> it.onSessionConfigurationFailed(
+                        new SessionConfigurationException(String.format(
+                                Locale.ENGLISH,
+                                "Engage returned %d/%s",
+                                engagement.getStatusCode(),
+                                engagement.getError()))));
+            }
+        }
+        
+        @Override
+        public void onError(Throwable t) {
+            Log.w(  BuildConfig.LOG_TAG,
+                    "Failed to retrieve session configuration",
+                    t);
+            performOn(eventListeners, it -> it.onSessionConfigurationFailed(t));
+        }
     }
 }

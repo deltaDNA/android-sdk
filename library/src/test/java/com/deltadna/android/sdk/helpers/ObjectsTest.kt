@@ -23,30 +23,43 @@ import org.junit.runners.JUnit4
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONObject
 
+import com.deltadna.android.sdk.helpers.Objects.*
+
 @RunWith(JUnit4::class)
 class ObjectsTest {
     
     @Test
     fun equals() {
-        assertThat(Objects.equals(null, null)).isTrue()
+        assertThat(equals(null, null)).isTrue()
         val obj = Object()
-        assertThat(Objects.equals(obj, obj)).isTrue()
+        assertThat(equals(obj, obj)).isTrue()
         
-        assertThat(Objects.equals(null, Object())).isFalse()
-        assertThat(Objects.equals(Object(), null)).isFalse()
-        assertThat(Objects.equals(Object(), Object())).isFalse()
+        assertThat(equals(null, Object())).isFalse()
+        assertThat(equals(Object(), null)).isFalse()
+        assertThat(equals(Object(), Object())).isFalse()
     }
     
     @Test
     fun extract() {
-        assertThat(Objects.extract(null, "a")).isNull()
-        assertThat(Objects.extract(JSONObject("{\"a\":null}"), "a"))
+        assertThat(extract(null, "a")).isNull()
+        assertThat(extract(JSONObject("{\"a\":null}"), "a"))
                 .isNull()
-        assertThat(Objects.extract(JSONObject("{\"a\":{}}"), "a").toString())
+        assertThat(extract(JSONObject("{\"a\":{}}"), "a").toString())
                 .isEqualTo("{}")
-        assertThat(Objects.extract(JSONObject("{\"a\":{\"b\":{}}}"), "a").toString())
+        assertThat(extract(JSONObject("{\"a\":{\"b\":{}}}"), "a").toString())
                 .isEqualTo("{\"b\":{}}")
-        assertThat(Objects.extract(JSONObject("{\"a\":{\"b\":{}}}"), "a", "b").toString())
+        assertThat(extract(JSONObject("{\"a\":{\"b\":{}}}"), "a", "b").toString())
                 .isEqualTo("{}")
+    }
+    
+    @Test
+    fun extractArray() {
+        assertThat(extractArray(null, "a")).isNull()
+        assertThat(extractArray(JSONObject("{\"a\":null}"), "a"))
+                .isNull()
+        assertThat(extractArray(JSONObject("{\"a\":[]}"), "a").toString())
+                .isEqualTo("[]")
+        assertThat(extractArray(JSONObject("{\"a\":{\"b\":[]}}"), "a", "b").toString())
+                .isEqualTo("[]")
     }
 }

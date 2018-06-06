@@ -113,8 +113,8 @@ public abstract class DDNA {
         return instance;
     }
     
-    protected final Settings settings;
-    protected final String platform;
+    final Settings settings;
+    final String platform;
     
     final Preferences preferences;
     final NetworkManager network;
@@ -123,7 +123,7 @@ public abstract class DDNA {
     final Set<EventListener> eventListeners = Collections.newSetFromMap(
             new WeakHashMap<EventListener, Boolean>(1));
     
-    protected String sessionId = UUID.randomUUID().toString();
+    String sessionId = UUID.randomUUID().toString();
     
     DDNA(   Application application,
             String environmentKey,
@@ -269,6 +269,19 @@ public abstract class DDNA {
             EngageListener<E> listener);
     
     /**
+     * Makes a session configuration request. This method should be called if
+     * a session configuration request has previously failed.
+     * <p>
+     * The result will be notified via the
+     * {@link EventListener#onSessionConfigured(boolean)} or
+     * {@link EventListener#onSessionConfigurationFailed(Throwable)} callback
+     * methods for any registered {@link EventListener}s.
+     *
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA requestSessionConfiguration();
+    
+    /**
      * Sends pending events to our platform.
      * <p>
      * This is usually called automatically, but in the case that automatic
@@ -278,6 +291,20 @@ public abstract class DDNA {
      * @return this {@link DDNA} instance
      */
     public abstract DDNA upload();
+    
+    /**
+     * Downloads image assets from the session configuration in the background.
+     * <p>
+     * This happens automatically whenever a session configuration request
+     * takes places, such as during a new session or when
+     * {@link #requestSessionConfiguration()} is called.
+     * <p>
+     * The success or failure will be notified to all registered
+     * {@link EventListener}s.
+     * 
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA downloadImageAssets();
     
     /**
      * Gets the registration id for push notifications.
@@ -421,7 +448,7 @@ public abstract class DDNA {
         
         preferences.setUserId(newUserId);
         if (changed) {
-            preferences.clearFirstRun();
+            preferences.clearRunAndSessionKeys();
         }
         
         return this;
@@ -434,12 +461,16 @@ public abstract class DDNA {
         }
         
         sessionId = UUID.randomUUID().toString();
+        requestSessionConfiguration();
+        preferences.setLastSession(new Date());
         
-        for (final EventListener listener : eventListeners) {
-            listener.onNewSession();
-        }
+        performOn(eventListeners, EventListener::onNewSession);
         
         return this;
+    }
+    
+    final <T> void performOn(Iterable<T> items, Action<T> action) {
+        for (final T item : items) action.act(item);
     }
     
     static String getCurrentTimestamp() {
@@ -584,5 +615,10 @@ public abstract class DDNA {
     interface SettingsModifier {
         
         void modify(Settings settings);
+    }
+    
+    interface Action<T> {
+        
+        void act(T item);
     }
 }

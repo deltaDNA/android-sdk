@@ -102,8 +102,18 @@ class DDNADelegate extends DDNA {
     }
     
     @Override
+    public DDNA requestSessionConfiguration() {
+        return getDelegate().requestSessionConfiguration();
+    }
+    
+    @Override
     public DDNA upload() {
         return getDelegate().upload();
+    }
+    
+    @Override
+    public DDNA downloadImageAssets() {
+        return getDelegate().downloadImageAssets();
     }
     
     @Nullable

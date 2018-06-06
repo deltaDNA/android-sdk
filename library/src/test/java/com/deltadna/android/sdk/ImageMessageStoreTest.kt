@@ -18,9 +18,7 @@ package com.deltadna.android.sdk
 
 import android.database.Cursor
 import android.os.Environment
-import com.deltadna.android.sdk.DatabaseHelper.ImageMessages.Column.ID
-import com.deltadna.android.sdk.DatabaseHelper.ImageMessages.Column.LOCATION
-import com.deltadna.android.sdk.DatabaseHelper.ImageMessages.Column.NAME
+import com.deltadna.android.sdk.DatabaseHelper.ImageMessages.Column.*
 import com.deltadna.android.sdk.Location.EXTERNAL
 import com.deltadna.android.sdk.Location.INTERNAL
 import com.deltadna.android.sdk.helpers.Settings
@@ -28,7 +26,9 @@ import com.deltadna.android.sdk.listeners.RequestListener
 import com.deltadna.android.sdk.net.CancelableRequest
 import com.deltadna.android.sdk.net.NetworkManager
 import com.deltadna.android.sdk.net.Response
-import com.google.common.truth.Truth.*
+import com.deltadna.android.sdk.test.runTasks
+import com.deltadna.android.sdk.test.waitAndRunTasks
+import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import kotlinx.coroutines.experimental.launch
 import org.junit.Before
@@ -96,8 +96,8 @@ class ImageMessageStoreTest {
         }
         
         launch { uut.get("http://host.net/path/1.png") }
-        Robolectric.getForegroundThreadScheduler().runOneTask()
         
+        Robolectric.getForegroundThreadScheduler().runOneTask()
         verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
                 argThat { this == File(
@@ -116,8 +116,8 @@ class ImageMessageStoreTest {
         }
         
         launch { uut.get("http://host.net/path/1.png") }
-        Robolectric.getForegroundThreadScheduler().runOneTask()
         
+        Robolectric.getForegroundThreadScheduler().runOneTask()
         verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
                 argThat { this == File(
@@ -135,8 +135,8 @@ class ImageMessageStoreTest {
         }
         
         launch { uut.get("http://host.net/path/1.png") }
-        Robolectric.getForegroundThreadScheduler().runOneTask()
         
+        Robolectric.getForegroundThreadScheduler().runOneTask()
         verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
                 argThat { this == File(
@@ -217,46 +217,91 @@ class ImageMessageStoreTest {
     }
     
     @Test
+    fun prefetchNothing() {
+        with(mock<ImageMessageStore.Callback<Void>>()) {
+            uut.prefetch(this)
+            
+            runTasks()
+            verify(this).onCompleted(isNull())
+        }
+    }
+    
+    @Test
     fun prefetch() {
         val callback = mock<ImageMessageStore.Callback<Void>>()
+        // 1 and 3 will need to be downloaded, 2 is already cached
         val items = arrayOf("1.png", "2.png", "3.png")
-        items.forEach {
-            if (it == "2.png") {
-                File(EXTERNAL.cache(application, "image_messages"), it)
-                        .createNewFile()
-                whenever(database.getImageMessage(eq("http://host.net/path/$it")))
+        items.forEach { name ->
+            val file = File(EXTERNAL.cache(application, "image_messages"), name)
+            file.createNewFile()
+            
+            if (name == "2.png") {
+                whenever(database.getImageMessage(eq("http://host.net/path/$name")))
                         .then { mock<Cursor>().apply {
                             whenever(moveToFirst()).then { true }
                             whenever(getColumnIndex(eq(LOCATION.toString()))).then { 0 }
                             whenever(getColumnIndex(eq(NAME.toString()))).then { 1 }
                             whenever(getString(eq(0))).then { EXTERNAL.name }
-                            whenever(getString(eq(1))).then { it }
+                            whenever(getString(eq(1))).then { name }
                         }}
             } else {
-                whenever(database.getImageMessage(eq("http://host.net/path/$it")))
+                whenever(database.getImageMessage(eq("http://host.net/path/$name")))
                         .then { mock<Cursor>().apply {
                             whenever(moveToFirst()).then { false }
                         }}
+                
+                doAnswer {
+                    (it.arguments[2] as RequestListener<File>).onCompleted(
+                            Response<File>(200, false, null, file, null))
+                    mock<CancelableRequest>()
+                }.whenever(network).fetch(eq("http://host.net/path/$name"), any(), any())
             }
         }
         
-         uut.prefetch(
-                 callback,
-                 *items.map { "http://host.net/path/$it"}.toTypedArray())
+        uut.prefetch(
+                callback,
+                *items.map { "http://host.net/path/$it" }.toTypedArray())
         
-        verify(network, timeout(500)).fetch(
-                eq("http://host.net/path/1.png"),
-                argThat { this == File(
-                        EXTERNAL.cache(application, "image_messages"),
-                        "1.png") },
+        waitAndRunTasks()
+        verify(callback).onCompleted(isNull())
+        verify(network, never()).fetch(
+                eq("http://host.net/path/2.png"),
+                any(),
                 any())
-        verify(network, timeout(500)).fetch(
-                eq("http://host.net/path/3.png"),
-                argThat { this == File(
-                        EXTERNAL.cache(application, "image_messages"),
-                        "3.png") },
-                any())
-        verifyNoMoreInteractions(network)
+    }
+    
+    @Test
+    fun prefetchFailsOnAnySingleFailure() {
+        val callback = mock<ImageMessageStore.Callback<Void>>()
+        // 2 will fail to download
+        val items = arrayOf("1.png", "2.png", "3.png")
+        items.forEach { name ->
+            val file = File(EXTERNAL.cache(application, "image_messages"), name)
+            file.createNewFile()
+            
+            whenever(database.getImageMessage(eq("http://host.net/path/$name")))
+                    .then { mock<Cursor>().apply {
+                        whenever(moveToFirst()).then { false }
+                    }}
+            
+            doAnswer {
+                if (name == "2.png") {
+                    (it.arguments[2] as RequestListener<File>).onCompleted(
+                            Response<File>(500, false, null, null, "error"))
+                } else {
+                    (it.arguments[2] as RequestListener<File>).onCompleted(
+                            Response<File>(200, false, null, file, null))
+                }
+                mock<CancelableRequest>()
+            }.whenever(network).fetch(eq("http://host.net/path/$name"), any(), any())
+        }
+        
+        uut.prefetch(
+                callback,
+                *items.map { "http://host.net/path/$it" }.toTypedArray())
+        
+        waitAndRunTasks()
+        verify(callback).onFailed(any())
     }
     
     @Test

@@ -19,18 +19,16 @@ package com.deltadna.android.sdk.example;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
-import com.deltadna.android.sdk.EngageFactory;
 import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.Event;
-import com.deltadna.android.sdk.ImageMessageActivity;
 import com.deltadna.android.sdk.ImageMessage;
+import com.deltadna.android.sdk.ImageMessageActivity;
 import com.deltadna.android.sdk.Product;
 import com.deltadna.android.sdk.Transaction;
 import com.deltadna.android.sdk.listeners.EngageListener;
@@ -146,12 +144,9 @@ public class ExampleActivity extends AppCompatActivity {
     public void onImageMessage(View view) {
         DDNA.instance().getEngageFactory().requestImageMessage(
                 "testImageMessage",
-                new EngageFactory.Callback<ImageMessage>() {
-                    @Override
-                    public void onCompleted(@Nullable ImageMessage action) {
-                        if (action != null) {
-                            action.prepare(new ImageMessageListener());
-                        }
+                action -> {
+                    if (action != null) {
+                        action.prepare(new ImageMessageListener());
                     }
                 });
     }
@@ -202,8 +197,8 @@ public class ExampleActivity extends AppCompatActivity {
         }
         
         @Override
-        public void onError() {
-            Log.w(BuildConfig.LOG_TAG, "Image Message preparation error");
+        public void onError(Throwable reason) {
+            Log.w(BuildConfig.LOG_TAG, "Image Message preparation error", reason);
         }
     }
 }

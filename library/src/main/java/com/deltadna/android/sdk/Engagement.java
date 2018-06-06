@@ -33,6 +33,7 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     
     private Response<JSONObject> response;
     private int statusCode;
+    private boolean cached;
     @Nullable
     private JSONObject json;
     @Nullable
@@ -103,6 +104,15 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     }
     
     /**
+     * Gets whether the response was retrieved from the cache.
+     *
+     * @return {@code true} if the response is cached, else {@code false}
+     */
+    public boolean isCached() {
+        return cached;
+    }
+    
+    /**
      * Gets whether the response was successful after the Engage request has
      * completed.
      *
@@ -144,6 +154,7 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
         this.response = response;
         // unpack response for easy access
         this.statusCode = response.code;
+        this.cached = response.cached;
         this.json = response.body;
         this.error = response.error;
         

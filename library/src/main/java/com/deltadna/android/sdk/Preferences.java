@@ -20,85 +20,113 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.Nullable;
 
+import java.util.Date;
+import java.util.Map;
+
 /**
  * Wrapper around simple key/value pairs which need to be persisted.
  */
 final class Preferences {
     
-    private static final String FILE = "DELTADNA";
+    private static final String FILE = "com.deltadna.android.sdk";
     
-    private static final String KEY_USER_ID = "DDSDK_USER_ID";
-    private static final String KEY_FIRST_RUN = "DDSDK_FIRST_RUN";
-    private static final String KEY_REGISTRATION_ID =
-            "DDSDK_ANDROID_REGISTRATION_ID";
-    private static final String KEY_FORGET_ME = "DDSDK_FORGET_ME";
-    private static final String KEY_FORGOTTEN = "DDSDK_FORGOTTEN";
+    private static final String USER_ID = "user_id";
+    private static final String FIRST_RUN = "first_run";
+    private static final String FIRST_SESSION = "first_session";
+    private static final String LAST_SESSION = "last_session";
+    private static final String REGISTRATION_ID = "registration_id";
+    private static final String FORGET_ME = "forget_me";
+    private static final String FORGOTTEN = "forgotten";
     
     private final SharedPreferences prefs;
     
     Preferences(Context context) {
         prefs = context.getSharedPreferences(FILE, Context.MODE_PRIVATE);
+        
+        new Migrate(context).run();
     }
     
     @Nullable
     String getUserId() {
-        return prefs.getString(KEY_USER_ID, null);
+        return prefs.getString(USER_ID, null);
     }
     
     Preferences setUserId(String userId) {
-        prefs.edit().putString(KEY_USER_ID, userId).apply();
+        prefs.edit().putString(USER_ID, userId).apply();
         return this;
     }
     
     int getFirstRun() {
-        return prefs.getInt(KEY_FIRST_RUN, 1);
+        return prefs.getInt(FIRST_RUN, 1);
     }
     
     Preferences setFirstRun(int firstRun) {
-        prefs.edit().putInt(KEY_FIRST_RUN, firstRun).apply();
+        prefs.edit().putInt(FIRST_RUN, firstRun).apply();
         return this;
     }
     
-    Preferences clearFirstRun() {
-        prefs.edit().remove(KEY_FIRST_RUN).apply();
+    Date getFirstSession() {
+        return new Date(prefs.getLong(FIRST_SESSION, System.currentTimeMillis()));
+    }
+    
+    Preferences setFirstSession(Date date) {
+        prefs.edit().putLong(FIRST_SESSION, date.getTime()).apply();
+        return this;
+    }
+    
+    Date getLastSession() {
+        return new Date(prefs.getLong(LAST_SESSION, System.currentTimeMillis()));
+    }
+    
+    Preferences setLastSession(Date date) {
+        prefs.edit().putLong(LAST_SESSION, date.getTime()).apply();
         return this;
     }
     
     @Nullable
     String getRegistrationId() {
-        return prefs.getString(KEY_REGISTRATION_ID, null);
+        return prefs.getString(REGISTRATION_ID, null);
     }
     
     Preferences setRegistrationId(@Nullable String registrationId) {
         prefs.edit().putString(
-                KEY_REGISTRATION_ID,
+                REGISTRATION_ID,
                 registrationId)
                 .apply();
         return this;
     }
     
     boolean isForgetMe() {
-        return prefs.getBoolean(KEY_FORGET_ME, false);
+        return prefs.getBoolean(FORGET_ME, false);
     }
     
     Preferences setForgetMe(boolean value) {
-        prefs.edit().putBoolean(KEY_FORGET_ME, value).apply();
+        prefs.edit().putBoolean(FORGET_ME, value).apply();
         return this;
     }
     
     boolean isForgotten() {
-        return prefs.getBoolean(KEY_FORGOTTEN, false);
+        return prefs.getBoolean(FORGOTTEN, false);
     }
     
     Preferences setForgotten(boolean value) {
-        prefs.edit().putBoolean(KEY_FORGOTTEN, value).apply();
+        prefs.edit().putBoolean(FORGOTTEN, value).apply();
+        return this;
+    }
+    
+    Preferences clearRunAndSessionKeys() {
+        prefs   .edit()
+                .remove(FIRST_RUN)
+                .remove(FIRST_SESSION)
+                .remove(LAST_SESSION)
+                .apply();
         return this;
     }
     
     Preferences clearForgetMeAndForgotten() {
         prefs   .edit()
-                .remove(KEY_FORGET_ME)
-                .remove(KEY_FORGOTTEN)
+                .remove(FORGET_ME)
+                .remove(FORGOTTEN)
                 .apply();
         return this;
     }
@@ -111,5 +139,57 @@ final class Preferences {
     @Deprecated
     SharedPreferences getPrefs() {
         return prefs;
+    }
+    
+    private class Migrate implements Runnable {
+        
+        private static final String FILE = "DELTADNA";
+        
+        private static final String KEY_USER_ID = "DDSDK_USER_ID";
+        private static final String KEY_FIRST_RUN = "DDSDK_FIRST_RUN";
+        private static final String KEY_REGISTRATION_ID = "DDSDK_ANDROID_REGISTRATION_ID";
+        private static final String KEY_FORGET_ME = "DDSDK_FORGET_ME";
+        private static final String KEY_FORGOTTEN = "DDSDK_FORGOTTEN";
+        
+        private final Context context;
+        
+        Migrate(Context context) {
+            this.context = context;
+        }
+        
+        @Override
+        public void run() {
+            final SharedPreferences old =
+                    context.getSharedPreferences(FILE, Context.MODE_PRIVATE);
+            if (old.getAll().isEmpty()) return;
+            
+            final SharedPreferences.Editor editor = prefs.edit();
+            for (final Map.Entry<String, ?> entry : old.getAll().entrySet()) {
+                switch (entry.getKey()) {
+                    case KEY_USER_ID:
+                        editor.putString(USER_ID, (String) entry.getValue());
+                        break;
+                    
+                    case KEY_FIRST_RUN:
+                        editor.putInt(FIRST_RUN, (Integer) entry.getValue());
+                        break;
+                    
+                    case KEY_REGISTRATION_ID:
+                        editor.putString(REGISTRATION_ID, (String) entry.getValue());
+                        break;
+                    
+                    case KEY_FORGET_ME:
+                        editor.putBoolean(FORGET_ME, (Boolean) entry.getValue());
+                        break;
+                    
+                    case KEY_FORGOTTEN:
+                        editor.putBoolean(FORGOTTEN, (Boolean) entry.getValue());
+                        break;
+                }
+            }
+            editor.apply();
+            
+            old.edit().clear().apply();
+        }
     }
 }

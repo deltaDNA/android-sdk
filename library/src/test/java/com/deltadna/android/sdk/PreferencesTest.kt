@@ -16,6 +16,7 @@
 
 package com.deltadna.android.sdk
 
+import com.google.common.collect.Range
 import com.google.common.truth.Truth.*
 import org.junit.After
 import org.junit.Before
@@ -23,6 +24,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
 class PreferencesTest {
@@ -42,6 +44,30 @@ class PreferencesTest {
     }
     
     @Test
+    fun firstSession() {
+        assertThat(uut.firstSession).isIn(Range.closed(
+                Date(System.currentTimeMillis() - 100),
+                Date(System.currentTimeMillis() + 100)))
+        
+        with(Date(1)) {
+            uut.firstSession = this
+            assertThat(uut.firstSession).isEqualTo(this)
+        }
+    }
+    
+    @Test
+    fun lastSession() {
+        assertThat(uut.lastSession).isIn(Range.closed(
+                Date(System.currentTimeMillis() - 100),
+                Date(System.currentTimeMillis() + 100)))
+        
+        with(Date(1)) {
+            uut.lastSession = this
+            assertThat(uut.lastSession).isEqualTo(this)
+        }
+    }
+    
+    @Test
     fun forgetMe() {
         assertThat(uut.isForgetMe).isFalse()
         uut.isForgetMe = true
@@ -53,6 +79,19 @@ class PreferencesTest {
         assertThat(uut.isForgotten).isFalse()
         uut.isForgotten = true
         assertThat(uut.isForgotten).isTrue()
+    }
+    
+    @Test
+    fun clearRunAndSessionKeys() {
+        uut.firstRun = 0
+        uut.firstSession = Date(1)
+        uut.lastSession = Date(2)
+        
+        uut.clearRunAndSessionKeys()
+        
+        assertThat(uut.firstRun).isEqualTo(1)
+        assertThat(uut.firstSession).isNotEqualTo(Date(1))
+        assertThat(uut.lastSession).isNotEqualTo(Date(2))
     }
     
     @Test

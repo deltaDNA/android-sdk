@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 deltaDNA Ltd. All rights reserved.
+ * Copyright (c) 2018 deltaDNA Ltd. All rights reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,54 @@
 
 package com.deltadna.android.sdk
 
+import com.deltadna.android.sdk.exceptions.SessionConfigurationException
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EventListener
+import com.deltadna.android.sdk.test.runTasks
+import com.deltadna.android.sdk.test.waitAndRunTasks
+import com.github.salomonbrys.kotson.jsonArray
+import com.github.salomonbrys.kotson.jsonObject
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
+import com.squareup.okhttp.mockwebserver.MockResponse
+import com.squareup.okhttp.mockwebserver.MockWebServer
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.io.IOException
 
 @RunWith(RobolectricTestRunner::class)
 class DDNAImplTest {
     
-    private var uut = createUut()
+    private lateinit var server: MockWebServer
+    
+    private lateinit var uut: DDNAImpl
     
     @Before
     fun before() {
-        uut = createUut()
+        server = MockWebServer()
+        server.start()
+        
+        uut = DDNAImpl(
+                RuntimeEnvironment.application,
+                "environmentKey",
+                server.url("/collect").toString(),
+                server.url("/engage").toString(),
+                Settings(),
+                null,
+                null,
+                null,
+                null)
+    }
+    
+    @After
+    fun after() {
+        try {
+            server.shutdown()
+        } catch (_: IOException) {}
     }
     
     @Test
@@ -42,6 +72,15 @@ class DDNAImplTest {
         uut.register(listener)
         uut.startSdk()
         
+        server.takeRequest() // session config
+        server.takeRequest().run {
+            assertThat(path).startsWith("/collect")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"eventName\":\"newPlayer\"")
+                assertThat(this).contains("\"eventName\":\"gameStarted\"")
+                assertThat(this).contains("\"eventName\":\"clientDevice\"")
+            }
+        }
         inOrder(listener) {
             verify(listener).onNewSession()
             verify(listener).onStarted()
@@ -55,33 +94,150 @@ class DDNAImplTest {
         uut.startSdk()
         uut.stopSdk()
         
+        server.takeRequest() // session config
+        server.takeRequest().run {
+            assertThat(path).startsWith("/collect")
+            assertThat(body.readUtf8()).contains("\"eventName\":\"gameEnded\"")
+        }
         verify(listener).onStopped()
     }
     
+    /**
+     * First request as part of a new session fails, the second request succeeds,
+     * and the third request fails but comes back the the previously cached
+     * configuration.
+     */
     @Test
-    fun sessionChanging() {
-        val s1 = uut.newSession().sessionId
-        assertThat(s1).isNotEmpty()
+    fun requestSessionConfiguration() {
+        uut.settings.setBackgroundEventUpload(false)
         
-        val s2 = uut.newSession().sessionId
-        assertThat(s2).isNotEmpty()
-        assertThat(s2).isNotEqualTo(s1)
-    }
-    
-    @Test
-    fun sessionNotifications() {
         with(mock<EventListener>()) {
             uut.register(this)
-            uut.newSession()
-            uut.newSession()
+            server.enqueue(MockResponse()
+                    .setResponseCode(500)
+                    .setBody("error"))
+            server.enqueue(MockResponse()
+                    .setResponseCode(200)
+                    .setBody(jsonObject("parameters" to jsonObject(
+                            "dpWhitelist" to jsonArray(),
+                            "eventsWhitelist" to jsonArray(),
+                            "imageCache" to jsonArray()))
+                            .toString()))
+            server.enqueue(MockResponse()
+                    .setResponseCode(500)
+                    .setBody("error"))
             
-            verify(this, times(2)).onNewSession()
+            uut.startSdk()
             
-            uut.unregister(this)
-            uut.newSession()
+            server.takeRequest().run {
+                assertThat(path).startsWith("/engage")
+                with(body.readUtf8()) {
+                    assertThat(this).contains("\"decisionPoint\":\"config\"")
+                    assertThat(this).contains("\"flavour\":\"internal\"")
+                    assertThat(this).contains("\"timeSinceFirstSession\":")
+                    assertThat(this).contains("\"timeSinceLastSession\":")
+                }
+                
+                waitAndRunTasks()
+            }
+            verify(this).onSessionConfigurationFailed(
+                    isA<SessionConfigurationException>())
+            verify(this, never()).onImageCachePopulated()
+            verify(this, never()).onImageCachingFailed(any())
             
-            verifyNoMoreInteractions(this)
+            uut.requestSessionConfiguration()
+            
+            server.takeRequest().run {
+                assertThat(path).startsWith("/engage")
+                with(body.readUtf8()) {
+                    assertThat(this).contains("\"decisionPoint\":\"config\"")
+                    assertThat(this).contains("\"flavour\":\"internal\"")
+                    assertThat(this).contains("\"timeSinceFirstSession\":")
+                    assertThat(this).contains("\"timeSinceLastSession\":")
+                }
+                
+                waitAndRunTasks()
+            }
+            verify(this).onSessionConfigured(eq(false))
+            verify(this).onImageCachePopulated()
+            
+            uut.requestSessionConfiguration()
+            
+            server.takeRequest().run {
+                assertThat(path).startsWith("/engage")
+                with(body.readUtf8()) {
+                    assertThat(this).contains("\"decisionPoint\":\"config\"")
+                    assertThat(this).contains("\"flavour\":\"internal\"")
+                    assertThat(this).contains("\"timeSinceFirstSession\":")
+                    assertThat(this).contains("\"timeSinceLastSession\":")
+                }
+                
+                waitAndRunTasks()
+            }
+            verify(this).onSessionConfigured(eq(true))
+            verify(this, times(2)).onImageCachePopulated()
         }
+    }
+    
+    /**
+     * Downloads image assets at first as part of a new session, failing on the
+     * second file it tries. On the second try we succeed to download the second
+     * file, and on the third try we will have both of the cached.
+     */
+    @Test
+    fun downloadImageAssets() {
+        val images = mutableListOf("/1.png", "/2.png")
+        val listener = mock<EventListener>()
+        uut.settings.setBackgroundEventUpload(false)
+        uut.register(listener)
+        
+        // will be downloaded as part of a new session
+        server.enqueue(MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonObject("parameters" to jsonObject(
+                        "dpWhitelist" to jsonArray(),
+                        "eventsWhitelist" to jsonArray(),
+                        "imageCache" to jsonArray(*images
+                                .map { server.url(it).toString() }
+                                .toTypedArray())))
+                        .toString()))
+        server.enqueue(MockResponse().setResponseCode(200).setBody("a"))
+        server.enqueue(MockResponse().setResponseCode(500).setBody("error"))
+        
+        uut.startSdk()
+        
+        server.takeRequest().run {
+            assertThat(path).startsWith("/engage")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"decisionPoint\":\"config\"")
+                assertThat(this).contains("\"flavour\":\"internal\"")
+            }
+            
+            runTasks()
+        }
+        with(server.takeRequest().path) {
+            assertThat(this).isIn(images)
+            images.remove(this)
+        }
+        assertThat(server.takeRequest().path).isIn(images)
+        waitAndRunTasks(iterations = 2)
+        verify(listener).onImageCachingFailed(any())
+        
+        server.enqueue(MockResponse().setResponseCode(200).setBody("b"))
+        
+        uut.downloadImageAssets()
+        
+        assertThat(server.takeRequest().path).isIn(images)
+        assertThat(server.requestCount).isEqualTo(4)
+        waitAndRunTasks(iterations = 2)
+        verify(listener).onImageCachePopulated()
+        
+        uut.downloadImageAssets()
+        
+        // images will be cached now so not expecting any network requests
+        assertThat(server.requestCount).isEqualTo(4)
+        waitAndRunTasks()
+        verify(listener, times(2)).onImageCachePopulated()
     }
     
     @Test
@@ -92,15 +248,4 @@ class DDNAImplTest {
         uut.forgetMe()
         assertThat(uut.isStarted).isFalse()
     }
-    
-    private fun createUut() = DDNAImpl(
-            RuntimeEnvironment.application,
-            "environmentKey",
-            "collectUrl",
-            "engageUrl",
-            Settings(),
-            null,
-            null,
-            null,
-            null)
 }
