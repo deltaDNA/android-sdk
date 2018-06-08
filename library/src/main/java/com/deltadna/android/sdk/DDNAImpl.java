@@ -23,6 +23,7 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.deltadna.android.sdk.exceptions.NotStartedException;
 import com.deltadna.android.sdk.exceptions.SessionConfigurationException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.EngageArchive;
@@ -31,6 +32,7 @@ import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
+import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -58,6 +60,9 @@ final class DDNAImpl extends DDNA {
     
     private static final int ENGAGE_API_VERSION = 4;
     
+    private static final String TAG = BuildConfig.LOG_TAG
+            + ' '
+            + DDNAImpl.class.getSimpleName();
     private static final String ENGAGE_DIRECTORY = "engage" + File.separator;
     @Deprecated
     private static final String ENGAGE_PATH_LEGACY = "%s/ddsdk/engage/";
@@ -89,10 +94,10 @@ final class DDNAImpl extends DDNA {
     
     @Override
     public DDNA startSdk(@Nullable String userId) {
-        Log.d(BuildConfig.LOG_TAG, "Starting SDK");
+        Log.d(TAG, "Starting SDK");
         
         if (started) {
-            Log.w(BuildConfig.LOG_TAG, "SDK already started");
+            Log.w(TAG, "SDK already started");
         } else {
             started = true;
             
@@ -111,7 +116,7 @@ final class DDNAImpl extends DDNA {
             
             triggerDefaultEvents();
             
-            Log.d(BuildConfig.LOG_TAG, "SDK started");
+            Log.d(TAG, "SDK started");
             performOn(eventListeners, EventListener::onStarted);
         }
         
@@ -120,10 +125,10 @@ final class DDNAImpl extends DDNA {
     
     @Override
     public DDNA stopSdk() {
-        Log.d(BuildConfig.LOG_TAG, "Stopping SDK");
+        Log.d(TAG, "Stopping SDK");
         
         if (!started) {
-            Log.w(BuildConfig.LOG_TAG, "SDK has not been started");
+            Log.w(TAG, "SDK has not been started");
         } else {
             recordEvent("gameEnded");
             
@@ -135,7 +140,7 @@ final class DDNAImpl extends DDNA {
             
             started = false;
             
-            Log.d(BuildConfig.LOG_TAG, "SDK stopped");
+            Log.d(TAG, "SDK stopped");
             performOn(eventListeners, EventListener::onStopped);
         }
         
@@ -155,9 +160,14 @@ final class DDNAImpl extends DDNA {
     @Override
     public DDNA recordEvent(Event event) {
         Preconditions.checkArg(event != null, "event cannot be null");
+        if (!whitelistEvents.isEmpty() && !whitelistEvents.contains(event.name)) {
+            Log.d(TAG, "Event " + event.name + " is not whitelisted, ignoring");
+            return this;
+        }
         
+        Log.v(TAG, "Recording event " + event.name);
         if (!started) {
-            Log.w(BuildConfig.LOG_TAG, "SDK has not been started");
+            Log.w(TAG, "SDK has not been started");
         }
         
         final JSONObject jsonEvent = new JSONObject();
@@ -229,13 +239,24 @@ final class DDNAImpl extends DDNA {
     @Override
     public <E extends Engagement> DDNA requestEngagement(E engagement, EngageListener<E> listener) {
         Preconditions.checkArg(engagement != null, "engagement cannot be null");
+        Preconditions.checkArg(listener != null, "listener cannot be null");
         
         if (!started) {
-            Log.w(  BuildConfig.LOG_TAG,
-                    "SDK has not been started, aborting engagement");
+            Log.w(TAG, "SDK has not been started, aborting engagement " + engagement);
+            listener.onError(new NotStartedException());
+            return this;
+        } else if (!whitelistDps.isEmpty()
+                && !whitelistDps.contains(engagement.getDecisionPointAndFlavour())) {
+            Log.d(TAG, String.format(
+                    Locale.ENGLISH,
+                    "Decision point %s is not whitelisted",
+                    engagement.getDecisionPointAndFlavour()));
+            listener.onCompleted((E) engagement.setResponse(new Response<>(
+                    200, false, new byte[] {}, new JSONObject(), null)));
             return this;
         }
         
+        Log.v(TAG, "Requesting engagement " + engagement);
         eventHandler.handleEngagement(
                 engagement,
                 listener,
@@ -250,14 +271,21 @@ final class DDNAImpl extends DDNA {
     
     @Override
     public DDNA requestSessionConfiguration() {
+        final Date firstSession = preferences.getFirstSession();
+        final Date lastSession = preferences.getLastSession();
+        
         return requestEngagement(
                 new Engagement("config", "internal")
                         .putParam(
                                 "timeSinceFirstSession",
-                                new Date().getTime() - preferences.getFirstSession().getTime())
+                                firstSession == null
+                                        ? 0
+                                        : new Date().getTime() - firstSession.getTime())
                         .putParam(
                                 "timeSinceLastSession",
-                                new Date().getTime() - preferences.getLastSession().getTime()),
+                                lastSession == null
+                                        ? 0
+                                        : new Date().getTime() - lastSession.getTime()),
                 new SessionConfigCallback());
     }
     
@@ -356,7 +384,7 @@ final class DDNAImpl extends DDNA {
         if (    settings.onFirstRunSendNewPlayerEvent()
                 && preferences.getFirstRun() > 0) {
             
-            Log.d(BuildConfig.LOG_TAG, "Recording 'newPlayer' event");
+            Log.d(TAG, "Recording 'newPlayer' event");
             
             recordEvent(new Event("newPlayer").putParam(
                     "userCountry", ClientInfo.countryCode()));
@@ -365,7 +393,7 @@ final class DDNAImpl extends DDNA {
         }
         
         if (settings.onInitSendGameStartedEvent()) {
-            Log.d(BuildConfig.LOG_TAG, "Recording 'gameStarted' event");
+            Log.d(TAG, "Recording 'gameStarted' event");
             
             final Event event = new Event("gameStarted")
                     .putParam("userLocale", ClientInfo.locale());
@@ -380,7 +408,7 @@ final class DDNAImpl extends DDNA {
         }
         
         if (settings.onInitSendClientDeviceEvent()) {
-            Log.d(BuildConfig.LOG_TAG, "Recording 'clientDevice' event");
+            Log.d(TAG, "Recording 'clientDevice' event");
             
             recordEvent(new Event("clientDevice")
                     .putParam("deviceName", ClientInfo.deviceName())
@@ -421,7 +449,7 @@ final class DDNAImpl extends DDNA {
         } else if (Location.EXTERNAL.available()) {
             location = Location.EXTERNAL;
         } else {
-            Log.w(BuildConfig.LOG_TAG, String.format(
+            Log.w(TAG, String.format(
                     Locale.US,
                     "%s not available, falling back to %s",
                     Location.EXTERNAL,
@@ -437,7 +465,7 @@ final class DDNAImpl extends DDNA {
                     ENGAGE_PATH_LEGACY,
                     (path != null) ? path : ""));
         } else {
-            Log.d(BuildConfig.LOG_TAG, "Legacy engage storage path not found");
+            Log.d(TAG, "Legacy engage storage path not found");
             legacyPath = null;
         }
         
@@ -457,13 +485,9 @@ final class DDNAImpl extends DDNA {
         sessionHandler = new SessionRefreshHandler(
                 application,
                 settings,
-                new SessionRefreshHandler.Listener() {
-                    @Override
-                    public void onExpired() {
-                        Log.d(  BuildConfig.LOG_TAG,
-                                "Session expired, updating id");
-                        newSession(true);
-                    }
+                () -> {
+                    Log.d(TAG, "Session expired, updating id");
+                    newSession(true);
                 });
         eventHandler = new EventHandler(eventStore, archive, network);
         
@@ -534,9 +558,9 @@ final class DDNAImpl extends DDNA {
                 }
             }
         } catch (Resources.NotFoundException e) {
-            Log.w(BuildConfig.LOG_TAG, "Failed to find ISO 4217 resource", e);
+            Log.w(TAG, "Failed to find ISO 4217 resource", e);
         } catch (XmlPullParserException | IOException e) {
-            Log.w(BuildConfig.LOG_TAG, "Failed parsing ISO 4217 resource", e);
+            Log.w(TAG, "Failed parsing ISO 4217 resource", e);
         } finally {
             iso4217 = Collections.unmodifiableMap(temp);
         }
@@ -548,10 +572,10 @@ final class DDNAImpl extends DDNA {
         
         @Override
         public void onCompleted(Engagement engagement) {
-            Log.v(BuildConfig.LOG_TAG, "Received session configuration");
+            Log.v(TAG, "Received session configuration");
             
             if (engagement.isSuccessful()) {
-                Log.v(BuildConfig.LOG_TAG, "Retrieved session configuration");
+                Log.v(TAG, "Retrieved session configuration");
                 
                 final JSONArray dpWhitelist = Objects.extractArray(
                         engagement.getJson(),
@@ -564,9 +588,7 @@ final class DDNAImpl extends DDNA {
                         try {
                             toBeWhitelisted.add(dpWhitelist.getString(i));
                         } catch (JSONException e) {
-                            Log.w(  BuildConfig.LOG_TAG,
-                                    "Failed deserialising session configuration",
-                                    e);
+                            Log.w(TAG, "Failed deserialising session configuration", e);
                         }
                     }
                     
@@ -584,9 +606,7 @@ final class DDNAImpl extends DDNA {
                         try {
                             toBeWhitelisted.add(eventsWhitelist.getString(i));
                         } catch (JSONException e) {
-                            Log.w(  BuildConfig.LOG_TAG,
-                                    "Failed deserialising session configuration",
-                                    e);
+                            Log.w(TAG, "Failed deserialising session configuration", e);
                         }
                     }
                     
@@ -604,9 +624,7 @@ final class DDNAImpl extends DDNA {
                         try {
                             toBeCached.add(imageCache.getString(i));
                         } catch (JSONException e) {
-                            Log.w(  BuildConfig.LOG_TAG,
-                                    "Failed deserialising session configuration",
-                                    e);
+                            Log.w(TAG, "Failed deserialising session configuration", e);
                         }
                     }
                     
@@ -614,11 +632,11 @@ final class DDNAImpl extends DDNA {
                     downloadImageAssets();
                 }
                 
-                Log.v(BuildConfig.LOG_TAG, "Session configured");
+                Log.v(TAG, "Session configured");
                 performOn(eventListeners, it ->
                         it.onSessionConfigured(engagement.isCached()));
             } else {
-                Log.w(BuildConfig.LOG_TAG, String.format(
+                Log.w(TAG, String.format(
                         Locale.ENGLISH,
                         "Failed to retrieve session configuration due to %d/%s",
                         engagement.getStatusCode(),
@@ -634,9 +652,7 @@ final class DDNAImpl extends DDNA {
         
         @Override
         public void onError(Throwable t) {
-            Log.w(  BuildConfig.LOG_TAG,
-                    "Failed to retrieve session configuration",
-                    t);
+            Log.w(TAG, "Failed to retrieve session configuration", t);
             performOn(eventListeners, it -> it.onSessionConfigurationFailed(t));
         }
     }

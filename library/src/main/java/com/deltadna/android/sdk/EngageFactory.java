@@ -154,7 +154,7 @@ public class EngageFactory {
                 parametersCopy = new Params();
             }
             
-            return new Engagement(decisionPoint, null, parametersCopy);
+            return new Engagement(decisionPoint, parametersCopy);
         } else {
             return new Engagement(decisionPoint);
         }

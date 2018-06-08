@@ -311,7 +311,7 @@ class ImageMessageStoreTest {
             File(EXTERNAL.cache(application, "image_messages"), it).createNewFile()
         }}
         whenever(database.imageMessages).then { mock<Cursor>().apply {
-            whenever(isAfterLast).thenReturn(false, false, false, true)
+            whenever(moveToNext()).thenReturn(true, true, true, false)
             whenever(getColumnIndex(eq(ID.toString()))).then { 0 }
             whenever(getColumnIndex(eq(LOCATION.toString()))).then { 1 }
             whenever(getColumnIndex(eq(NAME.toString()))).then { 2 }

@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk
 
-import com.google.common.collect.Range
 import com.google.common.truth.Truth.*
 import org.junit.After
 import org.junit.Before
@@ -45,9 +44,7 @@ class PreferencesTest {
     
     @Test
     fun firstSession() {
-        assertThat(uut.firstSession).isIn(Range.closed(
-                Date(System.currentTimeMillis() - 100),
-                Date(System.currentTimeMillis() + 100)))
+        assertThat(uut.firstSession).isNull()
         
         with(Date(1)) {
             uut.firstSession = this
@@ -57,9 +54,7 @@ class PreferencesTest {
     
     @Test
     fun lastSession() {
-        assertThat(uut.lastSession).isIn(Range.closed(
-                Date(System.currentTimeMillis() - 100),
-                Date(System.currentTimeMillis() + 100)))
+        assertThat(uut.lastSession).isNull()
         
         with(Date(1)) {
             uut.lastSession = this

@@ -28,10 +28,23 @@ import org.json.JSONObject
 class EngagementTest {
     
     @Test
-    fun flavour() {
-        assertThat(KEngagement("point").flavour).isNull()
-        assertThat(KEngagement("point", null).flavour).isNull()
+    fun `flavour defaults to engagement`() {
+        assertThat(KEngagement("point").flavour).isEqualTo("engagement")
+    }
+    
+    @Test
+    fun `flavour is set from ctor`() {
         assertThat(KEngagement("point", "flavour").flavour).isEqualTo("flavour")
+    }
+    
+    @Test(expected = IllegalArgumentException::class)
+    fun `null flavour not allowed`() {
+        KEngagement("point", null)
+    }
+    
+    @Test(expected = IllegalArgumentException::class)
+    fun `empty flavour not allowed`() {
+        KEngagement("point", "")
     }
     
     @Test
@@ -74,8 +87,13 @@ class EngagementTest {
     }
     
     @Test
-    fun getDecisionPoint() {
+    fun `get decision point`() {
         assertThat(KEngagement("point").decisionPoint).isEqualTo("point")
+    }
+    
+    @Test
+    fun `get decision point and flavour`() {
+        assertThat(KEngagement("a", "b").decisionPointAndFlavour).isEqualTo("a@b")
     }
     
     private class KEngagement : Engagement<KEngagement> {

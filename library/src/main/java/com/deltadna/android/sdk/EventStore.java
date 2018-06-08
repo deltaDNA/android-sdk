@@ -117,6 +117,8 @@ class EventStore extends BroadcastReceiver {
      * @param content the content to be saved
      */
     synchronized void add(String content) {
+        Log.v(TAG, "Adding " + content);
+        
         final byte[] bytes = content.getBytes(UTF8);
         if (bytes.length > EVENTS_LIMIT) {
             Log.w(TAG, "Skipping " + content + " due to bulk events limit");
@@ -296,9 +298,11 @@ class EventStore extends BroadcastReceiver {
             }
             
             if (!db.insertEventRow(time, location, name, hash, file.length())) {
-                Log.e(TAG, "Failed inserting " + new String(content));
+                Log.w(TAG, "Failed inserting " + new String(content));
                 //noinspection ResultOfMethodCallIgnored
                 file.delete();
+            } else {
+                Log.v(TAG, "Inserted " + new String(content));
             }
             
             return null;

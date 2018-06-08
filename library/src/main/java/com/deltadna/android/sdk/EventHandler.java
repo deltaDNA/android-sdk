@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
@@ -39,7 +38,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,14 +53,9 @@ final class EventHandler {
             + EventHandler.class.getSimpleName();
     
     private final ScheduledExecutorService executor =
-            new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(@NonNull Runnable r) {
-                    return new Thread(
-                            r,
-                            EventHandler.class.getSimpleName());
-                }
-            });
+            new ScheduledThreadPoolExecutor(1, r -> new Thread(
+                    r,
+                    EventHandler.class.getSimpleName()));
     
     private final EventStore store;
     private final EngageArchive archive;
@@ -155,6 +148,7 @@ final class EventHandler {
             event = new JSONObject()
                     .put("userID", userId)
                     .put("decisionPoint", engagement.name)
+                    .put("flavour", engagement.flavour)
                     .put("sessionID", sessionId)
                     .put("version", engageApiVersion)
                     .put("sdkVersion", sdkVersion)
@@ -163,10 +157,6 @@ final class EventHandler {
                     .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
                     .put("timezoneOffset", ClientInfo.timezoneOffset())
                     .put("locale", ClientInfo.locale());
-            
-            if (!TextUtils.isEmpty(engagement.flavour)) {
-                event.put("flavour", engagement.flavour);
-            }
             
             if (!engagement.params.isEmpty()) {
                 event.put("parameters", engagement.params.json);
@@ -267,6 +257,8 @@ final class EventHandler {
         
         @Override
         public void run() {
+            Log.v(TAG, "Starting event upload");
+            
             final CloseableIterator<EventStoreItem> events = store.items();
             final AtomicReference<CloseableIterator.Mode> clearEvents =
                     new AtomicReference<>(CloseableIterator.Mode.ALL);
@@ -355,6 +347,7 @@ final class EventHandler {
                     request.cancel();
                 }
             } finally {
+                Log.v(TAG, "Finished event upload");
                 events.close(clearEvents.get());
             }
         }

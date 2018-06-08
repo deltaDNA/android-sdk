@@ -461,7 +461,12 @@ public abstract class DDNA {
         }
         
         sessionId = UUID.randomUUID().toString();
+        
         requestSessionConfiguration();
+        
+        if (preferences.getFirstSession() == null) {
+            preferences.setFirstSession(new Date());
+        }
         preferences.setLastSession(new Date());
         
         performOn(eventListeners, EventListener::onNewSession);

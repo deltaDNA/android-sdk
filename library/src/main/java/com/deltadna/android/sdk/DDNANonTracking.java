@@ -117,17 +117,13 @@ final class DDNANonTracking extends DDNA {
     
     @Override
     public DDNA requestEngagement(String decisionPoint, EngageListener<Engagement> listener) {
-        listener.onCompleted(new Engagement(decisionPoint).setResponse(
-                new Response<>(200, false, new byte[] {}, new JSONObject(), null)));
-        
-        return this;
+        return requestEngagement(new Engagement(decisionPoint), listener);
     }
     
     @Override
     public <E extends Engagement> DDNA requestEngagement(E engagement, EngageListener<E> listener) {
-        listener.onCompleted((E) engagement.setResponse(
-                new Response<>(200, false, new byte[] {}, new JSONObject(), null)));
-        
+        listener.onCompleted((E) engagement.setResponse(new Response<>(
+                200, false, new byte[] {}, new JSONObject(), null)));
         return this;
     }
     
