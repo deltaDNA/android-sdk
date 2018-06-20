@@ -94,6 +94,19 @@ class DDNATest {
     }
     
     @Test
+    fun `new session updates preferences with session times`() {
+        val preferences = Preferences(application)
+        
+        assertThat(preferences.firstSession).isNull()
+        assertThat(preferences.lastSession).isNull()
+        
+        uut.newSession()
+        
+        assertThat(preferences.firstSession).isNotNull()
+        assertThat(preferences.lastSession).isNotNull()
+    }
+    
+    @Test
     fun newSessionNotifiesCallbacks() {
         with(mock<EventListener>()) {
             uut.register(this)

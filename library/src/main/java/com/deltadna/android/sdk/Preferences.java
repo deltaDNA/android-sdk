@@ -65,8 +65,11 @@ final class Preferences {
         return this;
     }
     
+    @Nullable
     Date getFirstSession() {
-        return new Date(prefs.getLong(FIRST_SESSION, System.currentTimeMillis()));
+        return prefs.contains(FIRST_SESSION)
+                ? new Date(prefs.getLong(FIRST_SESSION, System.currentTimeMillis()))
+                : null;
     }
     
     Preferences setFirstSession(Date date) {
@@ -74,8 +77,11 @@ final class Preferences {
         return this;
     }
     
+    @Nullable
     Date getLastSession() {
-        return new Date(prefs.getLong(LAST_SESSION, System.currentTimeMillis()));
+        return prefs.contains(LAST_SESSION)
+                ? new Date(prefs.getLong(LAST_SESSION, System.currentTimeMillis()))
+                : null;
     }
     
     Preferences setLastSession(Date date) {

@@ -19,6 +19,7 @@ package com.deltadna.android.sdk;
 import android.support.annotation.Nullable;
 
 import com.deltadna.android.sdk.helpers.Objects;
+import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONObject;
@@ -28,7 +29,8 @@ import org.json.JSONObject;
  */
 public class Engagement<T extends Engagement<T>> extends Event<T> {
     
-    @Nullable
+    private static final String DEFAULT_FLAVOUR = "engagement";
+    
     final String flavour;
     
     private Response<JSONObject> response;
@@ -45,25 +47,44 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
      * @param decisionPoint the decision point
      */
     public Engagement(String decisionPoint) {
-        this(decisionPoint, null);
+        this(decisionPoint, DEFAULT_FLAVOUR);
+    }
+    
+    /**
+     * Creates a new instance, with parameters.
+     *
+     * @param decisionPoint the decision point
+     * @param params        the parameters
+     */
+    public Engagement(String decisionPoint, Params params) {
+        this(decisionPoint, DEFAULT_FLAVOUR, params);
     }
     
     /**
      * Creates a new instance, with a flavour.
      *
      * @param decisionPoint the decision point
-     * @param flavour       the flavour, may be {@code null}
+     * @param flavour       the flavour
      */
-    public Engagement(String decisionPoint, @Nullable String flavour) {
+    public Engagement(String decisionPoint, String flavour) {
         this(decisionPoint, flavour, new Params());
     }
     
+    /**
+     * Creates a new instance, with a flavour and parameters.
+     *
+     * @param decisionPoint the decision point
+     * @param flavour       the flavour
+     * @param params        the parameters
+     */
     public Engagement(
             String decisionPoint,
-            @Nullable String flavour,
+            String flavour,
             Params params) {
         
         super(decisionPoint, params);
+        
+        Preconditions.checkString(flavour, "flavour cannot be null or empty");
         
         this.flavour = flavour;
     }
@@ -148,6 +169,10 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     
     public String getDecisionPoint() {
         return name;
+    }
+    
+    String getDecisionPointAndFlavour() {
+        return name + '@' + flavour;
     }
     
     T setResponse(Response<JSONObject> response) {

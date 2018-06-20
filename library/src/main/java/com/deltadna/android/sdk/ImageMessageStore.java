@@ -322,7 +322,7 @@ class ImageMessageStore {
             
             int count = 0;
             try (Cursor cursor = database.getImageMessages()) {
-                while (!cursor.isAfterLast()) {
+                while (cursor.moveToNext()) {
                     final Location location = Location.valueOf(cursor.getString(
                             cursor.getColumnIndex(LOCATION.toString())));
                     final String name = cursor.getString(
@@ -333,14 +333,12 @@ class ImageMessageStore {
                                 name);
                         if (!file.exists()) {
                             Log.v(TAG, "Removing database entry for missing " + file);
-
+                            
                             database.removeImageMessage(cursor.getLong(
                                     cursor.getColumnIndex(ID.toString())));
                             count++;
                         }
                     }
-                    
-                    cursor.moveToNext();
                 }
                 
                 Log.d(TAG, "Finished cleanup task with " + count + " removed");
