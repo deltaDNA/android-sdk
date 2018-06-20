@@ -127,8 +127,6 @@ public final class ImageMessageActivity extends Activity {
                 
                 setResult(Activity.RESULT_OK, intent);
             } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_DISMISS)) {
-                imageMessage.cleanUp();
-                
                 setResult(Activity.RESULT_CANCELED);
             }
             

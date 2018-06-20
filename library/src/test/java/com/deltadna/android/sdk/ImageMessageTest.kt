@@ -19,14 +19,23 @@ package com.deltadna.android.sdk
 import com.deltadna.android.sdk.net.Response
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONObject
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
+import org.robolectric.shadow.api.Shadow
 import java.io.ByteArrayOutputStream
 import java.io.ObjectOutputStream
 
 @RunWith(JUnit4::class)
 class ImageMessageTest {
+    
+    @Before
+    fun before() {
+        
+    }
     
     @Test
     fun createWithImage() {

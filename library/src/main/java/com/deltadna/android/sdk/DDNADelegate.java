@@ -21,9 +21,11 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import com.deltadna.android.sdk.listeners.EngageListener;
+import com.deltadna.android.sdk.listeners.EventListener;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * {@inheritDoc}
@@ -33,14 +35,20 @@ class DDNADelegate extends DDNA {
     private final DDNA tracking;
     private final DDNA nonTracking;
     
-    DDNADelegate(Configuration configuration, DDNA tracking, DDNA nonTracking) {
+    DDNADelegate(
+            Configuration configuration,
+            Set<EventListener> eventListeners,
+            DDNA tracking,
+            DDNA nonTracking) {
+        
         super(  configuration.application,
                 configuration.environmentKey,
                 configuration.collectUrl,
                 configuration.engageUrl,
                 configuration.settings,
                 configuration.hashSecret,
-                configuration.platform);
+                configuration.platform,
+                eventListeners);
         
         this.tracking = tracking;
         this.nonTracking = nonTracking;
@@ -72,22 +80,22 @@ class DDNADelegate extends DDNA {
     }
     
     @Override
-    public DDNA recordEvent(String name) {
+    public EventAction recordEvent(String name) {
         return getDelegate().recordEvent(name);
     }
     
     @Override
-    public DDNA recordEvent(Event event) {
+    public EventAction recordEvent(Event event) {
         return getDelegate().recordEvent(event);
     }
     
     @Override
-    public DDNA recordNotificationOpened(boolean launch, Bundle payload) {
+    public EventAction recordNotificationOpened(boolean launch, Bundle payload) {
         return getDelegate().recordNotificationOpened(launch, payload);
     }
     
     @Override
-    public DDNA recordNotificationDismissed(Bundle payload) {
+    public EventAction recordNotificationDismissed(Bundle payload) {
         return getDelegate().recordNotificationDismissed(payload);
     }
     

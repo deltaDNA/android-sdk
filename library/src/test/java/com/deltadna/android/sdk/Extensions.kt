@@ -14,10 +14,25 @@
  * limitations under the License.
  */
 
-package com.deltadna.android.sdk.test
+package com.deltadna.android.sdk
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import org.json.JSONObject
 import org.robolectric.shadows.ShadowLooper
+import java.util.*
 import kotlin.test.fail
+
+inline fun <reified T> Any.read(field: String) =
+        javaClass.getDeclaredField(field).let {
+            it.isAccessible = true
+            it.get(this) as T
+        }
+
+fun JsonObject.convert() = JSONObject(toString())
+fun JSONObject.convert() = JsonParser().parse(toString())!!
+
+fun Date.tsIso() = DDNA.TIMESTAMP_FORMAT_ISO.format(this)
 
 inline fun <reified T: Throwable> assertThrown(block: () -> Unit) {
     try {
@@ -25,12 +40,6 @@ inline fun <reified T: Throwable> assertThrown(block: () -> Unit) {
         fail("Expected exception ${T::class} not thrown")
     } catch (ignored: Throwable) {}
 }
-
-inline fun <reified T> Any.read(field: String) =
-        javaClass.getDeclaredField(field).let {
-            it.isAccessible = true
-            it.get(this) as T
-        }
 
 fun waitAndRunTasks(millis: Long = 500, iterations: Int = 1) {
     for (i in 0 until iterations) {
@@ -44,3 +53,6 @@ fun runTasks(iterations: Int = 1) {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
     }
 }
+
+class KEvent(name: String = "name", vararg params: Pair<String, Any?>)
+    : Event<KEvent>(name, Params().apply { params.forEach { (k, v) -> put(k, v) } })

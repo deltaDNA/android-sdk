@@ -27,6 +27,7 @@ import android.widget.TextView;
 import com.deltadna.android.sdk.DDNA;
 import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.Event;
+import com.deltadna.android.sdk.EventActionHandler;
 import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.ImageMessageActivity;
 import com.deltadna.android.sdk.Product;
@@ -108,9 +109,19 @@ public class ExampleActivity extends AppCompatActivity {
     
     public void onBasicEvent(View view) {
         DDNA.instance().recordEvent(new Event("basicEvent")
-                .putParam("clientVersion", "1.03.00")
-                .putParam("serverVersion", "1.02.00")
-                .putParam("dataVersion", "1.02.05"));
+                .putParam("clientVersion", BuildConfig.VERSION_NAME)
+                .putParam("dataVersion", "1.1")
+                .putParam("serverVersion", "2.0"))
+                .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
+                    // do something with the game parameters
+                    Log.i(  BuildConfig.LOG_TAG,
+                            "Received game parameters from event trigger: " + gameParameters);
+                }))
+                .add(new EventActionHandler.ImageMessageHandler(imageMessage -> {
+                    // the image message is already prepared so it will show instantly
+                    imageMessage.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
+                }))
+                .run();
     }
     
     public void onComplexEvent(View view) {

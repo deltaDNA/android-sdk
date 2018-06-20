@@ -3,6 +3,7 @@
 ## [4.9.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.0) (YYYY-MM-DD)
 Added session configuration.  
 Added event and decision point whitelisting.  
+Added event-triggered campaign support.  
 
 ## [4.8.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.0) (2018-05-18)
 Added API for forgetting the user and stopping tracking (GDPR).  

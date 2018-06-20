@@ -130,7 +130,8 @@ class DDNATest {
             "http://host.net/engageUrl",
             Settings(),
             null,
-            null) {
+            null,
+            mutableSetOf()) {
         
         override fun startSdk(): DDNA {
             listener.startSdk()
@@ -151,24 +152,24 @@ class DDNATest {
             return listener.isStarted
         }
         
-        override fun recordEvent(name: String): DDNA {
+        override fun recordEvent(name: String): EventAction {
             listener.recordEvent(name)
-            return this
+            return EventAction.EMPTY
         }
         
-        override fun recordEvent(event: Event<out Event<*>>): DDNA {
+        override fun recordEvent(event: Event<out Event<*>>): EventAction {
             listener.recordEvent(event)
-            return this
+            return EventAction.EMPTY
         }
         
-        override fun recordNotificationOpened(launch: Boolean, payload: Bundle?): DDNA {
+        override fun recordNotificationOpened(launch: Boolean, payload: Bundle?): EventAction {
             listener.recordNotificationOpened(launch, payload)
-            return this
+            return EventAction.EMPTY
         }
         
-        override fun recordNotificationDismissed(payload: Bundle?): DDNA {
+        override fun recordNotificationDismissed(payload: Bundle?): EventAction {
             listener.recordNotificationDismissed(payload)
-            return this
+            return EventAction.EMPTY
         }
         
         override fun requestEngagement(decisionPoint: String?, listener: EngageListener<Engagement<*>>?): DDNA {

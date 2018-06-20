@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk
 
-import com.deltadna.android.sdk.test.read
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.mock
 import org.junit.Test

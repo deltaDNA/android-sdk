@@ -17,64 +17,85 @@
 package com.deltadna.android.sdk
 
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockito_kotlin.*
 import org.json.JSONObject
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import java.util.*
 
 @RunWith(JUnit4::class)
 class ParamsTest {
     
-    private var uut: Params? = null
-    private val json = mock<JSONObject>()
+    private lateinit var json: JSONObject
+    
+    private lateinit var uut: Params
     
     @Before
     fun before() {
-        uut = Params(json)
-    }
-    
-    @After
-    fun after() {
-        uut = null
-        reset(json)
-    }
-    
-    @Test
-    fun put() {
-        uut!!.put("key", "value")
-        uut!!.put("keyNull", null)
+        json = JSONObject()
         
-        verify(json).put(eq("key"), eq("value"))
-        verify(json).put(eq("keyNull"), isNull<JsonParams>())
+        uut = Params(json, mutableMapOf())
     }
     
     @Test
-    fun putNested() {
-        with(JSONObject()) {
-            uut!!.put("key", Params(this))
-            
-            verify(json).put(eq("key"), same(this))
+    fun `value is added into JSON`() {
+        uut.put("value", 1)
+        assertThat(json["value"]).isEqualTo(1)
+    }
+    
+    @Test
+    fun `nested value is added into JSON`() {
+        with(Params().put("a", 1)) {
+            uut.put("value", this)
+            assertThat(this@ParamsTest.json["value"]).isEqualTo(json)
         }
     }
     
     @Test(expected = IllegalArgumentException::class)
-    fun putKeyCannotBeNull() {
-        uut!!.put(null, "value")
+    fun `cannot add value with null key`() {
+        uut.put(null, "value")
     }
     
     @Test(expected = IllegalArgumentException::class)
-    fun putKeyCannotBeEmpty() {
-        uut!!.put("", "value")
+    fun `cannot add value with empty key`() {
+        uut.put("", "value")
     }
     
     @Test
-    fun isEmpty() {
-        whenever(json.length()).thenReturn(0, 1)
+    fun `correct types are captured for added values`() {
+        uut.put("boolean", true)
+        uut.put("Boolean", java.lang.Boolean.TRUE)
+        uut.put("int", 1)
+        uut.put("Integer", java.lang.Integer(1))
+        uut.put("long", 1L)
+        uut.put("Long", java.lang.Long(1L))
+        uut.put("float", 1F)
+        uut.put("Float", java.lang.Float(1F))
+        uut.put("double", 1.0)
+        uut.put("Double", java.lang.Double(1.0))
+        uut.put("String", "value")
+        uut.put("Date", Date())
         
-        assertThat(uut!!.isEmpty).isTrue()
-        assertThat(uut!!.isEmpty).isFalse()
+        assertThat(uut.typeOf("boolean")).isEqualTo(java.lang.Boolean::class.java)
+        assertThat(uut.typeOf("Boolean")).isEqualTo(java.lang.Boolean::class.java)
+        assertThat(uut.typeOf("int")).isEqualTo(java.lang.Integer::class.java)
+        assertThat(uut.typeOf("Integer")).isEqualTo(java.lang.Integer::class.java)
+        assertThat(uut.typeOf("long")).isEqualTo(java.lang.Long::class.java)
+        assertThat(uut.typeOf("Long")).isEqualTo(java.lang.Long::class.java)
+        assertThat(uut.typeOf("float")).isEqualTo(java.lang.Float::class.java)
+        assertThat(uut.typeOf("Float")).isEqualTo(java.lang.Float::class.java)
+        assertThat(uut.typeOf("double")).isEqualTo(java.lang.Double::class.java)
+        assertThat(uut.typeOf("Double")).isEqualTo(java.lang.Double::class.java)
+        assertThat(uut.typeOf("String")).isEqualTo(String::class.java)
+        assertThat(uut.typeOf("Date")).isEqualTo(Date::class.java)
+    }
+    
+    @Test
+    fun `check whether parameters are empty or not`() {
+        assertThat(uut.isEmpty).isTrue()
+        
+        uut.put("a", 1)
+        assertThat(uut.isEmpty).isFalse()
     }
 }

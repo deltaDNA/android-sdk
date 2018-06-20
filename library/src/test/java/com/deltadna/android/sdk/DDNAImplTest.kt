@@ -21,14 +21,13 @@ import com.deltadna.android.sdk.exceptions.SessionConfigurationException
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.EventListener
-import com.deltadna.android.sdk.test.runTasks
-import com.deltadna.android.sdk.test.waitAndRunTasks
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,6 +37,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.shadows.ShadowLog
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import com.deltadna.android.sdk.EventActionHandler.GameParametersHandler as GPH
 
 @RunWith(RobolectricTestRunner::class)
 class DDNAImplTest {
@@ -60,7 +60,8 @@ class DDNAImplTest {
                 null,
                 null,
                 null,
-                null)
+                null,
+                mutableSetOf())
     }
     
     @After
@@ -321,8 +322,9 @@ class DDNAImplTest {
             server.enqueue(MockResponse()
                     .setResponseCode(200)
                     .setBody(jsonObject("parameters" to jsonObject(
-                            "dpWhitelist" to jsonArray(),
                             "eventsWhitelist" to jsonArray(),
+                            "dpWhitelist" to jsonArray(),
+                            "triggers" to jsonArray(),
                             "imageCache" to jsonArray()))
                             .toString()))
             server.enqueue(MockResponse()
@@ -339,7 +341,7 @@ class DDNAImplTest {
                     assertThat(this).contains("\"timeSinceFirstSession\":0")
                     assertThat(this).contains("\"timeSinceLastSession\":0")
                 }
-                
+
                 waitAndRunTasks()
             }
             verify(this).onSessionConfigurationFailed(
@@ -357,7 +359,7 @@ class DDNAImplTest {
                     assertThat(this).contains("\"timeSinceFirstSession\":")
                     assertThat(this).contains("\"timeSinceLastSession\":")
                 }
-                
+
                 waitAndRunTasks()
             }
             verify(this).onSessionConfigured(eq(false))
@@ -373,7 +375,7 @@ class DDNAImplTest {
                     assertThat(this).contains("\"timeSinceFirstSession\":")
                     assertThat(this).contains("\"timeSinceLastSession\":")
                 }
-                
+
                 waitAndRunTasks()
             }
             verify(this).onSessionConfigured(eq(true))
@@ -414,7 +416,7 @@ class DDNAImplTest {
                 assertThat(this).contains("\"decisionPoint\":\"config\"")
                 assertThat(this).contains("\"flavour\":\"internal\"")
             }
-            
+
             runTasks()
         }
         with(server.takeRequest().path) {
@@ -449,5 +451,34 @@ class DDNAImplTest {
         
         uut.forgetMe()
         assertThat(uut.isStarted).isFalse()
+    }
+    
+    @Test
+    fun `event trigger is read out from configuration and evaluated`() {
+        uut.settings.setBackgroundEventUpload(false)
+        uut.startSdk()
+        server.enqueue(MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonObject("parameters" to jsonObject(
+                        "eventsWhitelist" to jsonArray("a"),
+                        "triggers" to jsonArray(jsonObject(
+                                "eventName" to "a",
+                                "condition" to jsonArray(
+                                        jsonObject("p" to "b"),
+                                        jsonObject("i" to 1),
+                                        jsonObject("o" to "equal to")),
+                                "response" to jsonObject(
+                                        "parameters" to jsonObject("c" to 2))))))
+                        .toString()))
+        server.takeRequest()
+        runTasks()
+        
+        with(mock<EventActionHandler.Callback<JSONObject>>()) {
+            uut.recordEvent(KEvent("a").putParam("b", 1)).add(GPH(this)).run()
+            
+            verify(this).handle(argThat {
+                toString() == jsonObject("c" to 2).toString()
+            })
+        }
     }
 }

@@ -23,8 +23,8 @@ import com.deltadna.android.sdk.helpers.Preconditions;
  */
 public class Event<T extends Event<T>> {
     
-    final String name;
-    final Params params;
+    protected final String name;
+    protected final Params params;
     
     /**
      * Creates a new instance.
@@ -44,19 +44,6 @@ public class Event<T extends Event<T>> {
     }
     
     /**
-     * Puts nested parameters under the key.
-     *
-     * @param key   the key
-     * @param value the value
-     *
-     * @return this {@link T} instance
-     */
-    public T putParam(String key, JsonParams value) {
-        params.put(key, value);
-        return (T) this;
-    }
-    
-    /**
      * Puts the key/value pair into the event parameters.
      *
      * @param key   the key
@@ -65,6 +52,19 @@ public class Event<T extends Event<T>> {
      * @return this {@link T} instance
      */
     public T putParam(String key, Object value) {
+        params.put(key, value);
+        return (T) this;
+    }
+    
+    /**
+     * Puts nested parameters under the key.
+     *
+     * @param key   the key
+     * @param value the value
+     *
+     * @return this {@link T} instance
+     */
+    public T putParam(String key, JsonParams value) {
         params.put(key, value);
         return (T) this;
     }
