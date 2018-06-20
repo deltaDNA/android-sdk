@@ -179,7 +179,7 @@ class ImageMessageStoreTest {
         
         whenever(database.getImageMessage(eq("http://host.net/path/1.png"))).then {
             mock<Cursor>().apply {
-                whenever(moveToFirst()).then { false }
+                whenever(moveToFirst()).then { true }
                 whenever(getColumnIndex(eq(LOCATION.toString()))).then { 0 }
                 whenever(getColumnIndex(eq(NAME.toString()))).then { 1 }
                 whenever(getString(eq(0))).then { EXTERNAL.name }
@@ -188,6 +188,7 @@ class ImageMessageStoreTest {
         }
         
         launch { uut.get("http://host.net/path/1.png") }
+        Thread.sleep(500)
         
         verifyZeroInteractions(network)
     }
@@ -297,7 +298,7 @@ class ImageMessageStoreTest {
         uut.prefetch(
                 callback,
                 *items.map { "http://host.net/path/$it" }.toTypedArray())
-
+        
         waitAndRunTasks()
         verify(callback).onFailed(any())
     }
