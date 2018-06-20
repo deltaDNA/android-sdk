@@ -269,7 +269,7 @@ class DDNAImplTest {
             assertThat(path).startsWith("/engage")
             assertThat(body.readUtf8()).contains("\"decisionPoint\":\"a\"")
         }
-        runTasks()
+        waitAndRunTasks()
         verify(listenerA).onCompleted(any())
         
         // apply new session config
