@@ -102,5 +102,6 @@ class DDNAImplTest {
             null,
             null,
             null,
-            null)
+            null,
+            mutableSetOf())
 }

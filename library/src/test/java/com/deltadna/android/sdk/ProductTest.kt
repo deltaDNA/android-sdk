@@ -40,7 +40,8 @@ class ProductTest {
             null,
             null,
             null,
-            null)
+            null,
+            mutableSetOf())
     
     private var uut: Product<*>? = null
     

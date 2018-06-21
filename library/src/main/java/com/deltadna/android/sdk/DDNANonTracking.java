@@ -27,6 +27,7 @@ import android.util.Log;
 
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
+import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.Response;
 
@@ -36,6 +37,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -55,7 +57,8 @@ final class DDNANonTracking extends DDNA {
             String engageUrl,
             Settings settings,
             @Nullable String hashSecret,
-            @Nullable String platform) {
+            @Nullable String platform,
+            Set<EventListener> eventListeners) {
         
         super(  application,
                 environmentKey,
@@ -63,7 +66,8 @@ final class DDNANonTracking extends DDNA {
                 engageUrl,
                 settings,
                 hashSecret,
-                platform);
+                platform,
+                eventListeners);
         
         broadcasts = LocalBroadcastManager.getInstance(application);
         engageStoragePath = application.getCacheDir();

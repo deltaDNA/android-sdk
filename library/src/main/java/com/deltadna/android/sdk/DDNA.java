@@ -78,8 +78,12 @@ public abstract class DDNA {
                 "configuration cannot be null");
         
         if (instance == null) {
+            final Set<EventListener> eventListeners = Collections.newSetFromMap(
+                    new WeakHashMap<EventListener, Boolean>());
+            
             instance = new DDNADelegate(
                     configuration,
+                    eventListeners,
                     new DDNAImpl(
                             configuration.application,
                             configuration.environmentKey,
@@ -89,7 +93,8 @@ public abstract class DDNA {
                             configuration.hashSecret,
                             configuration.clientVersion,
                             configuration.userId,
-                            configuration.platform),
+                            configuration.platform,
+                            eventListeners),
                     new DDNANonTracking(
                             configuration.application,
                             configuration.environmentKey,
@@ -97,7 +102,8 @@ public abstract class DDNA {
                             configuration.engageUrl,
                             configuration.settings,
                             configuration.hashSecret,
-                            configuration.platform));
+                            configuration.platform,
+                            eventListeners));
         } else {
             Log.w(BuildConfig.LOG_TAG, "SDK has already been initialised");
         }
@@ -115,13 +121,11 @@ public abstract class DDNA {
     
     protected final Settings settings;
     protected final String platform;
+    final Set<EventListener> eventListeners;
     
     final Preferences preferences;
     final NetworkManager network;
     private final EngageFactory engageFactory;
-    
-    final Set<EventListener> eventListeners = Collections.newSetFromMap(
-            new WeakHashMap<EventListener, Boolean>(1));
     
     protected String sessionId = UUID.randomUUID().toString();
     
@@ -131,10 +135,12 @@ public abstract class DDNA {
             String engageUrl,
             Settings settings,
             @Nullable String hashSecret,
-            @Nullable String platform) {
+            @Nullable String platform,
+            Set<EventListener> eventListeners) {
         
         this.settings = settings;
         this.platform = (platform == null) ? ClientInfo.platform() : platform;
+        this.eventListeners = eventListeners;
         
         preferences = new Preferences(application);
         network = new NetworkManager(
@@ -579,7 +585,7 @@ public abstract class DDNA {
         }
     }
     
-    interface SettingsModifier {
+    public interface SettingsModifier {
         
         void modify(Settings settings);
     }

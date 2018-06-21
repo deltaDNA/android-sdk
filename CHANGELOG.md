@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.8.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.1) (YYYY-MM-DD)
+Fixed event listeners not being called.  
+
 ## [4.8.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.0) (2018-05-18)
 Added API for forgetting the user and stopping tracking (GDPR).  
 

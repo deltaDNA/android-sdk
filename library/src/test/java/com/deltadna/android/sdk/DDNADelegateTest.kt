@@ -49,6 +49,7 @@ class DDNADelegateTest {
                         "environmentKey",
                         "collectUrl",
                         "engageUrl"),
+                mutableSetOf(),
                 tracking,
                 nonTracking)
     }

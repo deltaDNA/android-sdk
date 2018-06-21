@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -349,14 +350,15 @@ final class DDNAImpl extends DDNA {
     
     DDNAImpl(
             Application application,
-             String environmentKey,
-             String collectUrl,
-             String engageUrl,
-             Settings settings,
-             @Nullable String hashSecret,
-             @Nullable String clientVersion,
-             @Nullable String userId,
-             @Nullable String platform) {
+            String environmentKey,
+            String collectUrl,
+            String engageUrl,
+            Settings settings,
+            @Nullable String hashSecret,
+            @Nullable String clientVersion,
+            @Nullable String userId,
+            @Nullable String platform,
+            Set<EventListener> eventListeners) {
         
         super(  application,
                 environmentKey,
@@ -364,7 +366,8 @@ final class DDNAImpl extends DDNA {
                 engageUrl,
                 settings,
                 hashSecret,
-                platform);
+                platform,
+                eventListeners);
         
         this.clientVersion = clientVersion;
         

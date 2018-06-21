@@ -62,7 +62,8 @@ class DDNANonTrackingTest {
                 server.url("/engage").toString(),
                 Settings(),
                 null,
-                null)
+                null,
+                mutableSetOf())
     }
     
     @After
