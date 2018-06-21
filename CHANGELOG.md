@@ -5,6 +5,9 @@ Added session configuration.
 Added event and decision point whitelisting.  
 Added event-triggered campaign support.  
 
+## [4.8.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.1) (2018-06-21)
+Fixed event listeners not being called.  
+
 ## [4.8.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.0) (2018-05-18)
 Added API for forgetting the user and stopping tracking (GDPR).  
 Added Image Message asset caching.  
