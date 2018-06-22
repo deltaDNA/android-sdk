@@ -35,18 +35,28 @@ The deltaDNA SDK allows your Android games to record in-game events and upload p
 The deltaDNA SDK can be used in Android projects using minimum SDK version 15 and newer (Android 4.0.3+).
 
 ### Gradle
-In your top-level build script
+In your top-level build script:
 ```groovy
 allprojects {
     repositories {
         maven { url 'http://deltadna.bintray.com/android' }
-        // repositories for your other dependencies...
     }
 }
 ```
-In your app's build script
+In your app's build script:
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.9.0-SNAPSHOT'
+dependencies {
+    implementation 'com.deltadna.android:deltadna-sdk:4.9.0-SNAPSHOT'
+}
+```
+The Java source and target compatibility needs to be set to 1.8 in you app's build script:
+```groovy
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
 ```
 
 ## Initialising
@@ -346,8 +356,9 @@ Can be found [here](CHANGELOG.md).
 * [Version 4.0](docs/migrations/4.0.md)
 * [Version 4.1](docs/migrations/4.1.md)
 * [Version 4.3](docs/migrations/4.3.md)
-* Version 4.9  
-  `recordEvent()` methods have been changed to to return an `EventAction` object, which can be used for Event Triggered Engage. This means that chaining calls on the `DDNA` SDK instance after calling `recordEvent()` is no longer supported.
+* Version 4.9
+  * The SDK has been updated to use Java 8 features, as such projects will need to be updated to use 1.8 for the Java source and target compatibility as per the [official documentation](https://developer.android.com/studio/write/java8-support).
+  * `recordEvent()` methods have been changed to to return an `EventAction` object, which can be used for Event Triggered Engage. This means that chaining calls on the `DDNA` SDK instance after calling `recordEvent()` is no longer supported.
 
 ## License
 The sources are available under the Apache 2.0 license.

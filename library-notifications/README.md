@@ -30,19 +30,29 @@ More details on integration and customization can be found further on in this do
 
 ## Adding to a project
 ### Gradle
-In your top-level build script
+In your top-level build script:
 ```groovy
 allprojects {
     repositories {
         maven { url 'http://deltadna.bintray.com/android' }
-        // repositories for your other dependencies...
     }
 }
 ```
-In your app's build script
+In your app's build script:
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:4.9.0-SNAPSHOT'
-compile 'com.deltadna.android:deltadna-sdk-notifications:4.9.0-SNAPSHOT'
+dependencies {
+    implementation 'com.deltadna.android:deltadna-sdk:4.9.0-SNAPSHOT'
+    implementation 'com.deltadna.android:deltadna-sdk-notifications:4.9.0-SNAPSHOT'
+}
+```
+The Java source and target compatibility needs to be set to 1.8 in you app's build script:
+```groovy
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
 ```
 
 ## Integration
