@@ -300,7 +300,7 @@ class ImageMessageStoreTest {
                 *items.map { "http://host.net/path/$it" }.toTypedArray())
         
         waitAndRunTasks()
-        verify(callback).onFailed(any())
+        verify(callback, timeout(500)).onFailed(any())
     }
     
     @Test

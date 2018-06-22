@@ -112,7 +112,7 @@ class NetworkDispatcherTest {
         RuntimeEnvironment.getMasterScheduler().advanceToLastPostedRunnable()
         
         assertThat(server!!.requestCount).isEqualTo(MAX_RETRIES + 1)
-        verify(listener).onError(isA<IOException>())
+        verify(listener, timeout(500)).onError(isA<IOException>())
     }
     
     @Test
