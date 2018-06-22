@@ -35,7 +35,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.shadows.ShadowLog
-import java.io.IOException
 import java.util.concurrent.TimeUnit
 import com.deltadna.android.sdk.EventActionHandler.GameParametersHandler as GPH
 
@@ -48,6 +47,8 @@ class DDNAImplTest {
     
     @Before
     fun before() {
+        ShadowLog.stream = System.out
+        
         server = MockWebServer()
         server.start()
         
@@ -66,16 +67,18 @@ class DDNAImplTest {
     
     @After
     fun after() {
-        try {
-            server.shutdown()
-        } catch (_: IOException) {}
+        server.shutdown()
     }
     
     @Test
     fun `starting sdk sends default events`() {
         uut.startSdk()
         
-        server.takeRequest() // session config
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
             with(body.readUtf8()) {
@@ -93,31 +96,44 @@ class DDNAImplTest {
         uut.settings.setOnInitSendGameStartedEvent(false)
         uut.startSdk()
         
-        server.takeRequest() // session config
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        assertThat(server.takeRequest().path).startsWith("/engage")
+        
         assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
     }
     
     @Test
     fun `starting sdk notifies listener`() {
+        uut.settings.setBackgroundEventUpload(false)
+        
         with(mock<EventListener>()) {
             uut.register(this)
             uut.startSdk()
             
-            server.takeRequest() // session config
-            server.takeRequest() // collect
             inOrder(this) {
                 verify(this@with).onNewSession()
                 verify(this@with).onStarted()
             }
         }
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
     }
     
     @Test
     fun `stopping sdk sends event`() {
+        uut.settings.setBackgroundEventUpload(false)
+        
         uut.startSdk()
         uut.stopSdk()
         
-        server.takeRequest() // session config
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
             assertThat(body.readUtf8()).contains("\"eventName\":\"gameEnded\"")
@@ -126,15 +142,22 @@ class DDNAImplTest {
     
     @Test
     fun `stopping sdk notifies listener`() {
+        uut.settings.setBackgroundEventUpload(false)
+        
         with(mock<EventListener>()) {
             uut.register(this)
             uut.startSdk()
             uut.stopSdk()
             
-            server.takeRequest() // session config
-            server.takeRequest() // collect
             verify(this).onStopped()
         }
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        // collect
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
     }
     
     @Test
@@ -253,7 +276,6 @@ class DDNAImplTest {
     fun `decision point whitelisting`() {
         val listenerA = mock<EngageListener<Engagement<*>>>()
         val listenerB = mock<EngageListener<Engagement<*>>>()
-        ShadowLog.stream = System.out
         
         // session config
         uut.settings.setBackgroundEventUpload(false)
@@ -390,9 +412,10 @@ class DDNAImplTest {
      */
     @Test
     fun `image asset caching`() {
+        uut.settings.setBackgroundEventUpload(false)
+        
         val images = mutableListOf("/1.png", "/2.png")
         val listener = mock<EventListener>()
-        uut.settings.setBackgroundEventUpload(false)
         uut.register(listener)
         
         // will be downloaded as part of a new session
@@ -446,11 +469,21 @@ class DDNAImplTest {
     
     @Test
     fun `forget me stops sdk`() {
+        uut.settings.setBackgroundEventUpload(false)
+        
         uut.startSdk()
         assertThat(uut.isStarted).isTrue()
         
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        
         uut.forgetMe()
         assertThat(uut.isStarted).isFalse()
+        
+        // collect
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
     }
     
     @Test
