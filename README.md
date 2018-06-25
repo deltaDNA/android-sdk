@@ -201,7 +201,7 @@ This event may be more complex, but the structure is logical, flexible, and prov
 ### Event triggers
 All `recordEvent()` methods return an `EventAction` instance on which `EventActionHandler`s can be registered through the `add()` method, for handling triggers which match the conditions setup on the Platform for event-triggered campaigns. Once all the handlers have been registered `run()` needs to be called in order for the event triggers to be evaluated and a matching handler to be run. This happens on the client without any network use and as such it is instantaneous.
 ```java
-recordEvent("missionStarted").putParam("missionLevel", 1)
+recordEvent(new Event("missionStarted").putParam("missionLevel", 1))
         .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
             // do something with the game parameters
         }))
