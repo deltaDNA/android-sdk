@@ -36,6 +36,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             + EventTrigger.class.getSimpleName();
     
     private final DDNA ddna;
+    private final int index;
+    
     private final String eventName;
     private final JSONObject response;
     
@@ -48,8 +50,9 @@ public final class EventTrigger implements Comparable<EventTrigger> {
     
     private int runs;
     
-    EventTrigger(DDNA ddna, JSONObject json) {
+    EventTrigger(DDNA ddna, int index, JSONObject json) {
         this.ddna = ddna;
+        this.index = index;
         
         eventName = json.optString("eventName", "");
         final JSONObject response = json.optJSONObject("response");
@@ -217,7 +220,12 @@ public final class EventTrigger implements Comparable<EventTrigger> {
     
     @Override
     public int compareTo(@NonNull EventTrigger trigger) {
-        return Integer.compare(priority, trigger.priority) * -1;
+        final int primary = Integer.compare(priority, trigger.priority) * -1;
+        if (primary == 0) {
+            return Integer.compare(index, trigger.index);
+        } else {
+            return primary;
+        }
     }
     
     private enum Op {

@@ -18,8 +18,11 @@ package com.deltadna.android.sdk
 
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
-import com.google.common.truth.Truth.*
-import com.nhaarman.mockito_kotlin.*
+import com.google.common.truth.Truth.assertThat
+import com.nhaarman.mockito_kotlin.argThat
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.verifyZeroInteractions
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,6 +43,7 @@ class EventTriggerTest {
     fun `attributes are extracted at construction`() {
         with(EventTrigger(
                 ddna,
+                0,
                 jsonObject(
                         "eventName" to "name",
                         "response" to jsonObject("a" to 1),
@@ -56,7 +60,7 @@ class EventTriggerTest {
     
     @Test
     fun `missing attributes are replaced with sane defaults`() {
-        with(EventTrigger(ddna, jsonObject().convert())) {
+        with(EventTrigger(ddna, 0, jsonObject().convert())) {
             assertThat(eventName).isEmpty()
             assertThat(response.length()).isEqualTo(0)
             assertThat(campaignId).isEqualTo(-1)
@@ -68,6 +72,7 @@ class EventTriggerTest {
     fun `action returns game parameters by default`() {
         with(EventTrigger(
                 ddna,
+                0,
                 jsonObject(
                         "response" to jsonObject("image" to jsonObject()))
                         .convert())) {
@@ -80,6 +85,7 @@ class EventTriggerTest {
     fun `action returns image message when present`() {
         with(EventTrigger(
                 ddna,
+                0,
                 jsonObject(
                         "response" to jsonObject("image" to jsonObject("a" to 1)))
                         .convert())) {
@@ -89,10 +95,24 @@ class EventTriggerTest {
     }
     
     @Test
-    fun `triggers are ordered according to their priorities`() {
-        val top = EventTrigger(ddna, jsonObject("priority" to 2).convert())
-        val middle = EventTrigger(ddna, jsonObject("priority" to 1).convert())
-        val bottom = EventTrigger(ddna, jsonObject("priority" to 0).convert())
+    fun `triggers are ordered based on priorities`() {
+        val top = EventTrigger(ddna, 0, jsonObject("priority" to 2).convert())
+        val middle = EventTrigger(ddna, 0, jsonObject("priority" to 1).convert())
+        val bottom = EventTrigger(ddna, 0, jsonObject("priority" to 0).convert())
+        val expected = listOf(top, middle, bottom)
+        
+        with(mutableListOf(middle, bottom, top)) {
+            sort()
+            
+            assertThat(this).isEqualTo(expected)
+        }
+    }
+    
+    @Test
+    fun `triggers are ordered based on indices if priorities are same`() {
+        val top = EventTrigger(ddna, 0, jsonObject("priority" to 0).convert())
+        val middle = EventTrigger(ddna, 1, jsonObject("priority" to 0).convert())
+        val bottom = EventTrigger(ddna, 2, jsonObject("priority" to 0).convert())
         val expected = listOf(top, middle, bottom)
         
         with(mutableListOf(middle, bottom, top)) {
@@ -104,7 +124,7 @@ class EventTriggerTest {
     
     @Test
     fun `trigger is evaluated indefinitely by default`() {
-        with(EventTrigger(ddna, jsonObject("eventName" to "a").convert())) {
+        with(EventTrigger(ddna, 0, jsonObject("eventName" to "a").convert())) {
             val event = KEvent("a")
             
             for (i in 0..10) assertThat(evaluate(event)).isTrue()
@@ -116,6 +136,7 @@ class EventTriggerTest {
         val limit = 3
         with(EventTrigger(
                 ddna,
+                0,
                 jsonObject(
                         "eventName" to "a",
                         "limit" to limit)
@@ -139,6 +160,7 @@ class EventTriggerTest {
         
         EventTrigger(
                 ddna,
+                0,
                 jsonObject(
                         "eventName" to eventName,
                         "campaignID" to campaignId,
@@ -161,7 +183,7 @@ class EventTriggerTest {
     
     @Test
     fun `trigger does not send a conversion event when evaluation fails`() {
-        EventTrigger(ddna, jsonObject("eventName" to "a").convert())
+        EventTrigger(ddna, 0, jsonObject("eventName" to "a").convert())
                 .evaluate(KEvent("b"))
         
         verifyZeroInteractions(ddna)
@@ -169,7 +191,7 @@ class EventTriggerTest {
     
     @Test
     fun `evaluation fails against event with different name`() {
-        assertThat(EventTrigger(ddna, jsonObject("eventName" to "a").convert())
+        assertThat(EventTrigger(ddna, 0, jsonObject("eventName" to "a").convert())
                 .evaluate(KEvent("b"))).isFalse()
     }
     
@@ -574,6 +596,7 @@ class EventTriggerTest {
     
     private fun cond(event: KEvent, vararg values: Any) = EventTrigger(
             ddna,
+            0,
             jsonObject(
                     "eventName" to event.name,
                     "condition" to jsonArray(*values))

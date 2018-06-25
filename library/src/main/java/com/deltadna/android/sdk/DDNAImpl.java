@@ -638,6 +638,7 @@ final class DDNAImpl extends DDNA {
                         try {
                             toBeSaved.add(new EventTrigger(
                                     DDNAImpl.this,
+                                    i,
                                     triggers.getJSONObject(i)));
                         } catch (JSONException e) {
                             Log.w(TAG, "Failed deserialising event trigger", e);

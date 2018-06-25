@@ -487,30 +487,48 @@ class DDNAImplTest {
     }
     
     @Test
-    fun `event trigger is read out from configuration and evaluated`() {
+    fun `event triggers are read out from configuration and evaluated`() {
         uut.settings.setBackgroundEventUpload(false)
+        
         uut.startSdk()
         server.enqueue(MockResponse()
                 .setResponseCode(200)
                 .setBody(jsonObject("parameters" to jsonObject(
                         "eventsWhitelist" to jsonArray("a"),
-                        "triggers" to jsonArray(jsonObject(
-                                "eventName" to "a",
-                                "condition" to jsonArray(
-                                        jsonObject("p" to "b"),
-                                        jsonObject("i" to 1),
-                                        jsonObject("o" to "equal to")),
-                                "response" to jsonObject(
-                                        "parameters" to jsonObject("c" to 2))))))
+                        "triggers" to jsonArray(
+                                jsonObject(
+                                        "eventName" to "b",
+                                        "condition" to jsonArray(
+                                                jsonObject("p" to "c"),
+                                                jsonObject("i" to 1),
+                                                jsonObject("o" to "equal to")),
+                                        "response" to jsonObject(
+                                                "parameters" to jsonObject("e" to 3))),
+                                jsonObject(
+                                        "eventName" to "a",
+                                        "condition" to jsonArray(
+                                                jsonObject("p" to "d"),
+                                                jsonObject("i" to 1),
+                                                jsonObject("o" to "equal to")),
+                                        "response" to jsonObject(
+                                                "parameters" to jsonObject("e" to 4))),
+                                jsonObject(
+                                        "eventName" to "a",
+                                        "condition" to jsonArray(
+                                                jsonObject("p" to "c"),
+                                                jsonObject("i" to 2),
+                                                jsonObject("o" to "equal to")),
+                                        "response" to jsonObject(
+                                                "parameters" to jsonObject("e" to 5))))))
                         .toString()))
         server.takeRequest()
-        runTasks()
+        waitAndRunTasks()
         
         with(mock<EventActionHandler.Callback<JSONObject>>()) {
-            uut.recordEvent(KEvent("a").putParam("b", 1)).add(GPH(this)).run()
+            uut.recordEvent(KEvent("a").putParam("c", 2)).add(GPH(this)).run()
             
             verify(this).handle(argThat {
-                toString() == jsonObject("c" to 2).toString()
+                toString() == jsonObject("e" to 5).toString()
             })
         }
     }
