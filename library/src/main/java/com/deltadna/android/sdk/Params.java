@@ -55,7 +55,11 @@ public class Params implements JsonParams {
                 new HashMap<>(params.types));
     }
     
-    Params(JSONObject json, Map<String, TypeToken<?>> types) {
+    public Params(JSONObject json) {
+        this(json, new HashMap<>());
+    }
+    
+    private Params(JSONObject json, Map<String, TypeToken<?>> types) {
         this.json = json;
         this.types = types;
     }

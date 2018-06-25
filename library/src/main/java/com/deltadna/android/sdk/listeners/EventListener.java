@@ -18,10 +18,10 @@ package com.deltadna.android.sdk.listeners;
 
 public interface EventListener {
     
-    void onStarted();
-    void onStopped();
+    default void onStarted() {}
+    default void onStopped() {}
     
-    void onNewSession();
+    default void onNewSession() {}
     
     /**
      * Will be called when the session configuration will be successfully
@@ -30,22 +30,22 @@ public interface EventListener {
      * @param cached    {@code true} if the configuration response was cached,
      *                  else {@code false}
      */
-    void onSessionConfigured(boolean cached);
+    default void onSessionConfigured(boolean cached) {}
     /**
      * Will be called when the session configuration will fail to be retrieved.
      *
      * @param cause the cause of the failure
      */
-    void onSessionConfigurationFailed(Throwable cause);
+    default void onSessionConfigurationFailed(Throwable cause) {}
     
     /**
      * Will be called when the image cache will be successfully populated.
      */
-    void onImageCachePopulated();
+    default void onImageCachePopulated() {}
     /**
      * Will be called when the image cache will fail to be populated.
      *
      * @param reason the reason for the failure
      */
-    void onImageCachingFailed(Throwable reason);
+    default void onImageCachingFailed(Throwable reason) {}
 }

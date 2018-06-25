@@ -35,7 +35,7 @@ class ParamsTest {
     fun before() {
         json = JSONObject()
         
-        uut = Params(json, mutableMapOf())
+        uut = Params(json)
     }
     
     @Test
