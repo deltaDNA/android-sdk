@@ -17,7 +17,7 @@
 buildscript {
     ext {
         firebaseVersion = '11.4.2'
-        kotlinVersion = '1.2.41'
+        kotlinVersion = '1.2.50'
         kotlinxCoroutinesVersion = '0.22.5'
         kotsonVersion = '2.5.0'
         mockWebServerVersion = '2.7.5'
