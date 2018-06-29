@@ -199,7 +199,7 @@ It is also worth noting that the currency value is always sent as an integer in 
 This event may be more complex, but the structure is logical, flexible, and provides a mechanism for players spending or receiving any combination of currencies and items.
 
 ### Event triggers
-All `recordEvent()` methods return an `EventAction` instance on which `EventActionHandler`s can be registered through the `add()` method, for handling triggers which match the conditions setup on the Platform for event-triggered campaigns. Once all the handlers have been registered `run()` needs to be called in order for the event triggers to be evaluated and a matching handler to be run. This happens on the client without any network use and as such it is instantaneous.
+All `recordEvent` methods return an `EventAction` instance on which `EventActionHandler`s can be registered through the `add` method, for handling triggers which match the conditions setup on the Platform for Event-Triggered Campaigns. Once all the handlers have been registered `run()` needs to be called in order for the event triggers to be evaluated and for a matching handler to be run. This happens on the client without any network use and as such it is instantaneous.
 ```java
 recordEvent(new Event("missionStarted").putParam("missionLevel", 1))
         .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
@@ -358,7 +358,7 @@ Can be found [here](CHANGELOG.md).
 * [Version 4.3](docs/migrations/4.3.md)
 * Version 4.9
   * The SDK has been updated to use Java 8 features, as such projects will need to be updated to use 1.8 for the Java source and target compatibility as per the [official documentation](https://developer.android.com/studio/write/java8-support).
-  * `recordEvent()` methods have been changed to to return an `EventAction` object, which can be used for Event Triggered Engage. This means that chaining calls on the `DDNA` SDK instance after calling `recordEvent()` is no longer supported.
+  * `recordEvent` methods have been changed to to return an `EventAction` object, which can be used for Event-Triggered Campaigns. This means that chaining calls on the `DDNA` SDK instance after calling `recordEvent` is no longer supported.
 
 ## License
 The sources are available under the Apache 2.0 license.

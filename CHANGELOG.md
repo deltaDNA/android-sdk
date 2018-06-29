@@ -3,7 +3,7 @@
 ## [4.9.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.0) (YYYY-MM-DD)
 Added session configuration.  
 Added event and decision point whitelisting.  
-Added event-triggered campaign support.  
+Added Event-Triggered Campaign support.  
 
 ## [4.8.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.8.1) (2018-06-21)
 Fixed event listeners not being called.  
