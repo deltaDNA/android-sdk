@@ -45,15 +45,6 @@ dependencies {
     implementation 'com.deltadna.android:deltadna-sdk-notifications:4.9.1-SNAPSHOT'
 }
 ```
-The Java source and target compatibility needs to be set to 1.8 in you app's build script:
-```groovy
-android {
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-```
 
 ## Integration
 Once you have the SDK and the Notifications addon in your project you will need to add a [`NotificationListenerService`](src/main/java/com/deltadna/android/sdk/notifications/NotificationListenerService.java) definition inside of the `application` section

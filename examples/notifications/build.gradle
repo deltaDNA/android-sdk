@@ -19,6 +19,11 @@ android {
         applicationId 'com.deltadna.android.sdk.notifications.example'
     }
     
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
     signingConfigs {
         // for demonstration purposes only, replace with your own signing config
         release.initWith(debug)

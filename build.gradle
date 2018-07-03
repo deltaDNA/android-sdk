@@ -34,7 +34,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0-alpha18'
+        classpath 'com.android.tools.build:gradle:3.2.0-beta02'
         classpath('com.dicedmelon.gradle:jacoco-android:0.1.2') {
             // https://github.com/arturdm/jacoco-android-gradle-plugin/issues/42
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
@@ -88,11 +88,6 @@ subprojects {
                 
                 consumerProguardFiles 'proguard.cfg'
             }
-        }
-        
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
         }
         
         if (isLibrary) {

@@ -19,6 +19,11 @@ android {
         applicationId "com.deltadna.android.sdk.support"
     }
     
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
     lintOptions {
         // workaround for a Bouncy Castle library issue
         abortOnError false

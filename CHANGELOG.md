@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.9.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.1) (YYYY-MM-DD)
+Fixed notifications compatibility with Unity.  
+
 ## [4.9.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.0) (2018-06-26)
 Added session configuration.  
 Added event and decision point whitelisting.  
