@@ -34,7 +34,6 @@ import com.deltadna.android.sdk.net.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +47,6 @@ final class DDNANonTracking extends DDNA {
     private final Handler handler = new Handler(Looper.getMainLooper());
     
     private final LocalBroadcastManager broadcasts;
-    private final File engageStoragePath;
     
     DDNANonTracking(
             Application application,
@@ -70,7 +68,6 @@ final class DDNANonTracking extends DDNA {
                 eventListeners);
         
         broadcasts = LocalBroadcastManager.getInstance(application);
-        engageStoragePath = application.getCacheDir();
     }
     
     @Override
@@ -185,11 +182,6 @@ final class DDNANonTracking extends DDNA {
     ImageMessageStore getImageMessageStore() {
         // ok as we should never get far enough to use the store
         return null;
-    }
-    
-    @Override
-    File getEngageStoragePath() {
-        return engageStoragePath;
     }
     
     @Override

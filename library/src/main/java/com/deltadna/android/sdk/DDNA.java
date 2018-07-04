@@ -30,7 +30,6 @@ import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -371,8 +370,6 @@ public abstract class DDNA {
     public abstract DDNA forgetMe();
     
     abstract ImageMessageStore getImageMessageStore();
-    
-    abstract File getEngageStoragePath();
     
     abstract Map<String, Integer> getIso4217();
     

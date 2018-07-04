@@ -55,6 +55,8 @@ public class Settings{
     
     private int sessionTimeout = 5 * 60 * 1000;
     
+    private int engageCacheExpiry = 12 * 60 * 60;
+    
     private int httpRequestMaxRetries = 0;
     /**
      * In seconds.
@@ -214,6 +216,33 @@ public class Settings{
         Preconditions.checkArg(timeout >= 0, "timeout cannot be negative");
         
         sessionTimeout = timeout;
+    }
+    
+    /**
+     * Gets the Engage cache expiry value.
+     *
+     * @return the Engage cache expiry value, in seconds.
+     */
+    public int getEngageCacheExpiry() {
+        return engageCacheExpiry;
+    }
+    
+    /**
+     * Sets the Engage cache expiry value.
+     * <p>
+     * A value of 0 will disable the Engage cache.
+     *
+     * @param seconds the Engage cache expiry value, in seconds
+     *
+     * @return this {@link Settings} instance
+     *
+     * @throws IllegalArgumentException if {@code seconds} is negative
+     */
+    public Settings setEngageCacheExpiry(int seconds) {
+        Preconditions.checkArg(seconds >= 0, "seconds cannot be negative");
+        
+        engageCacheExpiry = seconds;
+        return this;
     }
     
     /**

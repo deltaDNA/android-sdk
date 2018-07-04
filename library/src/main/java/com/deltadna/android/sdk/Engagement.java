@@ -171,6 +171,10 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
         return name;
     }
     
+    String getFlavour() {
+        return flavour;
+    }
+    
     String getDecisionPointAndFlavour() {
         return name + '@' + flavour;
     }

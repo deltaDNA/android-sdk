@@ -23,7 +23,6 @@ import android.text.TextUtils;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 
-import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
@@ -165,11 +164,6 @@ class DDNADelegate extends DDNA {
     @Override
     ImageMessageStore getImageMessageStore() {
         return getDelegate().getImageMessageStore();
-    }
-    
-    @Override
-    File getEngageStoragePath() {
-        return getDelegate().getEngageStoragePath();
     }
     
     @Override

@@ -92,6 +92,11 @@ class EngagementTest {
     }
     
     @Test
+    fun `get flavour`() {
+        assertThat(KEngagement("point", "flavour").flavour).isEqualTo("flavour")
+    }
+    
+    @Test
     fun `get decision point and flavour`() {
         assertThat(KEngagement("a", "b").decisionPointAndFlavour).isEqualTo("a@b")
     }

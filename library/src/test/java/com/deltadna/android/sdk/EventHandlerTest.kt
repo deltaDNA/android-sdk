@@ -16,7 +16,6 @@
 
 package com.deltadna.android.sdk
 
-import com.deltadna.android.sdk.helpers.EngageArchive
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.RequestListener
 import com.deltadna.android.sdk.net.NetworkManager
@@ -34,24 +33,24 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class EventHandlerTest {
     
-    private val store = mock<EventStore>()
-    private val archive = mock<EngageArchive>()
-    private val network = mock<NetworkManager>()
+    private lateinit var events: EventStore
+    private lateinit var engagements: EngageStore
+    private lateinit var network: NetworkManager
     
-    private var uut: EventHandler = EventHandler(store, archive, network)
+    private lateinit var uut: EventHandler
     
     @Before
     fun before() {
-        uut = EventHandler(store, archive, network)
+        events = mock()
+        engagements = mock()
+        network = mock()
+        
+        uut = EventHandler(events, engagements, network)
     }
     
     @After
     fun after() {
         uut.stop(false)
-        
-        reset(store)
-        reset(archive)
-        reset(network)
     }
     
     @Test
@@ -64,7 +63,7 @@ class EventHandlerTest {
         uut.start(0, 1)
         Thread.sleep(2200)
         
-        verify(store, times(3)).items()
+        verify(events, times(3)).items()
         var run = 0
         verify(network, times(2)).collect(
                 argThat {
@@ -86,7 +85,7 @@ class EventHandlerTest {
         uut.stop(false)
         Thread.sleep(2200)
         
-        verify(store, never()).items()
+        verify(events, never()).items()
         verify(network, never()).collect(any(), any())
     }
     
@@ -99,10 +98,10 @@ class EventHandlerTest {
             uut.stop(true)
             Thread.sleep(2200)
             
-            verify(store).items()
+            verify(events).items()
             verify(network).collect(
-                    com.nhaarman.mockito_kotlin.any(),
-                    com.nhaarman.mockito_kotlin.any())
+                    any<JSONObject>(),
+                    any<RequestListener<Void>>())
         }
     }
     
@@ -111,7 +110,7 @@ class EventHandlerTest {
         with(JSONObject()) {
             uut.handleEvent(this)
             
-            verify(store).add(eq(toString()))
+            verify(events).add(eq(toString()))
         }
     }
     
@@ -135,10 +134,7 @@ class EventHandlerTest {
                 "sdkVersion",
                 "platform")
         
-        verify(archive).put(
-                eq(engagement.name),
-                eq(engagement.flavour!!),
-                eq(result.toString()))
+        verify(engagements).put(same(engagement))
         verify(listener).onCompleted( argThat {
             assertThat(this).isSameAs(engagement)
             assertThat(this.statusCode).isEqualTo(200)
@@ -158,10 +154,7 @@ class EventHandlerTest {
             (it.arguments[1] as RequestListener<*>).onError(Exception())
             null
         }
-        whenever(archive.contains(engagement.name, engagement.flavour))
-                .thenReturn(true)
-        whenever(archive.get(engagement.name, engagement.flavour))
-                .thenReturn(archived.toString())
+        whenever(engagements.get(same(engagement))).then { archived }
         
         uut.handleEngagement(
                 engagement,
@@ -174,10 +167,7 @@ class EventHandlerTest {
         
         val cached = JSONObject(archived.toString())
                 .put("isCachedResponse", true)
-        verify(archive, never()).put(
-                eq(engagement.name),
-                eq(engagement.flavour),
-                eq(cached.toString()))
+        verify(engagements, never()).put(any())
         verify(listener).onCompleted(argThat {
             assertThat(this).isSameAs(engagement)
             assertThat(this.statusCode).isEqualTo(200)
@@ -197,8 +187,7 @@ class EventHandlerTest {
             (it.arguments[1] as RequestListener<*>).onError(cause)
             null
         }
-        whenever(archive.contains(engagement.name, engagement.flavour!!))
-                .thenReturn(false)
+        whenever(engagements.get(same(engagement))).then { null }
         
         uut.handleEngagement(
                 engagement,
@@ -292,7 +281,7 @@ class EventHandlerTest {
     private fun withStoreEvents(
             vararg items: List<String>,
             block: List<CloseableIterator<EventStoreItem>>.() -> Unit = {}) {
-        var stubbing = whenever(store.items())
+        var stubbing = whenever(events.items())
         block.invoke(items.map {
             spy(StoredEventsIterator(it)).apply {
                 stubbing = stubbing.thenReturn(this)
@@ -305,7 +294,7 @@ class EventHandlerTest {
             availabilities: List<Boolean> = listOf(),
             block: CloseableIterator<EventStoreItem>.() -> Unit = {}) {
         spy(StoredEventsIterator(values, availabilities)).apply {
-            whenever(store.items()).thenReturn(this)
+            whenever(events.items()).thenReturn(this)
             block.invoke(this)
         }
     }
@@ -341,7 +330,4 @@ class EventHandlerTest {
         override fun available() = availability
         override fun get() = value
     }
-    
-    open class KEngagement(point: String, flavour: String?)
-        : Engagement<KEngagement>(point, flavour)
 }

@@ -26,7 +26,6 @@ import android.util.Log;
 import com.deltadna.android.sdk.exceptions.NotStartedException;
 import com.deltadna.android.sdk.exceptions.SessionConfigurationException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
-import com.deltadna.android.sdk.helpers.EngageArchive;
 import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
@@ -67,23 +66,18 @@ final class DDNAImpl extends DDNA {
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + DDNAImpl.class.getSimpleName();
-    private static final String ENGAGE_DIRECTORY = "engage" + File.separator;
-    @Deprecated
-    private static final String ENGAGE_PATH_LEGACY = "%s/ddsdk/engage/";
     
     @Nullable
     private final String clientVersion;
     
     private final EventStore eventStore;
+    private final EngageStore engageStore;
     private final ImageMessageStore imageMessageStore;
-    private final EngageArchive archive;
     
     private final SessionRefreshHandler sessionHandler;
     private final EventHandler eventHandler;
     
     private final Map<String, Integer> iso4217;
-    
-    private final File engageStoragePath;
     
     private boolean started;
     
@@ -141,7 +135,6 @@ final class DDNAImpl extends DDNA {
             eventHandler.stop(true);
             
             imageMessageStore.cleanUp();
-            archive.save();
             
             started = false;
             
@@ -359,8 +352,8 @@ final class DDNAImpl extends DDNA {
         
         preferences.clear();
         eventStore.clear();
+        engageStore.clear();
         imageMessageStore.clear();
-        archive.clear();
         
         return this;
     }
@@ -373,11 +366,6 @@ final class DDNAImpl extends DDNA {
     @Override
     ImageMessageStore getImageMessageStore() {
         return imageMessageStore;
-    }
-    
-    @Override
-    File getEngageStoragePath() {
-        return engageStoragePath;
     }
     
     @Override
@@ -467,18 +455,6 @@ final class DDNAImpl extends DDNA {
                     Location.INTERNAL));
             location = Location.INTERNAL;
         }
-        engageStoragePath = location.storage(application, ENGAGE_DIRECTORY);
-        final File legacyPath;
-        if (application.getExternalFilesDir(null) != null) {
-            final String path = application.getExternalFilesDir(null).getPath();
-            legacyPath = new File(String.format(
-                    Locale.US,
-                    ENGAGE_PATH_LEGACY,
-                    (path != null) ? path : ""));
-        } else {
-            Log.d(TAG, "Legacy engage storage path not found");
-            legacyPath = null;
-        }
         
         final DatabaseHelper database = new DatabaseHelper(application);
         eventStore = new EventStore(
@@ -486,12 +462,15 @@ final class DDNAImpl extends DDNA {
                 database,
                 settings,
                 preferences);
+        engageStore = new EngageStore(
+                database,
+                location.storage(application, "engage" + File.separator),
+                settings);
         imageMessageStore = new ImageMessageStore(
                 application,
                 database,
                 network,
                 settings);
-        archive = new EngageArchive(engageStoragePath, legacyPath);
         
         sessionHandler = new SessionRefreshHandler(
                 application,
@@ -500,7 +479,7 @@ final class DDNAImpl extends DDNA {
                     Log.d(TAG, "Session expired, updating id");
                     newSession(true);
                 });
-        eventHandler = new EventHandler(eventStore, archive, network);
+        eventHandler = new EventHandler(eventStore, engageStore, network);
         
         final Map<String, Integer> temp = new HashMap<>();
         try {
