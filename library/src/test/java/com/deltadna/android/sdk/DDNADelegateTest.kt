@@ -50,6 +50,7 @@ class DDNADelegateTest {
                         "collectUrl",
                         "engageUrl"),
                 mutableSetOf(),
+                mutableSetOf(),
                 tracking,
                 nonTracking)
     }

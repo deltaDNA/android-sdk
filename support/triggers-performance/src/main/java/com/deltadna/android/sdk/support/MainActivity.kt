@@ -107,9 +107,6 @@ class MainActivity : AppCompatActivity() {
         : Event<KEvent>(name, Params().apply { params.forEach { (k, v) -> put(k , v) } })
     
     private class Listener : EventListener {
-        override fun onStarted() {}
-        override fun onStopped() {}
-        override fun onNewSession() {}
         override fun onSessionConfigured(cached: Boolean) {
             Debug.stopMethodTracing()
             DDNA.instance().unregister(this)
@@ -118,7 +115,5 @@ class MainActivity : AppCompatActivity() {
             Debug.stopMethodTracing()
             DDNA.instance().unregister(this)
         }
-        override fun onImageCachePopulated() {}
-        override fun onImageCachingFailed(reason: Throwable?) {}
     }
 }

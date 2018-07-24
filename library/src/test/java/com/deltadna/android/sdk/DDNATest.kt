@@ -20,7 +20,7 @@ import android.app.Application
 import android.os.Bundle
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
-import com.deltadna.android.sdk.listeners.EventListener
+import com.deltadna.android.sdk.listeners.internal.IEventListener
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
@@ -107,7 +107,7 @@ class DDNATest {
     
     @Test
     fun newSessionNotifiesCallbacks() {
-        with(mock<EventListener>()) {
+        with(mock<IEventListener>()) {
             uut.register(this)
             uut.newSession()
             uut.newSession()
@@ -130,6 +130,7 @@ class DDNATest {
             Settings(),
             null,
             null,
+            mutableSetOf(),
             mutableSetOf()) {
         
         override fun startSdk(): DDNA {

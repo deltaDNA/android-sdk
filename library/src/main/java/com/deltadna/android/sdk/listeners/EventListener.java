@@ -18,11 +18,6 @@ package com.deltadna.android.sdk.listeners;
 
 public interface EventListener {
     
-    default void onStarted() {}
-    default void onStopped() {}
-    
-    default void onNewSession() {}
-    
     /**
      * Will be called when the session configuration will be successfully
      * retrieved.

@@ -21,6 +21,7 @@ import com.deltadna.android.sdk.exceptions.SessionConfigurationException
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.EventListener
+import com.deltadna.android.sdk.listeners.internal.IEventListener
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.google.common.truth.Truth.assertThat
@@ -62,6 +63,7 @@ class DDNAImplTest {
                 null,
                 null,
                 null,
+                mutableSetOf(),
                 mutableSetOf())
     }
     
@@ -107,7 +109,7 @@ class DDNAImplTest {
     fun `starting sdk notifies listener`() {
         uut.settings.setBackgroundEventUpload(false)
         
-        with(mock<EventListener>()) {
+        with(mock<IEventListener>()) {
             uut.register(this)
             uut.startSdk()
             
@@ -144,7 +146,7 @@ class DDNAImplTest {
     fun `stopping sdk notifies listener`() {
         uut.settings.setBackgroundEventUpload(false)
         
-        with(mock<EventListener>()) {
+        with(mock<IEventListener>()) {
             uut.register(this)
             uut.startSdk()
             uut.stopSdk()
@@ -335,74 +337,81 @@ class DDNAImplTest {
     @Test
     fun `session configuration requests`() {
         uut.settings.setBackgroundEventUpload(false)
+        val config = jsonObject("parameters" to jsonObject(
+                "eventsWhitelist" to jsonArray(),
+                "dpWhitelist" to jsonArray(),
+                "triggers" to jsonArray(),
+                "imageCache" to jsonArray()))
+                .toString()
+        val l1 = mock<IEventListener>()
+        val l2 = mock<EventListener>()
         
-        with(mock<EventListener>()) {
-            uut.register(this)
-            server.enqueue(MockResponse()
-                    .setResponseCode(500)
-                    .setBody("error"))
-            server.enqueue(MockResponse()
-                    .setResponseCode(200)
-                    .setBody(jsonObject("parameters" to jsonObject(
-                            "eventsWhitelist" to jsonArray(),
-                            "dpWhitelist" to jsonArray(),
-                            "triggers" to jsonArray(),
-                            "imageCache" to jsonArray()))
-                            .toString()))
-            server.enqueue(MockResponse()
-                    .setResponseCode(500)
-                    .setBody("error"))
-            
-            uut.startSdk()
-            
-            server.takeRequest().run {
-                assertThat(path).startsWith("/engage")
-                with(body.readUtf8()) {
-                    assertThat(this).contains("\"decisionPoint\":\"config\"")
-                    assertThat(this).contains("\"flavour\":\"internal\"")
-                    assertThat(this).contains("\"timeSinceFirstSession\":0")
-                    assertThat(this).contains("\"timeSinceLastSession\":0")
-                }
-                
-                waitAndRunTasks()
+        uut.register(l1)
+        uut.register(l2)
+        server.enqueue(MockResponse()
+                .setResponseCode(500)
+                .setBody("error"))
+        server.enqueue(MockResponse()
+                .setResponseCode(200)
+                .setBody(config))
+        server.enqueue(MockResponse()
+                .setResponseCode(500)
+                .setBody("error"))
+        
+        uut.startSdk()
+        
+        server.takeRequest().run {
+            assertThat(path).startsWith("/engage")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"decisionPoint\":\"config\"")
+                assertThat(this).contains("\"flavour\":\"internal\"")
+                assertThat(this).contains("\"timeSinceFirstSession\":0")
+                assertThat(this).contains("\"timeSinceLastSession\":0")
             }
-            verify(this).onSessionConfigurationFailed(
-                    isA<SessionConfigurationException>())
-            verify(this, never()).onImageCachePopulated()
-            verify(this, never()).onImageCachingFailed(any())
-            
-            uut.requestSessionConfiguration()
-            
-            server.takeRequest().run {
-                assertThat(path).startsWith("/engage")
-                with(body.readUtf8()) {
-                    assertThat(this).contains("\"decisionPoint\":\"config\"")
-                    assertThat(this).contains("\"flavour\":\"internal\"")
-                    assertThat(this).contains("\"timeSinceFirstSession\":")
-                    assertThat(this).contains("\"timeSinceLastSession\":")
-                }
-                
-                waitAndRunTasks()
-            }
-            verify(this).onSessionConfigured(eq(false))
-            verify(this).onImageCachePopulated()
-            
-            uut.requestSessionConfiguration()
-            
-            server.takeRequest().run {
-                assertThat(path).startsWith("/engage")
-                with(body.readUtf8()) {
-                    assertThat(this).contains("\"decisionPoint\":\"config\"")
-                    assertThat(this).contains("\"flavour\":\"internal\"")
-                    assertThat(this).contains("\"timeSinceFirstSession\":")
-                    assertThat(this).contains("\"timeSinceLastSession\":")
-                }
-                
-                waitAndRunTasks()
-            }
-            verify(this).onSessionConfigured(eq(true))
-            verify(this, times(2)).onImageCachePopulated()
+
+            waitAndRunTasks()
         }
+        verify(l2).onSessionConfigurationFailed(
+                isA<SessionConfigurationException>())
+        verify(l1, never()).onSessionConfigured(any(), any())
+        verify(l2, never()).onImageCachePopulated()
+        verify(l2, never()).onImageCachingFailed(any())
+        
+        uut.requestSessionConfiguration()
+        
+        server.takeRequest().run {
+            assertThat(path).startsWith("/engage")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"decisionPoint\":\"config\"")
+                assertThat(this).contains("\"flavour\":\"internal\"")
+                assertThat(this).contains("\"timeSinceFirstSession\":")
+                assertThat(this).contains("\"timeSinceLastSession\":")
+            }
+            
+            waitAndRunTasks()
+        }
+        verify(l1).onSessionConfigured(eq(false), argThat { toString() == config })
+        verify(l2).onSessionConfigured(eq(false))
+        verify(l2).onImageCachePopulated()
+        
+        uut.requestSessionConfiguration()
+        
+        server.takeRequest().run {
+            assertThat(path).startsWith("/engage")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"decisionPoint\":\"config\"")
+                assertThat(this).contains("\"flavour\":\"internal\"")
+                assertThat(this).contains("\"timeSinceFirstSession\":")
+                assertThat(this).contains("\"timeSinceLastSession\":")
+            }
+            
+            waitAndRunTasks()
+        }
+        verify(l1).onSessionConfigured(
+                eq(true),
+                argThat { toString() == "${config.dropLast(1)},\"isCachedResponse\":true}"})
+        verify(l2).onSessionConfigured(eq(true))
+        verify(l2, times(2)).onImageCachePopulated()
     }
     
     /**

@@ -23,6 +23,7 @@ import android.support.v4.content.LocalBroadcastManager
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.EventListener
+import com.deltadna.android.sdk.listeners.internal.IEventListener
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import com.squareup.okhttp.mockwebserver.MockResponse
@@ -64,6 +65,7 @@ class DDNANonTrackingTest {
                 Settings(),
                 null,
                 null,
+                mutableSetOf(),
                 mutableSetOf())
     }
     
@@ -135,21 +137,26 @@ class DDNANonTrackingTest {
     
     @Test
     fun requestSessionConfiguration() {
-        with(mock<EventListener>()) {
-            uut.register(this)
-            uut.requestSessionConfiguration()
-            
-            verify(this).onSessionConfigured(eq(false))
-            verify(this).onImageCachePopulated()
-        }
+        val l1 = mock<IEventListener>()
+        val l2 = mock<EventListener>()
+        
+        uut.register(l1)
+        uut.register(l2)
+        uut.requestSessionConfiguration()
+        
+        verify(l1).onSessionConfigured(eq(false), argThat { toString() == "{}" })
+        verify(l2).onSessionConfigured(eq(false))
+        verify(l2).onImageCachePopulated()
     }
     
+    @Test
     fun upload() {
         uut.upload()
         
         assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
     }
     
+    @Test
     fun downloadImageAssets() {
         with(mock<EventListener>()) {
             uut.register(this)
@@ -230,6 +237,5 @@ class DDNANonTrackingTest {
         assertThat(server.requestCount).isEqualTo(0)
     }
     
-    private class KEvent(name: String) : Event<KEvent>(name)
     private class KEngagement(point: String) : Engagement<KEngagement>(point)
 }

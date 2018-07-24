@@ -22,6 +22,7 @@ import android.text.TextUtils;
 
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
+import com.deltadna.android.sdk.listeners.internal.IEventListener;
 
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,7 @@ class DDNADelegate extends DDNA {
     DDNADelegate(
             Configuration configuration,
             Set<EventListener> eventListeners,
+            Set<IEventListener> iEventListeners,
             DDNA tracking,
             DDNA nonTracking) {
         
@@ -47,7 +49,8 @@ class DDNADelegate extends DDNA {
                 configuration.settings,
                 configuration.hashSecret,
                 configuration.platform,
-                eventListeners);
+                eventListeners,
+                iEventListeners);
         
         this.tracking = tracking;
         this.nonTracking = nonTracking;
