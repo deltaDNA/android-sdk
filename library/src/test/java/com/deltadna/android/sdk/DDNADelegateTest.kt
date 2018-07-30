@@ -116,9 +116,6 @@ class DDNADelegateTest {
         uut.clearRegistrationId()
         verify(tracking).clearRegistrationId()
         
-        uut.engageStoragePath
-        verify(tracking).engageStoragePath
-        
         uut.iso4217
         verify(tracking).iso4217
         
@@ -183,9 +180,6 @@ class DDNADelegateTest {
         
         uut.clearRegistrationId()
         verify(nonTracking).clearRegistrationId()
-        
-        uut.engageStoragePath
-        verify(nonTracking).engageStoragePath
         
         uut.iso4217
         verify(nonTracking).iso4217

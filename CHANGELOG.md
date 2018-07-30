@@ -1,5 +1,8 @@
 # Change Log
 
+## [4.9.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.2) (YYYY-MM-DD)
+Updated Engage cache to eject stale items.  
+
 ## [4.9.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.1) (2018-07-25)
 Fixed notifications compatibility with Unity.  
 

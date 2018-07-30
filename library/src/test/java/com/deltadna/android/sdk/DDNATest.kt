@@ -21,7 +21,7 @@ import android.os.Bundle
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.EventListener
-import com.google.common.truth.Truth.*
+import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
@@ -31,7 +31,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import java.io.File
 import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
@@ -223,10 +222,6 @@ class DDNATest {
         
         override fun getImageMessageStore(): ImageMessageStore {
             return listener.imageMessageStore
-        }
-        
-        override fun getEngageStoragePath(): File {
-            return listener.engageStoragePath
         }
         
         override fun getIso4217(): MutableMap<String, Int> {

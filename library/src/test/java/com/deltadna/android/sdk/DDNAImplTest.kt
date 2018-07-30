@@ -363,7 +363,7 @@ class DDNAImplTest {
                     assertThat(this).contains("\"timeSinceFirstSession\":0")
                     assertThat(this).contains("\"timeSinceLastSession\":0")
                 }
-
+                
                 waitAndRunTasks()
             }
             verify(this).onSessionConfigurationFailed(
@@ -381,7 +381,7 @@ class DDNAImplTest {
                     assertThat(this).contains("\"timeSinceFirstSession\":")
                     assertThat(this).contains("\"timeSinceLastSession\":")
                 }
-
+                
                 waitAndRunTasks()
             }
             verify(this).onSessionConfigured(eq(false))
@@ -397,7 +397,7 @@ class DDNAImplTest {
                     assertThat(this).contains("\"timeSinceFirstSession\":")
                     assertThat(this).contains("\"timeSinceLastSession\":")
                 }
-
+                
                 waitAndRunTasks()
             }
             verify(this).onSessionConfigured(eq(true))

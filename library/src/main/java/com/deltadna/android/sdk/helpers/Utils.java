@@ -16,12 +16,6 @@
 
 package com.deltadna.android.sdk.helpers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
-
 /**
  * General utils class.
  */
@@ -58,22 +52,4 @@ public class Utils{
 		
 		return result;
 	}
-    
-    static void move(File file, File dest) throws IOException {
-        final File newFile = new File(dest, file.getName());
-        FileChannel output = null;
-        FileChannel input = null;
-        try {
-            output = new FileOutputStream(newFile).getChannel();
-            input = new FileInputStream(file).getChannel();
-            
-            input.transferTo(0, input.size(), output);
-            input.close();
-            
-            file.delete();
-        } finally {
-            if (input != null) input.close();
-            if (output != null) output.close();
-        }
-    }
 }

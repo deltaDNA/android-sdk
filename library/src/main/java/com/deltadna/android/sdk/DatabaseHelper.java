@@ -31,7 +31,7 @@ import java.util.Locale;
 final class DatabaseHelper extends SQLiteOpenHelper {
     
     private static final String TAG = BuildConfig.LOG_TAG + ' ' + "DbHelper";
-    private static final short VERSION = 2;
+    private static final short VERSION = 3;
     
     DatabaseHelper(Context context) {
         super(context, "com.deltadna.android.sdk", null, VERSION);
@@ -46,6 +46,15 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 + Events.Column.NAME + " TEXT NOT NULL UNIQUE, "
                 + Events.Column.HASH + " TEXT, "
                 + Events.Column.SIZE + " INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE " + Engagements.TABLE + "("
+                + Engagements.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + Engagements.Column.DECISION_POINT + " TEXT NOT NULL, "
+                + Engagements.Column.FLAVOUR + " TEXT NOT NULL, "
+                + Engagements.Column.CACHED + " INTEGER NOT NULL, "
+                + Engagements.Column.RESPONSE + " BLOB NOT NULL, "
+                + "UNIQUE("
+                + Engagements.Column.DECISION_POINT + ','
+                + Engagements.Column.FLAVOUR + ") ON CONFLICT REPLACE)");
         db.execSQL("CREATE TABLE " + ImageMessages.TABLE + "("
                 + ImageMessages.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + ImageMessages.Column.URL + " TEXT NOT NULL UNIQUE, "
@@ -80,6 +89,17 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                             + ImageMessages.Column.SIZE + " INTEGER NOT NULL, "
                             + ImageMessages.Column.DOWNLOADED + " INTEGER NOT NULL)");
                     break;
+                
+                case 3:
+                    db.execSQL("CREATE TABLE " + Engagements.TABLE + "("
+                            + Engagements.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + Engagements.Column.DECISION_POINT + " TEXT NOT NULL, "
+                            + Engagements.Column.FLAVOUR + " TEXT NOT NULL, "
+                            + Engagements.Column.CACHED + " INTEGER NOT NULL, "
+                            + Engagements.Column.RESPONSE + " BLOB NOT NULL, "
+                            + "UNIQUE("
+                            + Engagements.Column.DECISION_POINT + ','
+                            + Engagements.Column.FLAVOUR + ") ON CONFLICT REPLACE)");
             }
         }
     }
@@ -145,6 +165,49 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     
     void removeEventRows() {
         getWritableDatabase().delete(Events.TABLE, null, null);
+    }
+    
+    Cursor getEngagement(String decisionPoint, String flavour) {
+        return getReadableDatabase().query(
+                Engagements.TABLE,
+                Engagements.Column.all(),
+                String.format(
+                        Locale.ENGLISH,
+                        "%s = ? AND %s = ?",
+                        Engagements.Column.DECISION_POINT,
+                        Engagements.Column.FLAVOUR),
+                new String[] { decisionPoint, flavour },
+                null,
+                null,
+                null);
+    }
+    
+    boolean insertEngagementRow(
+            String decisionPoint,
+            String flavour,
+            Date cached,
+            byte[] response) {
+        
+        final ContentValues values = new ContentValues(4);
+        values.put(Engagements.Column.DECISION_POINT.toString(), decisionPoint);
+        values.put(Engagements.Column.FLAVOUR.toString(), flavour);
+        values.put(Engagements.Column.CACHED.toString(), cached.getTime());
+        values.put(Engagements.Column.RESPONSE.toString(), response);
+        
+        return (getWritableDatabase().insert(Engagements.TABLE, null, values)
+                != -1);
+    }
+    
+    boolean removeEngagementRow(long id) {
+        return (getWritableDatabase().delete(
+                Engagements.TABLE,
+                Engagements.Column.ID + " = ?",
+                new String[] { Long.toString(id) })
+                == 1);
+    }
+    
+    void removeEngagementRows() {
+        getWritableDatabase().delete(Engagements.TABLE, null, null);
     }
     
     Cursor getImageMessages() {
@@ -242,6 +305,36 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         }
         
         private Events() {}
+    }
+    
+    static final class Engagements {
+        
+        static final String TABLE = "engagements";
+        enum Column {
+            ID {
+                @Override
+                public String toString() {
+                    return BaseColumns._ID;
+                }
+            },
+            DECISION_POINT,
+            FLAVOUR,
+            CACHED,
+            RESPONSE;
+            
+            @Override
+            public String toString() {
+                return super.toString().toLowerCase(Locale.ENGLISH);
+            }
+            
+            static String[] all() {
+                final String[] result = new String[values().length];
+                for (int i = 0; i < values().length; i++) {
+                    result[i] = values()[i].toString();
+                }
+                return result;
+            }
+        }
     }
     
     static final class ImageMessages {

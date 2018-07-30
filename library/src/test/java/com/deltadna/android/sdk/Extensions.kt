@@ -56,3 +56,6 @@ fun runTasks(iterations: Int = 1) {
 
 class KEvent(name: String = "name", vararg params: Pair<String, Any?>)
     : Event<KEvent>(name, Params().apply { params.forEach { (k, v) -> put(k, v) } })
+
+class KEngagement(point: String, flavour: String?)
+    : Engagement<KEngagement>(point, flavour)

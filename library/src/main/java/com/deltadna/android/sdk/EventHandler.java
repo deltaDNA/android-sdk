@@ -17,11 +17,9 @@
 package com.deltadna.android.sdk;
 
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.deltadna.android.sdk.helpers.ClientInfo;
-import com.deltadna.android.sdk.helpers.EngageArchive;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.net.CancelableRequest;
@@ -57,8 +55,8 @@ final class EventHandler {
                     r,
                     EventHandler.class.getSimpleName()));
     
-    private final EventStore store;
-    private final EngageArchive archive;
+    private final EventStore events;
+    private final EngageStore engagements;
     private final NetworkManager network;
     
     @Nullable
@@ -67,12 +65,12 @@ final class EventHandler {
     private Future<?> upload;
     
     EventHandler(
-            EventStore store,
-            EngageArchive archive,
+            EventStore events,
+            EngageStore engagements,
             NetworkManager network) {
         
-        this.store = store;
-        this.archive = archive;
+        this.events = events;
+        this.engagements = engagements;
         this.network = network;
     }
     
@@ -128,7 +126,7 @@ final class EventHandler {
      * to be sent at a later time.
      */
     void handleEvent(JSONObject event) {
-        store.add(event.toString());
+        events.add(event.toString());
     }
     
     /**
@@ -171,37 +169,26 @@ final class EventHandler {
             public void onCompleted(Response<JSONObject> result) {
                 engagement.setResponse(result);
                 if (engagement.isSuccessful()) {
-                    //noinspection ConstantConditions
-                    archive.put(
-                            engagement.name,
-                            engagement.flavour,
-                            engagement.getJson().toString());
+                    engagements.put(engagement);
                 } else {
                     Log.w(TAG, String.format(
                             Locale.US,
-                            "Not caching %s due to failure, checking archive instead",
+                            "Not caching %s due to failure, checking cache",
                             engagement));
                     
-                    if (archive.contains(engagement.name, engagement.flavour)) {
+                    final JSONObject cached = engagements.get(engagement);
+                    if (cached != null) {
                         try {
-                            final JSONObject json = new JSONObject(
-                                    archive.get(engagement.name, engagement.flavour))
-                                    .put("isCachedResponse", true);
-                            engagement.setResponse(
-                                    new Response<>(
-                                            engagement.getStatusCode(),
-                                            true,
-                                            null,
-                                            json,
-                                            engagement.getError()));
+                            engagement.setResponse(new Response<>(
+                                    engagement.getStatusCode(),
+                                    true,
+                                    null,
+                                    cached.put("isCachedResponse", true),
+                                    engagement.getError()));
                             
-                            Log.d(TAG, "Using cached engage instead " + json);
-                        } catch (JSONException e) {
-                            // TODO should we clear the archive?
-                            Log.w(  TAG,
-                                    "Failed converting cached engage to JSON",
-                                    e);
-                        }
+                            Log.d(  TAG,
+                                    "Using cached response " + engagement.getJson());
+                        } catch (JSONException ignored) {}
                     }
                 }
                 
@@ -210,29 +197,21 @@ final class EventHandler {
             
             @Override
             public void onError(Throwable t) {
-                if (archive.contains(engagement.name, engagement.flavour)) {
+                final JSONObject cached = engagements.get(engagement);
+                if (cached != null) {
                     try {
-                        final JSONObject json = new JSONObject(
-                                archive.get(engagement.name, engagement.flavour))
-                                .put("isCachedResponse", true);
-                        engagement.setResponse(
-                                new Response<>(200, true, null, json, null));
+                        engagement.setResponse(new Response<>(
+                                200,
+                                true,
+                                null,
+                                cached.put("isCachedResponse", true),
+                                null));
                         
-                        Log.d(TAG, "Using cached engage " + json);
+                        Log.d(TAG, "Using cached response " + engagement.getJson());
                         
                         listener.onCompleted(engagement);
-                    } catch (JSONException e1) {
-                        /*
-                         * This can only happen if the archive has become
-                         * corrupted as we don't store a live response in
-                         * the cache if we failed to convert it in the first
-                         * place.
-                         */
-                        // TODO should we clear the archive?
-                        Log.e(  TAG,
-                                "Failed converting cached engage to JSON",
-                                e1);
-                        listener.onError(e1);
+                    } catch (JSONException e) {
+                        listener.onError(e);
                     }
                 } else {
                     listener.onError(t);
@@ -259,12 +238,12 @@ final class EventHandler {
         public void run() {
             Log.v(TAG, "Starting event upload");
             
-            final CloseableIterator<EventStoreItem> events = store.items();
+            final CloseableIterator<EventStoreItem> items = events.items();
             final AtomicReference<CloseableIterator.Mode> clearEvents =
                     new AtomicReference<>(CloseableIterator.Mode.ALL);
             
             try {
-                if (!events.hasNext()) {
+                if (!items.hasNext()) {
                     Log.d(TAG, "No stored events to upload");
                     
                     clearEvents.set(CloseableIterator.Mode.NONE);
@@ -273,8 +252,8 @@ final class EventHandler {
                 
                 final StringBuilder builder = new StringBuilder("{\"eventList\":[");
                 int count = 0;
-                while (events.hasNext()) {
-                    final EventStoreItem event = events.next();
+                while (items.hasNext()) {
+                    final EventStoreItem event = items.next();
                     
                     if (event.available()) {
                         final String content = event.get();
@@ -348,7 +327,7 @@ final class EventHandler {
                 }
             } finally {
                 Log.v(TAG, "Finished event upload");
-                events.close(clearEvents.get());
+                items.close(clearEvents.get());
             }
         }
     }
