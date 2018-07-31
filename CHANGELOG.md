@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.9.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.2) (YYYY-MM-DD)
+## [4.9.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.2) (2018-07-31)
 Updated Engage cache to eject stale items.  
 
 ## [4.9.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.1) (2018-07-25)
