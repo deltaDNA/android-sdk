@@ -46,7 +46,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.9.3-SNAPSHOT'
+    implementation 'com.deltadna.android:deltadna-sdk:4.9.3'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:
