@@ -31,6 +31,7 @@ import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
+import com.deltadna.android.sdk.listeners.internal.IEventListener;
 import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONArray;
@@ -116,7 +117,7 @@ final class DDNAImpl extends DDNA {
             triggerDefaultEvents();
             
             Log.d(TAG, "SDK started");
-            performOn(eventListeners, EventListener::onStarted);
+            performOn(iEventListeners, IEventListener::onStarted);
         }
         
         return this;
@@ -139,7 +140,7 @@ final class DDNAImpl extends DDNA {
             started = false;
             
             Log.d(TAG, "SDK stopped");
-            performOn(eventListeners, EventListener::onStopped);
+            performOn(iEventListeners, IEventListener::onStopped);
         }
         
         return this;
@@ -429,7 +430,8 @@ final class DDNAImpl extends DDNA {
             @Nullable String clientVersion,
             @Nullable String userId,
             @Nullable String platform,
-            Set<EventListener> eventListeners) {
+            Set<EventListener> eventListeners,
+            Set<IEventListener> iEventListeners) {
         
         super(  application,
                 environmentKey,
@@ -438,7 +440,8 @@ final class DDNAImpl extends DDNA {
                 settings,
                 hashSecret,
                 platform,
-                eventListeners);
+                eventListeners,
+                iEventListeners);
         
         this.clientVersion = clientVersion;
         
@@ -666,8 +669,11 @@ final class DDNAImpl extends DDNA {
                 }
                 
                 Log.v(TAG, "Session configured");
-                performOn(eventListeners, it ->
-                        it.onSessionConfigured(engagement.isCached()));
+                performOn(iEventListeners, it -> it.onSessionConfigured(
+                        engagement.isCached(),
+                        engagement.getJson()));
+                performOn(eventListeners, it -> it.onSessionConfigured(
+                        engagement.isCached()));
             } else {
                 Log.w(TAG, String.format(
                         Locale.ENGLISH,

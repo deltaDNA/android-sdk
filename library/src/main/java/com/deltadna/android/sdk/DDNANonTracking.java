@@ -29,6 +29,7 @@ import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
+import com.deltadna.android.sdk.listeners.internal.IEventListener;
 import com.deltadna.android.sdk.net.Response;
 
 import org.json.JSONException;
@@ -56,7 +57,8 @@ final class DDNANonTracking extends DDNA {
             Settings settings,
             @Nullable String hashSecret,
             @Nullable String platform,
-            Set<EventListener> eventListeners) {
+            Set<EventListener> eventListeners,
+            Set<IEventListener> iEventListeners) {
         
         super(  application,
                 environmentKey,
@@ -65,7 +67,8 @@ final class DDNANonTracking extends DDNA {
                 settings,
                 hashSecret,
                 platform,
-                eventListeners);
+                eventListeners,
+                iEventListeners);
         
         broadcasts = LocalBroadcastManager.getInstance(application);
     }
@@ -129,6 +132,7 @@ final class DDNANonTracking extends DDNA {
     
     @Override
     public DDNA requestSessionConfiguration() {
+        performOn(iEventListeners, it -> it.onSessionConfigured(false, new JSONObject()));
         performOn(eventListeners, it -> it.onSessionConfigured(false));
         performOn(eventListeners, EventListener::onImageCachePopulated);
         return this;

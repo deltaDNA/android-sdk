@@ -1,5 +1,8 @@
 # Change Log
 
+## [???](https://github.com/deltaDNA/android-sdk/releases/tag/???) (YYYY-MM-DD)
+Added support for SmartAds reading session configuration.  
+
 ## [4.9.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.3) (2018-08-07)
 Public release of 4.9.  
 

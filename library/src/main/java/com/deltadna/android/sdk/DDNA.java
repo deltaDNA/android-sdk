@@ -28,6 +28,7 @@ import com.deltadna.android.sdk.helpers.Preconditions;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
+import com.deltadna.android.sdk.listeners.internal.IEventListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
 import java.text.SimpleDateFormat;
@@ -86,10 +87,13 @@ public abstract class DDNA {
         if (instance == null) {
             final Set<EventListener> eventListeners = Collections.newSetFromMap(
                     new WeakHashMap<EventListener, Boolean>());
+            final Set<IEventListener> iEventListeners = Collections.newSetFromMap(
+                    new WeakHashMap<IEventListener, Boolean>());
             
             instance = new DDNADelegate(
                     configuration,
                     eventListeners,
+                    iEventListeners,
                     new DDNAImpl(
                             configuration.application,
                             configuration.environmentKey,
@@ -100,7 +104,8 @@ public abstract class DDNA {
                             configuration.clientVersion,
                             configuration.userId,
                             configuration.platform,
-                            eventListeners),
+                            eventListeners,
+                            iEventListeners),
                     new DDNANonTracking(
                             configuration.application,
                             configuration.environmentKey,
@@ -109,7 +114,8 @@ public abstract class DDNA {
                             configuration.settings,
                             configuration.hashSecret,
                             configuration.platform,
-                            eventListeners));
+                            eventListeners,
+                            iEventListeners));
         } else {
             Log.w(BuildConfig.LOG_TAG, "SDK has already been initialised");
         }
@@ -128,6 +134,7 @@ public abstract class DDNA {
     final Settings settings;
     final String platform;
     final Set<EventListener> eventListeners;
+    final Set<IEventListener> iEventListeners;
     
     final Preferences preferences;
     final NetworkManager network;
@@ -142,11 +149,13 @@ public abstract class DDNA {
             Settings settings,
             @Nullable String hashSecret,
             @Nullable String platform,
-            Set<EventListener> eventListeners) {
+            Set<EventListener> eventListeners,
+            Set<IEventListener> iEventListeners) {
         
         this.settings = settings;
         this.platform = (platform == null) ? ClientInfo.platform() : platform;
         this.eventListeners = eventListeners;
+        this.iEventListeners = iEventListeners;
         
         preferences = new Preferences(application);
         network = new NetworkManager(
@@ -416,13 +425,38 @@ public abstract class DDNA {
         return network;
     }
     
+    /**
+     * Registers an {@link EventListener} for receiving event notifications.
+     *
+     * @param listener the listener to register
+     *
+     * @return this {@link DDNA} instance
+     */
     public final DDNA register(EventListener listener) {
         eventListeners.add(listener);
         return this;
     }
     
+    /**
+     * Unregisters an {@link EventListener} so that it will no longer receive
+     * event notifications.
+     *
+     * @param listener the listener to unregister
+     *
+     * @return this {@link DDNA} instance
+     */
     public final DDNA unregister(EventListener listener) {
         eventListeners.remove(listener);
+        return this;
+    }
+    
+    public final DDNA register(IEventListener listener) {
+        iEventListeners.add(listener);
+        return this;
+    }
+    
+    public final DDNA unregister(IEventListener listener) {
+        iEventListeners.remove(listener);
         return this;
     }
     
@@ -479,7 +513,7 @@ public abstract class DDNA {
         }
         preferences.setLastSession(new Date());
         
-        performOn(eventListeners, EventListener::onNewSession);
+        performOn(iEventListeners, IEventListener::onNewSession);
         
         return this;
     }
