@@ -16,8 +16,8 @@
 
 buildscript {
     ext {
-        firebaseVersion = '11.4.2'
-        kotlinVersion = '1.2.50'
+        firebaseVersion = '15.0.2'
+        kotlinVersion = '1.2.60'
         kotlinxCoroutinesVersion = '0.22.5'
         kotsonVersion = '2.5.0'
         mockWebServerVersion = '2.7.5'
@@ -34,7 +34,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0-beta02'
+        classpath 'com.android.tools.build:gradle:3.2.0-beta04'
         classpath('com.dicedmelon.gradle:jacoco-android:0.1.2') {
             // https://github.com/arturdm/jacoco-android-gradle-plugin/issues/42
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
