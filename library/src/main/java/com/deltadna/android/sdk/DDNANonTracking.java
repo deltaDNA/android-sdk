@@ -17,12 +17,11 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.Nullable;
-import android.support.v4.content.LocalBroadcastManager;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.deltadna.android.sdk.helpers.Settings;
@@ -45,9 +44,9 @@ import java.util.UUID;
  */
 final class DDNANonTracking extends DDNA {
     
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final short FORGET_ME_DELAY = 5 * 1000;
     
-    private final LocalBroadcastManager broadcasts;
+    private final Handler handler = new Handler(Looper.getMainLooper());
     
     DDNANonTracking(
             Application application,
@@ -69,8 +68,6 @@ final class DDNANonTracking extends DDNA {
                 platform,
                 eventListeners,
                 iEventListeners);
-        
-        broadcasts = LocalBroadcastManager.getInstance(application);
     }
     
     @Override
@@ -82,7 +79,17 @@ final class DDNANonTracking extends DDNA {
     public synchronized DDNA startSdk(@Nullable String userId) {
         if (preferences.isForgetMe() && !preferences.isForgotten()) {
             handler.removeCallbacksAndMessages(null);
-            handler.post(new ForgetMe());
+            
+            if (TextUtils.isEmpty(preferences.getAdvertisingId())) {
+                /*
+                 * In case that the advertising ID isn't available let's delay
+                 * the sending of the event, in case that it's still being
+                 * retrieved.
+                 */
+                handler.postDelayed(new ForgetMe(), FORGET_ME_DELAY);
+            } else {
+                handler.post(new ForgetMe());
+            }
         }
         
         return this;
@@ -175,7 +182,6 @@ final class DDNANonTracking extends DDNA {
         if (!preferences.isForgotten()) {
             preferences.setForgetMe(true);
             
-            broadcasts.sendBroadcast(new Intent(Actions.FORGET_ME));
             handler.post(new ForgetMe());
         }
         
@@ -207,7 +213,8 @@ final class DDNANonTracking extends DDNA {
                         .put("userID", preferences.getUserId())
                         .put("eventParams", new JSONObject()
                                 .put("platform", platform)
-                                .put("sdkVersion", SDK_VERSION));
+                                .put("sdkVersion", SDK_VERSION)
+                                .put("ddnaAdvertisingId", preferences.getAdvertisingId()));
             } catch (JSONException e) {
                 Log.w(BuildConfig.LOG_TAG, "Failed creating ddnaForgetMe event", e);
                 return;

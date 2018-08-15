@@ -121,6 +121,14 @@ class DDNATest {
         }
     }
     
+    @Test
+    fun `advertising id is persisted to preferences`() {
+        with("id") {
+            uut.setAdvertisingId(this)
+            assertThat(uut.preferences.advertisingId).isEqualTo(this)
+        }
+    }
+    
     private class DDNAI(private val listener: DDNA, application: Application)
         : DDNA(
             application,

@@ -16,10 +16,7 @@
 
 package com.deltadna.android.sdk
 
-import android.content.BroadcastReceiver
-import android.content.IntentFilter
 import android.os.Bundle
-import android.support.v4.content.LocalBroadcastManager
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.EventListener
@@ -43,10 +40,8 @@ class DDNANonTrackingTest {
     
     private val application by lazy { RuntimeEnvironment.application }
     private val preferences by lazy { Preferences(application) }
-    private val broadcasts by lazy { LocalBroadcastManager.getInstance(application) }
     
     private lateinit var server: MockWebServer
-    private lateinit var listener: BroadcastReceiver
     
     private lateinit var uut: DDNANonTracking
     
@@ -54,8 +49,6 @@ class DDNANonTrackingTest {
     fun before() {
         server = MockWebServer()
         server.start()
-        listener = mock()
-        broadcasts.registerReceiver(listener, IntentFilter(Actions.FORGET_ME))
         
         uut = DDNANonTracking(
                 application,
@@ -71,14 +64,14 @@ class DDNANonTrackingTest {
     
     @After
     fun after() {
-        broadcasts.unregisterReceiver(listener)
         server.shutdown()
         preferences.clear()
     }
     
     @Test
-    fun startWhenNotForgotten() {
+    fun `start sends forget me event when not forgotten`() {
         preferences.userId = "userId"
+        preferences.advertisingId = "advertisingId"
         preferences.isForgetMe = true
         preferences.isForgotten = false
         
@@ -91,10 +84,16 @@ class DDNANonTrackingTest {
             with(JSONObject(body.readUtf8())) {
                 assertThat(get("eventName")).isEqualTo("ddnaForgetMe")
                 assertThat(has("eventTimestamp")).isTrue()
-                assertThat(has("eventUUID"))
+                assertThat(has("eventUUID")).isTrue()
                 assertThat(get("sessionID")).isEqualTo(uut.getSessionId())
                 assertThat(get("userID")).isEqualTo(preferences.userId)
-                assertThat(has("eventParams"))
+                
+                assertThat(has("eventParams")).isTrue()
+                with(getJSONObject("eventParams")) {
+                    assertThat(get("platform")).isEqualTo(uut.platform)
+                    assertThat(get("sdkVersion")).isEqualTo(DDNA.SDK_VERSION)
+                    assertThat(get("ddnaAdvertisingId")).isEqualTo(preferences.advertisingId)
+                }
             }
             
            runTasks()
@@ -102,7 +101,41 @@ class DDNANonTrackingTest {
     }
     
     @Test
-    fun startWhenForgotten() {
+    fun `start sends delayed forget me event when advertising id not set`() {
+        preferences.userId = "userId"
+        preferences.advertisingId = null
+        preferences.isForgetMe = true
+        preferences.isForgotten = false
+        
+        // this is just to stop a shutdown() exception 
+        server.enqueue(MockResponse().setResponseCode(200))
+        uut.startSdk()
+        
+        Robolectric.getForegroundThreadScheduler().advanceBy(5500, TimeUnit.SECONDS)
+        
+        with(server.takeRequest()) {
+            assertThat(path).isEqualTo("/collect/environmentKey")
+            with(JSONObject(body.readUtf8())) {
+                assertThat(get("eventName")).isEqualTo("ddnaForgetMe")
+                assertThat(has("eventTimestamp")).isTrue()
+                assertThat(has("eventUUID")).isTrue()
+                assertThat(get("sessionID")).isEqualTo(uut.getSessionId())
+                assertThat(get("userID")).isEqualTo(preferences.userId)
+                
+                assertThat(has("eventParams")).isTrue()
+                with(getJSONObject("eventParams")) {
+                    assertThat(get("platform")).isEqualTo(uut.platform)
+                    assertThat(get("sdkVersion")).isEqualTo(DDNA.SDK_VERSION)
+                    assertThat(has("ddnaAdvertisingId")).isFalse()
+                }
+            }
+            
+            runTasks()
+        }
+    }
+    
+    @Test
+    fun `start does not send forget me event when forgotten`() {
         preferences.isForgetMe = true
         preferences.isForgotten = true
         
@@ -170,15 +203,13 @@ class DDNANonTrackingTest {
     }
     
     @Test
-    fun forgetMe() {
+    fun `forget me event is sent correctly`() {
         preferences.userId = "userId"
+        preferences.advertisingId = "advertisingId"
         
         server.enqueue(MockResponse().setResponseCode(500))
         uut.forgetMe()
         
-        verify(listener).onReceive(
-                any(),
-                argThat { action == Actions.FORGET_ME })
         assertThat(preferences.isForgetMe).isTrue()
         assertThat(preferences.isForgotten).isFalse()
         
@@ -187,10 +218,16 @@ class DDNANonTrackingTest {
             with(JSONObject(body.readUtf8())) {
                 assertThat(get("eventName")).isEqualTo("ddnaForgetMe")
                 assertThat(has("eventTimestamp")).isTrue()
-                assertThat(has("eventUUID"))
+                assertThat(has("eventUUID")).isTrue()
                 assertThat(get("sessionID")).isEqualTo(uut.getSessionId())
                 assertThat(get("userID")).isEqualTo(preferences.userId)
-                assertThat(has("eventParams"))
+                
+                assertThat(has("eventParams")).isTrue()
+                with(getJSONObject("eventParams")) {
+                    assertThat(get("platform")).isEqualTo(uut.platform)
+                    assertThat(get("sdkVersion")).isEqualTo(DDNA.SDK_VERSION)
+                    assertThat(get("ddnaAdvertisingId")).isEqualTo(preferences.advertisingId)
+                }
             }
             
             runTasks()
@@ -201,18 +238,21 @@ class DDNANonTrackingTest {
         server.enqueue(MockResponse().setResponseCode(200))
         uut.forgetMe()
         
-        verify(listener, times(2)).onReceive(
-                any(),
-                argThat { action == Actions.FORGET_ME })
         with(server.takeRequest()) {
             assertThat(path).isEqualTo("/collect/environmentKey")
             with(JSONObject(body.readUtf8())) {
                 assertThat(get("eventName")).isEqualTo("ddnaForgetMe")
                 assertThat(has("eventTimestamp")).isTrue()
-                assertThat(has("eventUUID"))
+                assertThat(has("eventUUID")).isTrue()
                 assertThat(get("sessionID")).isEqualTo(uut.getSessionId())
                 assertThat(get("userID")).isEqualTo(preferences.userId)
-                assertThat(has("eventParams"))
+                
+                assertThat(has("eventParams")).isTrue()
+                with(getJSONObject("eventParams")) {
+                    assertThat(get("platform")).isEqualTo(uut.platform)
+                    assertThat(get("sdkVersion")).isEqualTo(DDNA.SDK_VERSION)
+                    assertThat(get("ddnaAdvertisingId")).isEqualTo(preferences.advertisingId)
+                }
             }
             
             waitAndRunTasks()
@@ -222,7 +262,6 @@ class DDNANonTrackingTest {
         
         uut.forgetMe()
         
-        verifyNoMoreInteractions(listener)
         assertThat(server.requestCount).isEqualTo(2)
     }
     

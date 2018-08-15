@@ -63,6 +63,16 @@ class PreferencesTest {
     }
     
     @Test
+    fun `advertising id is returned and persisted`() {
+        assertThat(uut.advertisingId).isNull()
+        
+        with("id") {
+            uut.advertisingId = this
+            assertThat(uut.advertisingId).isEqualTo(this)
+        }
+    }
+    
+    @Test
     fun forgetMe() {
         assertThat(uut.isForgetMe).isFalse()
         uut.isForgetMe = true
@@ -92,12 +102,14 @@ class PreferencesTest {
     @Test
     fun clearForgetMeAndForgotten() {
         uut.userId = "userId"
+        uut.advertisingId = "advertisingId"
         uut.isForgetMe = true
         uut.isForgotten = true
         
         uut.clearForgetMeAndForgotten()
         
         assertThat(uut.userId).isEqualTo("userId")
+        assertThat(uut.advertisingId).isEqualTo("advertisingId")
         assertThat(uut.isForgetMe).isFalse()
         assertThat(uut.isForgotten).isFalse()
     }
