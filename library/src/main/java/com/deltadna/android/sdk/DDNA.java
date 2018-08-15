@@ -420,11 +420,6 @@ public abstract class DDNA {
         return settings;
     }
     
-    // FIXME should not be exposed
-    public final NetworkManager getNetworkManager() {
-        return network;
-    }
-    
     /**
      * Registers an {@link EventListener} for receiving event notifications.
      *
@@ -457,6 +452,11 @@ public abstract class DDNA {
     
     public final DDNA unregister(IEventListener listener) {
         iEventListeners.remove(listener);
+        return this;
+    }
+    
+    public DDNA setAdvertisingId(@Nullable String advertisingId) {
+        preferences.setAdvertisingId(advertisingId);
         return this;
     }
     

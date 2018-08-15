@@ -2,6 +2,7 @@
 
 ## [???](https://github.com/deltaDNA/android-sdk/releases/tag/???) (YYYY-MM-DD)
 Added support for SmartAds reading session configuration.  
+Added support for passing the GAID into forget me events.  
 Updated Firebase Messaging for notifications.  
 
 ## [4.9.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.9.3) (2018-08-07)

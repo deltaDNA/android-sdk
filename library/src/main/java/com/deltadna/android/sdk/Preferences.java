@@ -35,6 +35,7 @@ final class Preferences {
     private static final String FIRST_SESSION = "first_session";
     private static final String LAST_SESSION = "last_session";
     private static final String REGISTRATION_ID = "registration_id";
+    private static final String ADVERTISING_ID = "advertising_id";
     private static final String FORGET_ME = "forget_me";
     private static final String FORGOTTEN = "forgotten";
     
@@ -99,6 +100,16 @@ final class Preferences {
                 REGISTRATION_ID,
                 registrationId)
                 .apply();
+        return this;
+    }
+    
+    @Nullable
+    String getAdvertisingId() {
+        return prefs.getString(ADVERTISING_ID, null);
+    }
+    
+    Preferences setAdvertisingId(@Nullable String advertisingId) {
+        prefs.edit().putString(ADVERTISING_ID, advertisingId).apply();
         return this;
     }
     
