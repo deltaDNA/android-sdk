@@ -34,7 +34,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0-beta04'
+        classpath 'com.android.tools.build:gradle:3.2.0'
         classpath('com.dicedmelon.gradle:jacoco-android:0.1.2') {
             // https://github.com/arturdm/jacoco-android-gradle-plugin/issues/42
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
@@ -72,7 +72,7 @@ subprojects {
     
     android {
         compileSdkVersion 26
-        buildToolsVersion '27.0.3'
+        buildToolsVersion '28.0.2'
         
         defaultConfig {
             minSdkVersion 15
