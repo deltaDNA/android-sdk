@@ -203,6 +203,14 @@ class DDNANonTrackingTest {
     }
     
     @Test
+    fun `cross game user id is not set`() {
+        assertThat(uut.crossGameUserId).isNull()
+        
+        uut.crossGameUserId = "a"
+        assertThat(uut.crossGameUserId).isNull()
+    }
+    
+    @Test
     fun `forget me event is sent correctly`() {
         preferences.userId = "userId"
         preferences.advertisingId = "advertisingId"

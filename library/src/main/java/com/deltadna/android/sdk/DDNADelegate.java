@@ -128,6 +128,17 @@ class DDNADelegate extends DDNA {
     
     @Nullable
     @Override
+    public String getCrossGameUserId() {
+        return getDelegate().getCrossGameUserId();
+    }
+    
+    @Override
+    public DDNA setCrossGameUserId(String crossGameUserId) {
+        return getDelegate().setCrossGameUserId(crossGameUserId);
+    }
+    
+    @Nullable
+    @Override
     public String getRegistrationId() {
         return getDelegate().getRegistrationId();
     }

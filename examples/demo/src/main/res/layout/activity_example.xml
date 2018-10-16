@@ -40,7 +40,8 @@ limitations under the License.
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:focusableInTouchMode="false">
             
             <Button
                 android:layout_width="wrap_content"
@@ -89,6 +90,26 @@ limitations under the License.
                 android:layout_marginBottom="8dp"
                 android:text="@string/image_message"
                 android:onClick="onImageMessage"/>
+            
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@android:color/darker_gray"/>
+            
+            <EditText
+                android:id="@+id/cross_game_user_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:hint="@string/input_cross_id"/>
+            
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/set_cross_id"
+                android:onClick="onSetCrossGameUserId"/>
         </LinearLayout>
         
         <LinearLayout

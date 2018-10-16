@@ -86,9 +86,9 @@ public abstract class DDNA {
         
         if (instance == null) {
             final Set<EventListener> eventListeners = Collections.newSetFromMap(
-                    new WeakHashMap<EventListener, Boolean>());
+                    new WeakHashMap<>());
             final Set<IEventListener> iEventListeners = Collections.newSetFromMap(
-                    new WeakHashMap<IEventListener, Boolean>());
+                    new WeakHashMap<>());
             
             instance = new DDNADelegate(
                     configuration,
@@ -328,6 +328,27 @@ public abstract class DDNA {
     public abstract DDNA downloadImageAssets();
     
     /**
+     * Gets the cross game user ID used for cross promotion.
+     *
+     * @return the cross game user ID, may be {@code null} if not set
+     */
+    @Nullable
+    public abstract String getCrossGameUserId();
+    
+    /**
+     * Sets the cross game user ID for the current user to be used for cross
+     * promotion.
+     *
+     * @param crossGameUserId the cross game user ID
+     *
+     * @return this {@link DDNA} instance
+     *
+     * @throws IllegalArgumentException if the {@code crossGameUserId} is null
+     *                                  or empty
+     */
+    public abstract DDNA setCrossGameUserId(String crossGameUserId);
+    
+    /**
      * Gets the registration id for push notifications.
      *
      * @return the registration id, may be {@code null} if not set
@@ -460,7 +481,10 @@ public abstract class DDNA {
         return this;
     }
     
-    final DDNA setUserId(@Nullable String userId) {
+    /**
+     * @return {@code true} if the user has changed, else {@code false}
+     */
+    final boolean setUserId(@Nullable String userId) {
         final String currentUserId = getUserId();
         final String newUserId;
         boolean changed = false;
@@ -486,16 +510,16 @@ public abstract class DDNA {
                 newUserId = userId;
             } else {
                 Log.d(BuildConfig.LOG_TAG, "User id has not changed");
-                return this;
+                return false;
             }
         }
         
         preferences.setUserId(newUserId);
         if (changed) {
-            preferences.clearRunAndSessionKeys();
+            preferences.clearUserAssociatedKeys();
         }
         
-        return this;
+        return changed;
     }
     
     final DDNA newSession(boolean suppressWarning) {
@@ -518,12 +542,16 @@ public abstract class DDNA {
         return this;
     }
     
-    final <T> void performOn(Iterable<T> items, Action<T> action) {
-        for (final T item : items) action.act(item);
+    final String getPlatform() {
+        return platform;
     }
     
     static String getCurrentTimestamp() {
         return TIMESTAMP_FORMAT.format(new Date());
+    }
+    
+    static <T> void performOn(Iterable<T> items, Action<T> action) {
+        for (final T item : items) action.act(item);
     }
     
     /**

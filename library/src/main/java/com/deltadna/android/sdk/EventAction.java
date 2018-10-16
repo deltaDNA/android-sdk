@@ -35,7 +35,8 @@ public class EventAction {
     
     static final EventAction EMPTY = new EventAction(
             new Event("noop"),
-            Collections.unmodifiableSortedSet(new TreeSet<>())) {
+            Collections.unmodifiableSortedSet(new TreeSet<>()),
+            null) { // null is fine here as it'll never be referenced
         
         @Override
         public EventAction add(EventActionHandler handler) {
@@ -48,12 +49,14 @@ public class EventAction {
     
     private final Event event;
     private final SortedSet<EventTrigger> triggers;
+    private final ActionStore store;
     
     private final Set<EventActionHandler> handlers = new LinkedHashSet<>();
     
-    EventAction(Event event, SortedSet<EventTrigger> triggers) {
+    EventAction(Event event, SortedSet<EventTrigger> triggers, ActionStore store) {
         this.event = event;
         this.triggers = triggers;
+        this.store = store;
     }
     
     /**
@@ -76,7 +79,7 @@ public class EventAction {
         for (final EventTrigger trigger : triggers) {
             if (trigger.evaluate(event)) {
                 for (final EventActionHandler handler : handlers) {
-                    if (handler.handle(trigger)) return;
+                    if (handler.handle(trigger, store)) return;
                 }
             }
         }

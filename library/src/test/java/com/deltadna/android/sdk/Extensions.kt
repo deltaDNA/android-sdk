@@ -21,6 +21,9 @@ import com.google.gson.JsonParser
 import org.json.JSONObject
 import org.robolectric.shadows.ShadowLooper
 import java.util.*
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.staticProperties
+import kotlin.reflect.jvm.javaField
 import kotlin.test.fail
 
 inline fun <reified T> Any.read(field: String) =
@@ -32,7 +35,7 @@ inline fun <reified T> Any.read(field: String) =
 fun JsonObject.convert() = JSONObject(toString())
 fun JSONObject.convert() = JsonParser().parse(toString())!!
 
-fun Date.tsIso() = DDNA.TIMESTAMP_FORMAT_ISO.format(this)
+fun Date.tsIso(): String = DDNA.TIMESTAMP_FORMAT_ISO.format(this)
 
 inline fun <reified T: Throwable> assertThrown(block: () -> Unit) {
     try {
@@ -52,6 +55,28 @@ fun runTasks(iterations: Int = 1) {
     for (i in 0 until iterations) {
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
     }
+}
+
+fun DDNA.inject(with: DDNA?): DDNA = inject(with, "instance")
+fun DDNA.scrub(): DDNA = inject(null)
+
+private inline fun <reified T: Any> T.inject(what: Any?, where: String): T {
+    T::class.memberProperties
+            .find { it.name == where }
+            ?.javaField
+            ?.apply {
+                isAccessible = true
+                set(this@inject, what)
+            }
+            ?: T::class
+                    .staticProperties
+                    .find { it.name == where }
+                    ?.javaField
+                    ?.apply {
+                        isAccessible = true
+                        set(this@inject, what)
+                    }
+    return this
 }
 
 class KEvent(name: String = "name", vararg params: Pair<String, Any?>)

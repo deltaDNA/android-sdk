@@ -18,6 +18,7 @@ package com.deltadna.android.sdk
 
 import android.app.Application
 import android.os.Bundle
+import com.deltadna.android.sdk.helpers.ClientInfo
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.internal.IEventListener
@@ -50,7 +51,14 @@ class DDNATest {
     }
     
     @Test
-    fun setUserIdPersistsIdToPreferences() {
+    fun `user change returned when user id set`() {
+        assertThat(uut.setUserId("a")).isFalse()
+        assertThat(uut.setUserId("a")).isFalse()
+        assertThat(uut.setUserId("b")).isTrue()
+    }
+    
+    @Test
+    fun `user id is persisted to preferences`() {
         val preferences = Preferences(application)
         
         uut.userId = "a"
@@ -61,7 +69,7 @@ class DDNATest {
     }
     
     @Test
-    fun setUserIdClearsKeysWhenChanged() {
+    fun `preference keys are cleared when user id changes`() {
         val preferences = Preferences(application)
         
         uut.userId = "a"
@@ -74,6 +82,15 @@ class DDNATest {
         assertThat(preferences.firstRun).isEqualTo(1)
         assertThat(preferences.firstSession).isNotEqualTo(Date(1))
         assertThat(preferences.lastSession).isNotEqualTo(Date(2))
+    }
+    
+    @Test
+    fun `cross game user id is cleared when user id changes`() {
+        uut.crossGameUserId = "a"
+        uut.userId = "a"
+        
+        assertThat(uut.crossGameUserId).isNull()
+        assertThat(Preferences(application).crossGameUserId).isNull()
     }
     
     @Test
@@ -127,6 +144,12 @@ class DDNATest {
             uut.setAdvertisingId(this)
             assertThat(uut.preferences.advertisingId).isEqualTo(this)
         }
+    }
+    
+    @Test
+    fun `platform is returned`() {
+        assertThat(uut.getPlatform()).isEqualTo(uut.platform)
+        assertThat(uut.getPlatform()).isEqualTo(ClientInfo.platform())
     }
     
     private class DDNAI(private val listener: DDNA, application: Application)
@@ -202,6 +225,15 @@ class DDNATest {
         
         override fun downloadImageAssets(): DDNA {
             listener.downloadImageAssets()
+            return this
+        }
+        
+        override fun getCrossGameUserId(): String? {
+            return listener.crossGameUserId
+        }
+        
+        override fun setCrossGameUserId(crossGameUserId: String?): DDNA {
+            listener.crossGameUserId = crossGameUserId
             return this
         }
         

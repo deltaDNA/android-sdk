@@ -25,13 +25,17 @@ import android.provider.BaseColumns;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Locale;
 
 final class DatabaseHelper extends SQLiteOpenHelper {
     
-    private static final String TAG = BuildConfig.LOG_TAG + ' ' + "DbHelper";
-    private static final short VERSION = 3;
+    private static final String TAG = BuildConfig.LOG_TAG + ' ' + "DatabaseHelper";
+    private static final short VERSION = 4;
     
     DatabaseHelper(Context context) {
         super(context, "com.deltadna.android.sdk", null, VERSION);
@@ -62,6 +66,14 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 + ImageMessages.Column.NAME + " TEXT NOT NULL UNIQUE, "
                 + ImageMessages.Column.SIZE + " INTEGER NOT NULL, "
                 + ImageMessages.Column.DOWNLOADED + " INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE " + Actions.TABLE + "("
+                + Actions.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + Actions.Column.NAME + " TEXT NOT NULL, "
+                + Actions.Column.CAMPAIGN_ID + " INTEGER NOT NULL UNIQUE ON CONFLICT REPLACE, "
+                + Actions.Column.CACHED + " INTEGER NOT NULL, "
+                + Actions.Column.PARAMETERS + " BLOB NOT NULL)");
+        db.execSQL("CREATE INDEX " + Actions.TABLE + '_' + Actions.Column.CAMPAIGN_ID + "_idx "
+                + "ON " + Actions.TABLE + '(' + Actions.Column.CAMPAIGN_ID + ')');
     }
     
     @Override
@@ -79,6 +91,8 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         
         int version = oldVersion;
         while (version++ < newVersion) {
+            Log.v(TAG, "Upgrading schema to version " + version);
+            
             switch (version) {
                 case 2:
                     db.execSQL("CREATE TABLE " + ImageMessages.TABLE + "("
@@ -100,6 +114,18 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                             + "UNIQUE("
                             + Engagements.Column.DECISION_POINT + ','
                             + Engagements.Column.FLAVOUR + ") ON CONFLICT REPLACE)");
+                    break;
+                
+                case 4:
+                    db.execSQL("CREATE TABLE " + Actions.TABLE + "("
+                            + Actions.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + Actions.Column.NAME + " TEXT NOT NULL, "
+                            + Actions.Column.CAMPAIGN_ID + " INTEGER NOT NULL UNIQUE ON CONFLICT REPLACE, "
+                            + Actions.Column.CACHED + " INTEGER NOT NULL, "
+                            + Actions.Column.PARAMETERS + " BLOB NOT NULL)");
+                    db.execSQL("CREATE INDEX " + Actions.TABLE + '_' + Actions.Column.CAMPAIGN_ID + "_idx "
+                            + "ON " + Actions.TABLE + '(' + Actions.Column.CAMPAIGN_ID + ')');
+                    break;
             }
         }
     }
@@ -275,6 +301,68 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 != -1);
     }
     
+    @Nullable
+    JSONObject getAction(long campaignId) {
+        try (final Cursor cursor = getReadableDatabase().query(
+                Actions.TABLE,
+                Actions.Column.all(),
+                Actions.Column.CAMPAIGN_ID + " = ?",
+                new String[] { String.valueOf(campaignId) },
+                null,
+                null,
+                null)) {
+            if (cursor.moveToFirst()) {
+                try {
+                    return new JSONObject(new String(
+                            cursor.getBlob(cursor.getColumnIndex(
+                                    Actions.Column.PARAMETERS.toString())),
+                            "UTF-8"));
+                } catch (UnsupportedEncodingException | JSONException e) {
+                    Log.w(  TAG,
+                            "Failed deserialising action into JSON for " + campaignId,
+                            e);
+                }
+            }
+        }
+        
+        return null;
+    }
+    
+    boolean insertActionRow(
+            String name,
+            long campaignId,
+            Date cached,
+            JSONObject parameters) {
+        
+        final ContentValues values = new ContentValues(4);
+        values.put(Actions.Column.NAME.toString(), name);
+        values.put(Actions.Column.CAMPAIGN_ID.toString(), campaignId);
+        values.put(Actions.Column.CACHED.toString(), cached.getTime());
+        try {
+            values.put(
+                    Actions.Column.PARAMETERS.toString(),
+                    parameters.toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            Log.w(TAG, "Failed inserting action: " + parameters, e);
+            return false;
+        }
+        
+        return (getWritableDatabase().insert(Actions.TABLE, null, values)
+                != -1);
+    }
+    
+    boolean removeActionRow(long campaignId) {
+        return (getWritableDatabase().delete(
+                Actions.TABLE,
+                Actions.Column.CAMPAIGN_ID + " = ?",
+                new String[] { Long.toString(campaignId) })
+                == 1);
+    }
+    
+    void removeActionRows() {
+        getWritableDatabase().delete(Actions.TABLE, null, null);
+    }
+    
     static final class Events {
         
         static final String TABLE = "Events";
@@ -363,6 +451,36 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             @Override
             public String toString() {
                 return value;
+            }
+            
+            static String[] all() {
+                final String[] result = new String[values().length];
+                for (int i = 0; i < values().length; i++) {
+                    result[i] = values()[i].toString();
+                }
+                return result;
+            }
+        }
+    }
+    
+    private static final class Actions {
+        
+        static final String TABLE = "actions";
+        enum Column {
+            ID {
+                @Override
+                public String toString() {
+                    return BaseColumns._ID;
+                }
+            },
+            NAME,
+            CAMPAIGN_ID,
+            CACHED,
+            PARAMETERS;
+            
+            @Override
+            public String toString() {
+                return name().toLowerCase();
             }
             
             static String[] all() {

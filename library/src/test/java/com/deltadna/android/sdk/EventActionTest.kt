@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk
 
 import com.nhaarman.mockito_kotlin.*
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -24,6 +25,13 @@ import java.util.*
 
 @RunWith(JUnit4::class)
 class EventActionTest {
+    
+    private lateinit var store: ActionStore
+    
+    @Before
+    fun before() {
+        store = mock()
+    }
     
     @Test
     fun `triggers are evaluated in order`() {
@@ -37,7 +45,7 @@ class EventActionTest {
             add(t1)
             add(t2)
             add(t3)
-        }).run()
+        }, store).run()
         
         inOrder(t1, t2, t3) {
             verify(t2).evaluate(same(e))
@@ -55,16 +63,16 @@ class EventActionTest {
         val h3 = mock<EventActionHandler<*>>()
         whenever(t.evaluate(e)).then { true }
         
-        EventAction(e, TreeSet<EventTrigger>().apply { add(t) })
+        EventAction(e, TreeSet<EventTrigger>().apply { add(t) }, store)
                 .add(h1)
                 .add(h2)
                 .add(h3)
                 .run()
         
         inOrder(h1, h2, h3) {
-            verify(h1).handle(same(t))
-            verify(h2).handle(same(t))
-            verify(h3).handle(same(t))
+            verify(h1).handle(same(t), same(store))
+            verify(h2).handle(same(t), same(store))
+            verify(h3).handle(same(t), same(store))
         }
     }
     
@@ -76,10 +84,10 @@ class EventActionTest {
         val h2 = mock<EventActionHandler<*>>()
         val h3 = mock<EventActionHandler<*>>()
         whenever(t.evaluate(e)).then { true }
-        whenever(h1.handle(same(t))).then { false }
-        whenever(h2.handle(same(t))).then { true }
+        whenever(h1.handle(same(t), same(store))).then { false }
+        whenever(h2.handle(same(t), same(store))).then { true }
         
-        EventAction(e, TreeSet<EventTrigger>().apply { add(t) })
+        EventAction(e, TreeSet<EventTrigger>().apply { add(t) }, store)
                 .add(h1)
                 .add(h2)
                 .add(h3)

@@ -34,6 +34,7 @@ final class Preferences {
     private static final String FIRST_RUN = "first_run";
     private static final String FIRST_SESSION = "first_session";
     private static final String LAST_SESSION = "last_session";
+    private static final String CROSS_GAME_USER_ID = "cross_game_user_id";
     private static final String REGISTRATION_ID = "registration_id";
     private static final String ADVERTISING_ID = "advertising_id";
     private static final String FORGET_ME = "forget_me";
@@ -91,6 +92,16 @@ final class Preferences {
     }
     
     @Nullable
+    String getCrossGameUserId() {
+        return prefs.getString(CROSS_GAME_USER_ID, null);
+    }
+    
+    Preferences setCrossGameUserId(@Nullable String crossGameUserId) {
+        prefs.edit().putString(CROSS_GAME_USER_ID, crossGameUserId).apply();
+        return this;
+    }
+    
+    @Nullable
     String getRegistrationId() {
         return prefs.getString(REGISTRATION_ID, null);
     }
@@ -131,11 +142,12 @@ final class Preferences {
         return this;
     }
     
-    Preferences clearRunAndSessionKeys() {
+    Preferences clearUserAssociatedKeys() {
         prefs   .edit()
                 .remove(FIRST_RUN)
                 .remove(FIRST_SESSION)
                 .remove(LAST_SESSION)
+                .remove(CROSS_GAME_USER_ID)
                 .apply();
         return this;
     }

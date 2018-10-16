@@ -28,8 +28,12 @@ limitations under the License.
     <string name="start_sdk">Start SDK</string>
     <string name="stop_sdk">Stop SDK</string>
     
+    <string name="input_cross_id">Input cross game user ID</string>
+    <string name="set_cross_id">Set cross game user ID</string>
+    
     <string name="image_message_action">We are now back with action value %1$s and params %2$s</string>
     <string name="image_message_link">We are now back with link value %1$s and params %2$s</string>
+    <string name="image_message_store">We are now back with store value %1$s and params %2$s</string>
     <string name="image_message_cancelled">The message has been dismissed with no action</string>
     
     <string name="dismiss">Dismiss</string>

@@ -16,6 +16,8 @@
 
 package com.deltadna.android.sdk.listeners;
 
+import org.json.JSONObject;
+
 /**
  * Listener which can be used with
  * {@link com.deltadna.android.sdk.ImageMessageActivity#handleResult(int, android.content.Intent, ImageMessageResultListener)}
@@ -23,9 +25,35 @@ package com.deltadna.android.sdk.listeners;
  */
 public interface ImageMessageResultListener {
     
-    void onAction(String value, String params);
+    /**
+     * Will be invoked when the user selects an element set to use an action.
+     *
+     * @param value     the action value
+     * @param params    the parameters for the action
+     */
+    default void onAction(String value, JSONObject params) {}
     
-    void onLink(String value, String params);
+    /**
+     * Will be invoked when the user selects an element set to use a link
+     * action.
+     *
+     * @param value     the link value
+     * @param params    the parameters for the action
+     */
+    default void onLink(String value, JSONObject params) {}
     
-    void onCancelled();
+    /**
+     * Will be invoked when the user selects an element set to use a store
+     * action. The value appropriate for the current platform will be returned.
+     *
+     * @param value     the platform-specific store value
+     * @param params    the parameters for the action
+     */
+    default void onStore(String value, JSONObject params) {}
+    
+    /**
+     * Will be invoked when the user selects an element set to dismiss the
+     * image message.
+     */
+    default void onCancelled() {}
 }

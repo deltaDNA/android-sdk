@@ -35,7 +35,7 @@ public abstract class EventActionHandler<T> {
         this.callback = callback;
     }
     
-    abstract boolean handle(EventTrigger trigger);
+    abstract boolean handle(EventTrigger trigger, ActionStore store);
     
     abstract String getType();
     
@@ -50,11 +50,15 @@ public abstract class EventActionHandler<T> {
         }
         
         @Override
-        final boolean handle(EventTrigger trigger) {
+        final boolean handle(EventTrigger trigger, ActionStore store) {
             if (trigger.getAction().equals(getType())) {
                 final JSONObject response = trigger.getResponse();
+                final JSONObject persistedParams = store.get(trigger);
                 
-                if (response.has("parameters")) {
+                if (persistedParams != null) {
+                    store.remove(trigger);
+                    callback.handle(persistedParams);
+                } else if (response.has("parameters")) {
                     callback.handle(response.optJSONObject("parameters"));
                 } else {
                     callback.handle(new JSONObject());
@@ -82,15 +86,26 @@ public abstract class EventActionHandler<T> {
         }
         
         @Override
-        final boolean handle(EventTrigger trigger) {
+        final boolean handle(EventTrigger trigger, ActionStore store) {
             if (trigger.getAction().equals(getType())) {
-                final JSONObject response = trigger.getResponse();
+                JSONObject response = trigger.getResponse();
+                final JSONObject persistedParams = store.get(trigger);
                 
                 try {
-                    final ImageMessage imageMessage = new ImageMessage(response);
+                    if (persistedParams != null) {
+                        // copy the json to avoid modifying original
+                        response = new JSONObject(response.toString());
+                        response.put("parameters", persistedParams);
+                    }
                     
+                    final ImageMessage imageMessage = new ImageMessage(response);
                     if (imageMessage.prepared()) {
+                        if (persistedParams != null) {
+                            store.remove(trigger);
+                        }
+                        
                         callback.handle(imageMessage);
+                        
                         return true;
                     }
                 } catch (JSONException ignored) {}
