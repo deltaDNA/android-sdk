@@ -22,6 +22,9 @@ import android.content.res.Configuration;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.deltadna.android.sdk.helpers.ClientInfo;
+import com.deltadna.android.sdk.helpers.Objects;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,15 +41,16 @@ public final class ImageMessage implements Serializable {
             + ' '
             + ImageMessage.class.getSimpleName();
     
-    static final String ACTION_NONE = "none";
-    static final String ACTION_DISMISS = "dismiss";
-    static final String ACTION_ACTION = "action";
-    static final String ACTION_LINK = "link";
-    
     private static final String ALIGN_CENTER = "center";
     private static final String ALIGN_RIGHT = "right";
     private static final String ALIGN_BOTTOM = "bottom";
-
+    
+    private static final String ACTION_NONE = "none";
+    private static final String ACTION_DISMISS = "dismiss";
+    private static final String ACTION_ACTION = "action";
+    private static final String ACTION_LINK = "link";
+    private static final String ACTION_STORE = "store";
+    
     static final String MASK_DIMMED = "dimmed";
     
     private static final int METRICTYPE_PIXELS = 0;
@@ -221,7 +225,7 @@ public final class ImageMessage implements Serializable {
         try {
             return new JSONObject(parameters);
         } catch (JSONException e) {
-            Log.w(BuildConfig.LOG_TAG, "Failed to serialise JSON parameters", e);
+            Log.w(TAG, "Failed to serialise JSON parameters", e);
             return new JSONObject();
         }
     }
@@ -744,9 +748,9 @@ public final class ImageMessage implements Serializable {
         final Rect imageRect;
         
         @Nullable
-        private final Action landscapeAction;
+        private final BaseAction landscapeAction;
         @Nullable
-        private final Action portraitAction;
+        private final BaseAction portraitAction;
         
         ImageBase(
                 JSONObject sprite,
@@ -761,10 +765,14 @@ public final class ImageMessage implements Serializable {
             imageRect = new Rect(imageX, imageY, imageX + imageW, imageY + imageH);
             
             landscapeAction = (layoutLandscape != null)
-                    ? new Action(layoutLandscape.getJSONObject("action"))
+                    ? BaseAction.create(
+                            layoutLandscape.getJSONObject("action"),
+                            DDNA.instance().getPlatform())
                     : null;
             portraitAction = (layoutPortrait != null)
-                    ? new Action(layoutPortrait.getJSONObject("action"))
+                    ? BaseAction.create(
+                            layoutPortrait.getJSONObject("action"),
+                            DDNA.instance().getPlatform())
                     : null;
         }
         
@@ -775,7 +783,7 @@ public final class ImageMessage implements Serializable {
          *
          * @return The action.
          */
-        Action action(int orientation) {
+        BaseAction action(int orientation) {
             if (orientation == Configuration.ORIENTATION_LANDSCAPE){
                 return landscapeAction != null ? landscapeAction : portraitAction;
             } else {
@@ -796,32 +804,114 @@ public final class ImageMessage implements Serializable {
         /**
          * Touch action.
          */
-        final Action action;
+        final BaseAction action;
         
         Shim(JSONObject json) throws JSONException {
             mask = json.getString("mask");
-            action = new Action(json.getJSONObject("action"));
+            action = BaseAction.create(
+                    json.getJSONObject("action"),
+                    DDNA.instance().getPlatform());
         }
     }
     
     /**
      * Encapsulates an Action.
      */
-    static class Action implements Serializable {
+    static abstract class BaseAction<T> implements Serializable {
         
-        /**
-         * Action type.
-         */
-        final String type;
-        /**
-         * Action value.
-         */
+        protected final String type;
+        
+        private BaseAction(JSONObject json) throws JSONException {
+            type = json.getString("type");
+        }
+        
         @Nullable
-        final String value;
+        abstract T getValue();
+        
+        @Nullable
+        static BaseAction create(JSONObject json, @Nullable String platform)
+                throws JSONException {
+            
+            switch (json.getString("type")) {
+                case ACTION_NONE:
+                    return null;
+                    
+                case ACTION_DISMISS:
+                    return new DismissAction(json);
+                
+                case ACTION_ACTION:
+                    return new Action(json);
+                
+                case ACTION_LINK:
+                    return new LinkAction(json);
+                
+                case ACTION_STORE:
+                    return new StoreAction(json, platform);
+                
+                default:
+                    return new Action(json);
+            }
+        }
+    }
+    
+    static class DismissAction extends BaseAction<Void> implements Serializable {
+        
+        DismissAction(JSONObject json) throws JSONException {
+            super(json);
+        }
+        
+        @Nullable
+        @Override
+        Void getValue() {
+            return null;
+        }
+    }
+    
+    static class Action extends BaseAction<String> implements Serializable {
+        
+        @Nullable
+        protected final String value;
         
         Action(JSONObject json) throws JSONException {
-            type = json.getString("type");
+            super(json);
+            
             value = json.optString("value");
+        }
+        
+        @Nullable
+        @Override
+        String getValue() {
+            return value;
+        }
+    }
+    
+    static class LinkAction extends Action implements Serializable {
+        
+        LinkAction(JSONObject json) throws JSONException {
+            super(json);
+        }
+    }
+    
+    static class StoreAction extends BaseAction<String> implements Serializable {
+        
+        private String value;
+        
+        StoreAction(JSONObject json, @Nullable String platform)
+                throws JSONException {
+            
+            super(json);
+            
+            value = json.has("value")
+                    ? Objects.equals(platform, ClientInfo.PLATFORM_AMAZON)
+                    ? json.optJSONObject("value").optString("AMAZON")
+                    : json.optJSONObject("value").optString("ANDROID")
+                    : null;
+        }
+        
+        @Nullable
+        @Override
+        String getValue() {
+            return value;
         }
     }
     

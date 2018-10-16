@@ -20,6 +20,7 @@
  * [Event triggers](#event-triggers)
 * [Engage](#engage)
  * [Image Messaging](#image-messaging)
+* [Cross promotion](#cross-promotion)
 * [Forgetting a user](#forgetting-a-user-(gdpr))
 * [Push notifications](#push-notifications)
 * [Settings](#settings)
@@ -303,12 +304,18 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
                 data,
                 new ImageMessageResultListener() {
                     @Override
-                    public void onAction(String value, String params) {
-                        // act on action button with value/params
+                    public void onAction(String value, JSONObject params) {
+                        // act on action with value/params
                     }
                     
-                    public void onLink(String value, String params) {
-                        // act on link button with value/params
+                    @Override
+                    public void onLink(String value, JSONObject params) {
+                        // act on link action with value/params
+                    }
+                    
+                    @Override
+                    public void onStore(String value, JSONObject params) {
+                        // act on store action with value/params
                     }
                     
                     @Override
@@ -320,10 +327,30 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 }
 ```
 
+## Cross promotion
+To register a user for cross promotion between multiple games the user needs to sign into a service which can provide unique user identification. Once the user has been signed in the ID can be set in the SDK:
+```java
+DDNA.instance().setCrossGameUserId(crossGameUserId);
+```
+On the next session the SDK will download a new configuration with cross promotion campaigns relevant to the user.
+
+When a cross promotion campaign with a store action has been acted on by the user, the SDK will return the store link for the currently set platform:
+```java
+ImageMessageActivity.handleResult(
+        resultCode,
+        data,
+        new ImageMessageResultListener() {
+            @Override
+            public void onStore(String value, JSONObject params) {
+                // perform an action on 'value', such as opening the store URL
+            }
+        });
+```
+
 ## Forgetting a user (GDPR)
 If a user no longer wishes to be tracked and would like to be forgotten the `forgetMe()` API can be used. This will stop the SDK from sending/receiving any further information to/from the Platform, as well as initiating a data deletion request on behalf of the user. The SDK will continue to work as it normally would, without any additional work required.
 
-If the game supports changing of users then calling `startSdk(userId)` with a new user ID or `clearPersistentData()` will restore the previous SDK functionality. 
+If the game supports changing of users then calling `startSdk(userId)` with a new user ID or `clearPersistentData()` will restore the previous SDK functionality.
 
 ## Push notifications
 The SDK can store the Android Registration Id for the device and send it to deltaDNA so that you may send targeted push notification messages to players.

@@ -20,6 +20,7 @@ import com.github.salomonbrys.kotson.jsonObject
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import org.json.JSONObject
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -32,6 +33,13 @@ import org.robolectric.shadow.api.Shadow
 @Config(shadows = [EventActionHandlerTest.ShadowImageMessage::class])
 class EventActionHandlerTest {
     
+    private lateinit var store: ActionStore
+    
+    @Before
+    fun before() {
+        store = mock()
+    }
+    
     @Test
     fun `game parameters handler only handles game parameter actions`() {
         val cbk = mock<EventActionHandler.Callback<JSONObject>>()
@@ -41,14 +49,14 @@ class EventActionHandlerTest {
             
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "imageMessage" }
-            })).isFalse()
+            }, store)).isFalse()
             verifyZeroInteractions(cbk)
             
             val json = jsonObject("parameters" to jsonObject("a" to 1)).convert()
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "gameParameters" }
                 whenever(response).then { json }
-            })).isTrue()
+            }, store)).isTrue()
             verify(cbk).handle(argThat {
                 toString() == jsonObject("a" to 1).toString()
             })
@@ -56,8 +64,28 @@ class EventActionHandlerTest {
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "gameParameters" }
                 whenever(response).then { JSONObject() }
-            })).isTrue()
+            }, store)).isTrue()
             verify(cbk, times(2)).handle(isNotNull())
+        }
+        
+        verify(store, never()).remove(any())
+    }
+    
+    @Test
+    fun `game parameters handler uses persisted action and removes it`() {
+        val cbk = mock<EventActionHandler.Callback<JSONObject>>()
+        val trigger = mock<EventTrigger>().apply {
+            whenever(action).then { "gameParameters" }
+            whenever(response).then { jsonObject("parameters" to
+                    jsonObject("a" to 1)).convert() }
+        }
+        val params = jsonObject("b" to 2).convert()
+        whenever(store.get(trigger)).then { params }
+        
+        with(EventActionHandler.GameParametersHandler(cbk)) {
+            assertThat(handle(trigger, store)).isTrue()
+            verify(store).remove(same(trigger))
+            verify(cbk).handle(argThat { "$this" == "$params" })
         }
     }
     
@@ -70,7 +98,7 @@ class EventActionHandlerTest {
             
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "gameParameters" }
-            })).isFalse()
+            }, store)).isFalse()
             verifyZeroInteractions(cbk)
             
             assertThat(handle(mock<EventTrigger>().apply {
@@ -79,7 +107,7 @@ class EventActionHandlerTest {
                         "image" to jsonObject(),
                         "prepared" to true)
                         .convert() }
-            })).isTrue()
+            }, store)).isTrue()
             verify(cbk).handle(notNull())
             
             assertThat(handle(mock<EventTrigger>().apply {
@@ -88,8 +116,29 @@ class EventActionHandlerTest {
                         "image" to jsonObject(),
                         "prepared" to false)
                         .convert() }
-            })).isFalse()
+            }, store)).isFalse()
             verifyNoMoreInteractions(cbk)
+        }
+    }
+    
+    @Test
+    fun `image message handler uses persisted action and removes it`() {
+        val cbk = mock<EventActionHandler.Callback<ImageMessage>>()
+        val trigger = mock<EventTrigger>().apply {
+            whenever(action).then { "imageMessage" }
+            whenever(response).then { jsonObject(
+                    "image" to jsonObject(),
+                    "prepared" to true,
+                    "parameters" to jsonObject("a" to 1))
+                    .convert() }
+        }
+        val params = jsonObject("b" to 2).convert()
+        whenever(store.get(trigger)).then { params }
+        
+        with(EventActionHandler.ImageMessageHandler(cbk)) {
+            assertThat(handle(trigger, store)).isTrue()
+            verify(store).remove(same(trigger))
+            verify(cbk).handle(argThat { "${parameters()}" == "$params" })
         }
     }
     
@@ -98,15 +147,21 @@ class EventActionHandlerTest {
     @Implements(ImageMessage::class)
     class ShadowImageMessage : Shadow() {
         
+        private lateinit var json: JSONObject
         private var prepared = false
         
         @Implementation
         fun __constructor__(json: JSONObject) {
+            this.json = json
+            
             assertThat(json.has("image")).isTrue()
             prepared = json.optBoolean("prepared")
         }
         
         @Implementation
         fun prepared() = prepared
+        
+        @Implementation
+        fun parameters(): JSONObject = json.getJSONObject("parameters")
     }
 }

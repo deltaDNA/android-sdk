@@ -23,6 +23,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -47,10 +48,12 @@ import java.util.Iterator;
  */
 public final class ImageMessageActivity extends Activity {
     
-    private enum Action { ACTION, LINK }
+    private static final String TAG = BuildConfig.LOG_TAG +
+            ' ' +
+            ImageMessageActivity.class.getSimpleName();
     
     private static final String EXTRA_IMG_MSG = "img_msg";
-    private static final String EXTRA_VALUE = "value";
+    private static final String EXTRA_ACTION = "action";
     private static final String EXTRA_PARAMS = "params";
     
     private ImageMessage imageMessage;
@@ -98,36 +101,21 @@ public final class ImageMessageActivity extends Activity {
      * @param source    the source of the action
      * @param action    the action to handle
      */
-    private void performAction(String source, ImageMessage.Action action){
+    private void performAction(
+            String source,
+            @Nullable ImageMessage.BaseAction action){
+        
         if (action != null) {
             final Event event = createActionEvent(source, action);
             
-            if (action.type.equalsIgnoreCase(ImageMessage.ACTION_NONE)) {
-                return;
-            } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_ACTION)) {
-                final Intent intent = new Intent();
-                intent.setAction(Action.ACTION.name());
-                intent.putExtra(EXTRA_VALUE, action.value);
-                intent.putExtra(
-                        EXTRA_PARAMS,
-                        imageMessage.parameters().toString());
-                
-                event.putParam("imActionValue", action.value);
-                
-                setResult(Activity.RESULT_OK, intent);
-            } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_LINK)) {
-                final Intent intent = new Intent();
-                intent.setAction(Action.LINK.name());
-                intent.putExtra(EXTRA_VALUE, action.value);
-                intent.putExtra(
-                        EXTRA_PARAMS,
-                        imageMessage.parameters().toString());
-                
-                event.putParam("imActionValue", action.value);
-                
-                setResult(Activity.RESULT_OK, intent);
-            } else if (action.type.equalsIgnoreCase(ImageMessage.ACTION_DISMISS)) {
+            if (action instanceof ImageMessage.DismissAction) {
                 setResult(Activity.RESULT_CANCELED);
+            } else {
+                setResult(Activity.RESULT_OK, new Intent()
+                        .putExtra(EXTRA_ACTION, action)
+                        .putExtra(EXTRA_PARAMS, imageMessage.parameters().toString()));
+                
+                event.putParam("imActionValue", action.getValue());
             }
             
             DDNA.instance().recordEvent(event);
@@ -136,7 +124,7 @@ public final class ImageMessageActivity extends Activity {
         }
     }
     
-    private Event createActionEvent(String source, ImageMessage.Action action) {
+    private Event createActionEvent(String source, ImageMessage.BaseAction action) {
         JSONObject params;
         try {
             params = new JSONObject(imageMessage.eventParams);
@@ -188,21 +176,30 @@ public final class ImageMessageActivity extends Activity {
             ImageMessageResultListener callback) {
         
         if (resultCode == RESULT_OK) {
-            final Action action = Action.valueOf(data.getAction());
-            final Bundle extras = data.getExtras();
+            final ImageMessage.BaseAction action = (ImageMessage.BaseAction)
+                    data.getSerializableExtra(EXTRA_ACTION);
+            JSONObject params;
+            try {
+                params = new JSONObject(data.getStringExtra(EXTRA_PARAMS));
+            } catch (JSONException e) {
+                Log.w(TAG, "Failed deserialising params to JSON", e);
+                params = new JSONObject();
+            }
             
-            switch (action) {
-                case ACTION:
-                    callback.onAction(
-                            extras.getString(EXTRA_VALUE),
-                            extras.getString(EXTRA_PARAMS));
-                    break;
-                
-                case LINK:
-                    callback.onLink(
-                            extras.getString(EXTRA_VALUE),
-                            extras.getString(EXTRA_PARAMS));
-                    break;
+            if (action instanceof ImageMessage.LinkAction) {
+                callback.onLink(
+                        ((ImageMessage.LinkAction) action).getValue(),
+                        params);
+            } else if (action instanceof ImageMessage.Action) {
+                callback.onAction(
+                        ((ImageMessage.Action) action).getValue(),
+                        params);
+            } else if (action instanceof ImageMessage.StoreAction) {
+                callback.onStore(
+                        ((ImageMessage.StoreAction) action).getValue(),
+                        params);
+            } else {
+                Log.w(TAG, "Unknown action type: " + action);
             }
         } else if (resultCode == RESULT_CANCELED) {
             callback.onCancelled();
@@ -291,7 +288,7 @@ public final class ImageMessageActivity extends Activity {
                             .getConfiguration().orientation;
                     
                     String source = null;
-                    ImageMessage.Action action = null;
+                    ImageMessage.BaseAction action = null;
                     
                     // if the touch is on the popup then test buttons
                     if (imageMessage.background.layout(orientation).frame()

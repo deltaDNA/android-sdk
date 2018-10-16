@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.deltadna.android.sdk.DDNA;
@@ -35,15 +36,24 @@ import com.deltadna.android.sdk.Transaction;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
 
+import org.json.JSONObject;
+
+import java.util.UUID;
+
 public class ExampleActivity extends AppCompatActivity {
     
     private static final int REQUEST_CODE_IMAGE_MSG = 1;
+    
+    private EditText crossGameUserId;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.activity_example);
+        
+        crossGameUserId = (EditText) findViewById(R.id.cross_game_user_id);
+        crossGameUserId.setText(DDNA.instance().getCrossGameUserId());
         
         /*
          * In this case the SDK will generate its own user id, but if you're
@@ -75,7 +85,7 @@ public class ExampleActivity extends AppCompatActivity {
                     data,
                     new ImageMessageResultListener() {
                         @Override
-                        public void onAction(String value, String params) {
+                        public void onAction(String value, JSONObject params) {
                             showImageMessageDialog(getString(
                                     R.string.image_message_action,
                                     value,
@@ -83,9 +93,17 @@ public class ExampleActivity extends AppCompatActivity {
                         }
                         
                         @Override
-                        public void onLink(String value, String params) {
+                        public void onLink(String value, JSONObject params) {
                             showImageMessageDialog(getString(
                                     R.string.image_message_link,
+                                    value,
+                                    params));
+                        }
+                        
+                        @Override
+                        public void onStore(String value, JSONObject params) {
+                            showImageMessageDialog(getString(
+                                    R.string.image_message_store,
                                     value,
                                     params));
                         }
@@ -160,6 +178,10 @@ public class ExampleActivity extends AppCompatActivity {
                         action.prepare(new ImageMessageListener());
                     }
                 });
+    }
+    
+    public void onSetCrossGameUserId(View view) {
+        DDNA.instance().setCrossGameUserId(crossGameUserId.getText().toString());
     }
     
     public void onStartSdk(View view) {

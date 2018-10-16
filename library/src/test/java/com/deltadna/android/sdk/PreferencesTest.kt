@@ -63,6 +63,16 @@ class PreferencesTest {
     }
     
     @Test
+    fun `cross game user id is returned and persisted`() {
+        assertThat(uut.crossGameUserId).isNull()
+        
+        with("id") {
+            uut.crossGameUserId = this
+            assertThat(uut.crossGameUserId).isEqualTo(this)
+        }
+    }
+    
+    @Test
     fun `advertising id is returned and persisted`() {
         assertThat(uut.advertisingId).isNull()
         
@@ -87,16 +97,18 @@ class PreferencesTest {
     }
     
     @Test
-    fun clearRunAndSessionKeys() {
+    fun `clear user associated keys clears relevant keys`() {
         uut.firstRun = 0
         uut.firstSession = Date(1)
         uut.lastSession = Date(2)
+        uut.crossGameUserId = "a"
         
-        uut.clearRunAndSessionKeys()
+        uut.clearUserAssociatedKeys()
         
         assertThat(uut.firstRun).isEqualTo(1)
         assertThat(uut.firstSession).isNotEqualTo(Date(1))
         assertThat(uut.lastSession).isNotEqualTo(Date(2))
+        assertThat(uut.crossGameUserId).isNull()
     }
     
     @Test

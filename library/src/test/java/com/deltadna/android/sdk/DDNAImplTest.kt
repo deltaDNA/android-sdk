@@ -24,6 +24,7 @@ import com.deltadna.android.sdk.listeners.EventListener
 import com.deltadna.android.sdk.listeners.internal.IEventListener
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
+import com.github.salomonbrys.kotson.minus
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import com.squareup.okhttp.mockwebserver.MockResponse
@@ -36,6 +37,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.shadows.ShadowLog
+import java.lang.IllegalArgumentException
+import java.util.*
 import java.util.concurrent.TimeUnit
 import com.deltadna.android.sdk.EventActionHandler.GameParametersHandler as GPH
 
@@ -103,6 +106,26 @@ class DDNAImplTest {
         assertThat(server.takeRequest().path).startsWith("/engage")
         
         assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
+    }
+    
+    @Test
+    fun `starting sdk with new user clears engage and action store`() {
+        uut.settings.setBackgroundEventUpload(false)
+        uut.userId = "id1"
+        val database = DatabaseHelper(RuntimeEnvironment.application)
+        database.insertEngagementRow("dp", "flavour", Date(), byteArrayOf())
+        database.insertActionRow("name", 1L, Date(), JSONObject())
+        
+        uut.startSdk("id2")
+        
+        with(database.getEngagement("dp", "flavour")) {
+            assertThat(this.count).isEqualTo(0)
+        }
+        assertThat(database.getAction(1L)).isNull()
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
     }
     
     @Test
@@ -477,25 +500,6 @@ class DDNAImplTest {
     }
     
     @Test
-    fun `forget me stops sdk`() {
-        uut.settings.setBackgroundEventUpload(false)
-        
-        uut.startSdk()
-        assertThat(uut.isStarted).isTrue()
-        
-        // session config
-        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
-        server.takeRequest()
-        
-        uut.forgetMe()
-        assertThat(uut.isStarted).isFalse()
-        
-        // collect
-        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
-        server.takeRequest()
-    }
-    
-    @Test
     fun `event triggers are read out from configuration and evaluated`() {
         uut.settings.setBackgroundEventUpload(false)
         
@@ -540,5 +544,112 @@ class DDNAImplTest {
                 toString() == jsonObject("e" to 5).toString()
             })
         }
+    }
+    
+    @Test
+    fun `persistent actions are persisted from session config`() {
+        val database = DatabaseHelper(RuntimeEnvironment.application)
+        val params = jsonObject("ddnaIsPersistent" to true, "a" to 1)
+        server.enqueue(MockResponse()
+                .setResponseCode(200)
+                .setBody(jsonObject("parameters" to jsonObject(
+                        "triggers" to jsonArray(
+                                jsonObject(
+                                        "eventName" to "name",
+                                        "condition" to jsonArray(),
+                                        "response" to jsonObject("parameters" to params),
+                                        "campaignID" to 1L),
+                                jsonObject(
+                                        "eventName" to "name",
+                                        "condition" to jsonArray(),
+                                        "response" to jsonObject("parameters" to params
+                                                .minus("ddnaIsPersistent")),
+                                        "campaignID" to 2L))))
+                        .toString()))
+        uut.settings.setBackgroundEventUpload(false)
+        
+        uut.startSdk()
+        server.takeRequest()
+        waitAndRunTasks()
+        
+        assertThat("${database.getAction(1L)}").isEqualTo("$params")
+        assertThat(database.getAction(2L)).isNull()
+    }
+    
+    @Test
+    fun `cross game user id is set and recorded`() {
+        uut.settings.setBackgroundEventUpload(false)
+        uut.startSdk()
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        
+        assertThat(uut.crossGameUserId).isNull()
+        
+        // collect
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        
+        uut.crossGameUserId = "id"
+        uut.upload()
+        
+        assertThat(uut.crossGameUserId).isEqualTo("id")
+        server.takeRequest().run {
+            assertThat(path).startsWith("/collect")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"eventName\":\"ddnaRegisterCrossGameUserID\"")
+                assertThat(this).contains("\"ddnaCrossGameUserID\":\"id\"")
+            }
+        }
+    }
+    
+    @Test
+    fun `cross game user id cannot be null or empty`() {
+        assertThrown<IllegalArgumentException> { uut.crossGameUserId = null }
+        assertThrown<IllegalArgumentException> { uut.crossGameUserId = "" }
+    }
+    
+    @Test
+    fun `persistent data is cleared`() {
+        val database = DatabaseHelper(RuntimeEnvironment.application).apply {
+            insertEventRow(1L, Location.INTERNAL, "name", null, 2L)
+            insertEngagementRow("dp", "flavour", Date(), byteArrayOf())
+            insertActionRow("name", 1L, Date(), JSONObject())
+            insertImageMessage("url", Location.INTERNAL, "name", 1L, Date())
+        }
+        uut.settings.setBackgroundEventUpload(false)
+        uut.startSdk()
+        
+        uut.clearPersistentData()
+        
+        assertThat(uut.isStarted).isFalse()
+        assertThat(uut.preferences.prefs.all).isEmpty()
+        assertThat(database.eventsSize).isEqualTo(0)
+        assertThat(database.getEngagement("dp", "flavour").count).isEqualTo(0)
+        assertThat(database.getAction(1L)).isNull()
+        assertThat(database.imageMessages.count).isEqualTo(0)
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+    }
+    
+    @Test
+    fun `forget me stops sdk`() {
+        uut.settings.setBackgroundEventUpload(false)
+        
+        uut.startSdk()
+        assertThat(uut.isStarted).isTrue()
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        
+        uut.forgetMe()
+        assertThat(uut.isStarted).isFalse()
+        
+        // collect
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
     }
 }

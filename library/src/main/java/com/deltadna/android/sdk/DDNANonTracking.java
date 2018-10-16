@@ -158,6 +158,17 @@ final class DDNANonTracking extends DDNA {
     
     @Nullable
     @Override
+    public String getCrossGameUserId() {
+        return null;
+    }
+    
+    @Override
+    public DDNA setCrossGameUserId(String crossGameUserId) {
+        return this;
+    }
+    
+    @Nullable
+    @Override
     public String getRegistrationId() {
         return null;
     }

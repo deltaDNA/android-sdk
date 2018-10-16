@@ -1,5 +1,14 @@
 # Change Log
 
+## [4.11.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.0) (YYYY-MM-DD)
+### Added
+- Support for cross promotion.
+- Support for image message store action.
+
+### Changed
+- `ImageMessageResultListener` returns parameters as `JSONObject` types.
+- `ImageMessageResultListener` callback methods are optional.
+
 ## [4.10.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.0) (2018-08-22)
 Added support for SmartAds reading session configuration.  
 Added support for passing the GAID into forget me events.  

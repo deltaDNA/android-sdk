@@ -73,6 +73,7 @@ final class DDNAImpl extends DDNA {
     
     private final EventStore eventStore;
     private final EngageStore engageStore;
+    private final ActionStore actionStore;
     private final ImageMessageStore imageMessageStore;
     
     private final SessionRefreshHandler sessionHandler;
@@ -101,7 +102,11 @@ final class DDNAImpl extends DDNA {
         } else {
             started = true;
             
-            setUserId(userId);
+            if (setUserId(userId)) {
+                Log.d(TAG, "Clearing engage and action store on user change");
+                engageStore.clear();
+                actionStore.clear();
+            }
             newSession(true);
             
             if (settings.getSessionTimeout() > 0) {
@@ -194,7 +199,8 @@ final class DDNAImpl extends DDNA {
                 event,
                 eventTriggers.containsKey(event.name)
                         ? eventTriggers.get(event.name)
-                        : Collections.unmodifiableSortedSet(new TreeSet<>()));
+                        : Collections.unmodifiableSortedSet(new TreeSet<>()),
+                actionStore);
     }
     
     @Override
@@ -320,6 +326,27 @@ final class DDNAImpl extends DDNA {
         return this;
     }
     
+    @Nullable
+    @Override
+    public String getCrossGameUserId() {
+        return preferences.getCrossGameUserId();
+    }
+    
+    @Override
+    public DDNA setCrossGameUserId(String crossGameUserId) {
+        Preconditions.checkString(
+                crossGameUserId,
+                "crossGameUserId cannot be null or empty");
+        
+        if (!Objects.equals(preferences.getCrossGameUserId(), crossGameUserId)) {
+            preferences.setCrossGameUserId(crossGameUserId);
+            recordEvent(new Event("ddnaRegisterCrossGameUserID")
+                    .putParam("ddnaCrossGameUserID", crossGameUserId));
+        }
+        
+        return this;
+    }
+    
     @Override
     @Nullable
     public String getRegistrationId() {
@@ -354,6 +381,7 @@ final class DDNAImpl extends DDNA {
         preferences.clear();
         eventStore.clear();
         engageStore.clear();
+        actionStore.clear();
         imageMessageStore.clear();
         
         return this;
@@ -469,6 +497,7 @@ final class DDNAImpl extends DDNA {
                 database,
                 location.storage(application, "engage" + File.separator),
                 settings);
+        actionStore = new ActionStore(database);
         imageMessageStore = new ImageMessageStore(
                 application,
                 database,
@@ -637,6 +666,15 @@ final class DDNAImpl extends DDNA {
                             set.add(trigger);
                             
                             eventTriggers.put(trigger.getEventName(), set);
+                        }
+                        
+                        // save persistent actions
+                        final JSONObject parameters = Objects.extract(
+                                trigger.getResponse(), "parameters");
+                        if (    parameters != null
+                                && parameters.has("ddnaIsPersistent")
+                                && parameters.optBoolean("ddnaIsPersistent", false)) { 
+                            actionStore.put(trigger, parameters);
                         }
                     }
                     // make the collections read-only

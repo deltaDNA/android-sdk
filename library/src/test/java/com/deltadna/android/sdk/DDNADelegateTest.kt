@@ -106,6 +106,14 @@ class DDNADelegateTest {
         uut.downloadImageAssets()
         verify(tracking).downloadImageAssets()
         
+        uut.crossGameUserId
+        verify(tracking).crossGameUserId
+        
+        with("id") {
+            uut.crossGameUserId = this
+            verify(tracking).setCrossGameUserId(same(this))
+        }
+        
         uut.registrationId
         verify(tracking).registrationId
         
@@ -170,6 +178,14 @@ class DDNADelegateTest {
         
         uut.downloadImageAssets()
         verify(nonTracking).downloadImageAssets()
+        
+        uut.crossGameUserId
+        verify(nonTracking).crossGameUserId
+        
+        with("id") {
+            uut.crossGameUserId = this
+            verify(nonTracking).setCrossGameUserId(same(this))
+        }
         
         uut.registrationId
         verify(nonTracking).registrationId
