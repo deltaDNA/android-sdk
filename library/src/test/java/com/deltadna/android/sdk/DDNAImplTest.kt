@@ -25,6 +25,7 @@ import com.deltadna.android.sdk.listeners.internal.IEventListener
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.github.salomonbrys.kotson.minus
+import com.github.salomonbrys.kotson.toJson
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import com.squareup.okhttp.mockwebserver.MockResponse
@@ -604,9 +605,37 @@ class DDNAImplTest {
     }
     
     @Test
+    fun `cross game user id is sent on game started event`() {
+        uut.settings.setOnFirstRunSendNewPlayerEvent(false)
+        uut.settings.setOnInitSendClientDeviceEvent(false)
+        uut.preferences.crossGameUserId = "id"
+        uut.startSdk()
+        uut.upload()
+        
+        // session config
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest()
+        
+        // collect
+        server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
+        server.takeRequest().run {
+            assertThat(path).startsWith("/collect")
+            with(body.readUtf8()) {
+                assertThat(this).contains("\"eventName\":\"gameStarted\"")
+                assertThat(this).contains("\"ddnaCrossGameUserID\":\"id\"")
+            }
+        }
+    }
+    
+    @Test
     fun `cross game user id cannot be null or empty`() {
-        assertThrown<IllegalArgumentException> { uut.crossGameUserId = null }
-        assertThrown<IllegalArgumentException> { uut.crossGameUserId = "" }
+        uut.crossGameUserId = "id"
+        
+        uut.crossGameUserId = null
+        assertThat(uut.crossGameUserId).isNotEqualTo(null)
+        
+        uut.crossGameUserId = ""
+        assertThat(uut.crossGameUserId).isNotEqualTo("")
     }
     
     @Test

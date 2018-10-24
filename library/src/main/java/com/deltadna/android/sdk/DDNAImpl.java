@@ -334,11 +334,9 @@ final class DDNAImpl extends DDNA {
     
     @Override
     public DDNA setCrossGameUserId(String crossGameUserId) {
-        Preconditions.checkString(
-                crossGameUserId,
-                "crossGameUserId cannot be null or empty");
-        
-        if (!Objects.equals(preferences.getCrossGameUserId(), crossGameUserId)) {
+        if (TextUtils.isEmpty(crossGameUserId)) {
+            Log.w(TAG, "crossGameUserId cannot be null or empty");
+        } else if (!Objects.equals(preferences.getCrossGameUserId(), crossGameUserId)) {
             preferences.setCrossGameUserId(crossGameUserId);
             recordEvent(new Event("ddnaRegisterCrossGameUserID")
                     .putParam("ddnaCrossGameUserID", crossGameUserId));
@@ -425,6 +423,10 @@ final class DDNAImpl extends DDNA {
                     .putParam("userLocale", ClientInfo.locale());
             if (!TextUtils.isEmpty(clientVersion)) {
                 event.putParam("clientVersion", clientVersion);
+            }
+            
+            if (!TextUtils.isEmpty(getCrossGameUserId())) {
+                event.putParam("ddnaCrossGameUserID", getCrossGameUserId());
             }
             if (getRegistrationId() != null) {
                 event.putParam("androidRegistrationID", getRegistrationId());
