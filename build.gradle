@@ -17,7 +17,7 @@
 buildscript {
     ext {
         firebaseVersion = '15.0.2'
-        kotlinVersion = '1.2.60'
+        kotlinVersion = '1.2.71'
         kotlinxCoroutinesVersion = '0.22.5'
         kotsonVersion = '2.5.0'
         mockWebServerVersion = '2.7.5'
@@ -34,7 +34,7 @@ buildscript {
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.0'
+        classpath 'com.android.tools.build:gradle:3.2.1'
         classpath('com.dicedmelon.gradle:jacoco-android:0.1.2') {
             // https://github.com/arturdm/jacoco-android-gradle-plugin/issues/42
             exclude group: 'org.codehaus.groovy', module: 'groovy-all'
@@ -72,7 +72,7 @@ subprojects {
     
     android {
         compileSdkVersion 26
-        buildToolsVersion '28.0.2'
+        buildToolsVersion '28.0.3'
         
         defaultConfig {
             minSdkVersion 15
@@ -113,7 +113,7 @@ subprojects {
     if (isLibrary) {
         dependencies {
             testImplementation "com.github.salomonbrys.kotson:kotson:$kotsonVersion"
-            testImplementation 'com.google.truth:truth:0.37'
+            testImplementation 'com.google.truth:truth:0.42'
             testImplementation 'com.nhaarman:mockito-kotlin:1.5.0'
             testImplementation "com.squareup.okhttp:mockwebserver:$mockWebServerVersion"
             testImplementation 'junit:junit:4.12'
