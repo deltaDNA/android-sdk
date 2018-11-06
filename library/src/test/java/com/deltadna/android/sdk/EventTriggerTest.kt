@@ -41,20 +41,25 @@ class EventTriggerTest {
     
     @Test
     fun `attributes are extracted at construction`() {
+        val eventParams = jsonObject("responseEngagementName" to "campaignName", "responseVariantName" to "variantName")
+        val responseJson = jsonObject("eventParams" to eventParams, "a" to 1)
+
         with(EventTrigger(
                 ddna,
                 0,
                 jsonObject(
                         "eventName" to "name",
-                        "response" to jsonObject("a" to 1),
+                        "response" to responseJson,
                         "campaignID" to 1,
                         "variantID" to 2)
                         .convert())) {
             
             assertThat(eventName).isEqualTo("name")
-            assertThat(response.convert()).isEqualTo(jsonObject("a" to 1))
+            assertThat(response.convert()).isEqualTo(jsonObject("a" to 1, "eventParams" to eventParams))
             assertThat(campaignId).isEqualTo(1)
             assertThat(variantId).isEqualTo(2)
+            assertThat(campaignName).isEqualTo("campaignName")
+            assertThat(variantName).isEqualTo("variantName")
         }
     }
     
@@ -65,6 +70,8 @@ class EventTriggerTest {
             assertThat(response.length()).isEqualTo(0)
             assertThat(campaignId).isEqualTo(-1)
             assertThat(variantId).isEqualTo(-1)
+            assertThat(campaignName).isNull()
+            assertThat(variantName).isNull()
         }
     }
     
@@ -157,6 +164,10 @@ class EventTriggerTest {
         val campaignId = 1L
         val priority = 2
         val variantId = 3L
+        val campaignName = "campaignName"
+        val variantName = "variantName"
+        val eventParams = jsonObject("responseEngagementName" to campaignName, "responseVariantName" to variantName)
+        val response = jsonObject("eventParams" to eventParams)
         
         EventTrigger(
                 ddna,
@@ -165,7 +176,8 @@ class EventTriggerTest {
                         "eventName" to eventName,
                         "campaignID" to campaignId,
                         "priority" to priority,
-                        "variantID" to variantId)
+                        "variantID" to variantId,
+                        "response" to response)
                         .convert())
                 .evaluate(KEvent(eventName))
         
@@ -176,8 +188,44 @@ class EventTriggerTest {
                 get("ddnaEventTriggeredCampaignPriority") == priority &&
                 get("ddnaEventTriggeredVariantID") == variantId &&
                 get("ddnaEventTriggeredActionType") == "gameParameters" &&
-                get("ddnaEventTriggeredSessionCount") == 1
+                get("ddnaEventTriggeredSessionCount") == 1 &&
+                get("ddnaEventTriggeredCampaignName") == campaignName &&
+                get("ddnaEventTriggeredVariantName") == variantName
             }
+        })
+    }
+
+    @Test
+    fun `trigger sends conversion event when evaluated and omits optional parameters if not present`() {
+        val eventName = "a"
+        val campaignId = 1L
+        val priority = 2
+        val variantId = 3L
+        val response = jsonObject()
+
+        EventTrigger(
+                ddna,
+                0,
+                jsonObject(
+                        "eventName" to eventName,
+                        "campaignID" to campaignId,
+                        "priority" to priority,
+                        "variantID" to variantId,
+                        "response" to response)
+                        .convert())
+                .evaluate(KEvent(eventName))
+
+        verify(ddna).recordEvent(argThat<Event<KEvent>> {
+            name == "ddnaEventTriggeredAction" &&
+                    with(params.json) {
+                        get("ddnaEventTriggeredCampaignID") == campaignId &&
+                                get("ddnaEventTriggeredCampaignPriority") == priority &&
+                                get("ddnaEventTriggeredVariantID") == variantId &&
+                                get("ddnaEventTriggeredActionType") == "gameParameters" &&
+                                get("ddnaEventTriggeredSessionCount") == 1 &&
+                                ! has("ddnaEventTriggeredCampaignName")  &&
+                                ! has("ddnaEventTriggeredVariantName")
+                    }
         })
     }
     
