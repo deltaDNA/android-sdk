@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.10.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.1) (YYYY-MM-DD)
+### Fixed
+Missing fields to ddnaEventTriggeredAction event.
+
 ## [4.10.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.0) (2018-08-22)
 Added support for SmartAds reading session configuration.  
 Added support for passing the GAID into forget me events.  

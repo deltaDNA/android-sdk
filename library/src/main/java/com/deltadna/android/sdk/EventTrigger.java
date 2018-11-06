@@ -47,7 +47,12 @@ public final class EventTrigger implements Comparable<EventTrigger> {
     
     private final long campaignId;
     private final long variantId;
-    
+
+    @Nullable
+    private final String campaignName;
+    @Nullable
+    private final String variantName;
+
     private int runs;
     
     EventTrigger(DDNA ddna, int index, JSONObject json) {
@@ -57,7 +62,7 @@ public final class EventTrigger implements Comparable<EventTrigger> {
         eventName = json.optString("eventName", "");
         final JSONObject response = json.optJSONObject("response");
         this.response = (response != null) ? response : new JSONObject();
-        
+
         priority = json.optInt("priority", 0);
         limit = json.optInt("limit", -1);
         final JSONArray condition = json.optJSONArray("condition");
@@ -78,6 +83,11 @@ public final class EventTrigger implements Comparable<EventTrigger> {
         
         campaignId = json.optInt("campaignID", -1);
         variantId = json.optInt("variantID", -1);
+
+        final JSONObject nullableEventParams = this.response.optJSONObject("eventParams");
+        final JSONObject eventParams = nullableEventParams != null ? nullableEventParams : new JSONObject();
+        campaignName = eventParams.optString("responseEngagementName", null);
+        variantName = eventParams.optString("responseVariantName", null);
     }
     
     String getEventName() {
@@ -98,15 +108,26 @@ public final class EventTrigger implements Comparable<EventTrigger> {
     JSONObject getResponse() {
         return response;
     }
-    
+
     long getCampaignId() {
         return campaignId;
     }
-    
+
     long getVariantId() {
         return variantId;
     }
-    
+
+    @Nullable
+    String getCampaignName() {
+        return campaignName;
+    }
+
+    @Nullable
+    String getVariantName() {
+        return variantName;
+    }
+
+
     boolean evaluate(Event event) {
         if (limit != -1 && runs >= limit) return false;
         if (!event.name.equals(eventName)) return false;
@@ -210,7 +231,10 @@ public final class EventTrigger implements Comparable<EventTrigger> {
                     .putParam("ddnaEventTriggeredCampaignPriority", priority)
                     .putParam("ddnaEventTriggeredVariantID", variantId)
                     .putParam("ddnaEventTriggeredActionType", getAction())
+                    .putParam("ddnaEventTriggeredCampaignName", getCampaignName())
+                    .putParam("ddnaEventTriggeredVariantName", getVariantName())
                     .putParam("ddnaEventTriggeredSessionCount", runs));
+
             
             return true;
         } else {
@@ -227,7 +251,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             return primary;
         }
     }
-    
+
+
     private enum Op {
         
         AND("and") {
