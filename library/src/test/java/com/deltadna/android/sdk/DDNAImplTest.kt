@@ -25,7 +25,6 @@ import com.deltadna.android.sdk.listeners.internal.IEventListener
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
 import com.github.salomonbrys.kotson.minus
-import com.github.salomonbrys.kotson.toJson
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import com.squareup.okhttp.mockwebserver.MockResponse
@@ -38,7 +37,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.shadows.ShadowLog
-import java.lang.IllegalArgumentException
 import java.util.*
 import java.util.concurrent.TimeUnit
 import com.deltadna.android.sdk.EventActionHandler.GameParametersHandler as GPH
@@ -631,8 +629,8 @@ class DDNAImplTest {
     fun `cross game user id cannot be null or empty`() {
         uut.crossGameUserId = "id"
         
-        uut.crossGameUserId = null
-        assertThat(uut.crossGameUserId).isNotEqualTo(null)
+        uut.crossGameUserId = null as String? // workaround for compiler ambiguity
+        assertThat(uut.crossGameUserId).isNotNull()
         
         uut.crossGameUserId = ""
         assertThat(uut.crossGameUserId).isNotEqualTo("")
