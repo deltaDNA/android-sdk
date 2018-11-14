@@ -142,7 +142,16 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
     public boolean isSuccessful() {
         return (json != null);
     }
-    
+
+    /**
+     * Gets whether the response was able to make use of cached Engage requests after the Engage request has completed.
+     *
+     * @return {@code true} if the response was eligible to access the cache, else {@code false}
+     */
+    public boolean isCacheCandidate(){
+        return ! (statusCode >= 400 && statusCode <  500);
+    }
+
     /**
      * Gets the JSON body of the response after the Engage request has
      * completed with a success.

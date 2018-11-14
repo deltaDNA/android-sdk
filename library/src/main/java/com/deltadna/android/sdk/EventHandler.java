@@ -170,7 +170,7 @@ final class EventHandler {
                 engagement.setResponse(result);
                 if (engagement.isSuccessful()) {
                     engagements.put(engagement);
-                } else {
+                } else if (engagement.isCacheCandidate() ){
                     Log.w(TAG, String.format(
                             Locale.US,
                             "Not caching %s due to failure, checking cache",
@@ -190,8 +190,13 @@ final class EventHandler {
                                     "Using cached response " + engagement.getJson());
                         } catch (JSONException ignored) {}
                     }
+                } else {
+                    Log.w(TAG, String.format(
+                            Locale.US,
+                            "Not caching %s due to failure, and not checking cache due to client error response",
+                            engagement));
+
                 }
-                
                 listener.onCompleted(engagement);
             }
             
