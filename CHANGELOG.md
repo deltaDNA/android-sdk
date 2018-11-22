@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.10.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.2) (YYYY-MM-DD)
+## Fixed
+- Engage requests resulting in client error responses will no longer use the Engage cache.
+
 ## [4.10.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.1) (2018-11-07)
 ### Fixed
 - Missing fields to ddnaEventTriggeredAction event.
