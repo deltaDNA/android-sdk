@@ -146,7 +146,7 @@ class EventHandlerTest {
     }
 
     @Test
-    fun handleEngagementWithClientErrorResponse() {
+    fun `handle Engagement with client error response`() {
         val engagement = KEngagement("point", "flavour")
         val listener = mock<EngageListener<KEngagement>>()
         whenever(network.engage(any(), any())).thenAnswer {

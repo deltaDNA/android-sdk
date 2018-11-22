@@ -148,7 +148,7 @@ public class Engagement<T extends Engagement<T>> extends Event<T> {
      *
      * @return {@code true} if the response was eligible to access the cache, else {@code false}
      */
-    public boolean isCacheCandidate(){
+    boolean isCacheCandidate(){
         return ! (statusCode >= 400 && statusCode <  500);
     }
 
