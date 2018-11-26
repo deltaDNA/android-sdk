@@ -144,6 +144,37 @@ class EventHandlerTest {
             true
         })
     }
+
+    @Test
+    fun `handle Engagement with client error response`() {
+        val engagement = KEngagement("point", "flavour")
+        val listener = mock<EngageListener<KEngagement>>()
+        whenever(network.engage(any(), any())).thenAnswer {
+            (it.arguments[1] as RequestListener<JSONObject>)
+                    .onCompleted(Response(400, false, null, null, "Bad Request"))
+            null
+        }
+
+        uut.handleEngagement(
+                engagement,
+                listener,
+                "userId",
+                "sessionId",
+                0,
+                "sdkVersion",
+                "platform")
+
+        verify(engagements, times(0)).put(any())
+        verify(listener).onCompleted( argThat {
+            assertThat(this).isSameAs(engagement)
+            assertThat(this.statusCode).isEqualTo(400)
+            assertThat(this.isCached).isFalse()
+            assertThat(this.isCacheCandidate).isFalse()
+            assertThat(this.json).isEqualTo(null)
+            assertThat(this.error).isEqualTo("Bad Request")
+            true
+        })
+    }
     
     @Test
     fun handleEngagementWithArchiveHit() {

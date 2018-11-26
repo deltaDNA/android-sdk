@@ -52,39 +52,55 @@ class EngagementTest {
         with(KEngagement("point")) {
             assertThat(statusCode).isEqualTo(0)
             assertThat(isSuccessful).isFalse()
+            assertThat(isCacheCandidate).isTrue()
             assertThat(json).isNull()
             assertThat(error).isNull()
-            
+
             setResponse(Response(200, false, null, JSONObject(), null))
             assertThat(statusCode).isEqualTo(200)
             assertThat(isCached).isFalse()
+            assertThat(isCacheCandidate).isTrue()
             assertThat(isSuccessful).isTrue()
             assertThat(json).isNotNull()
             assertThat(error).isNull()
-            
+
             setResponse(Response(200, true, null, JSONObject(), null))
             assertThat(statusCode).isEqualTo(200)
             assertThat(isCached).isTrue()
+            assertThat(isCacheCandidate).isTrue()
             assertThat(isSuccessful).isTrue()
             assertThat(json).isNotNull()
             assertThat(error).isNull()
-            
+
             setResponse(Response(300, false, null, null, "error"))
             assertThat(statusCode).isEqualTo(300)
             assertThat(isCached).isFalse()
+            assertThat(isCacheCandidate).isTrue()
             assertThat(isSuccessful).isFalse()
             assertThat(json).isNull()
             assertThat(error).isNotNull()
-            
+
             // cached response
             setResponse(Response(300, false, null, JSONObject(), "error"))
             assertThat(statusCode).isEqualTo(300)
             assertThat(isCached).isFalse()
+            assertThat(isCacheCandidate).isTrue()
             assertThat(isSuccessful).isTrue()
             assertThat(json).isNotNull()
             assertThat(error).isNotNull()
+
+            //cache prevented response
+            setResponse(Response(400, false, null, null, "error"))
+            assertThat(statusCode).isEqualTo(400)
+            assertThat(isCached).isFalse()
+            assertThat(isCacheCandidate).isFalse()
+            assertThat(isSuccessful).isFalse()
+            assertThat(json).isNull()
+            assertThat(error).isNotNull()
         }
     }
+
+
     
     @Test
     fun `get decision point`() {

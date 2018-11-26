@@ -9,6 +9,10 @@
 - `ImageMessageResultListener` returns parameters as `JSONObject` types.
 - `ImageMessageResultListener` callback methods are optional.
 
+## [4.10.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.2) (2018-11-26)
+### Fixed
+- Engage requests resulting in client error responses will no longer use the Engage cache.
+
 ## [4.10.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.1) (2018-11-07)
 ### Fixed
 - Missing fields to ddnaEventTriggeredAction event.
