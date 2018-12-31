@@ -195,7 +195,30 @@ recordEvent(new Transaction(
         .setId("47891208312996456524019-178.149.115.237:51787")
         .setProductId("4019"));
 ```
-It is also worth noting that the currency value is always sent as an integer in the minor currency unit and with the ISO-4217 3 character currency code.
+
+ As detailed in the [ISO 4217 standard](https://en.wikipedia.org/wiki/ISO_4217#Active_codes "ISO 4217 standard"), not all real currencies have 2 minor units and thus require conversion into a common form. The `Product.ConvertCurrency()` method can be used to ensure the correct currency value is sent. 
+
+For example, to track a purchase made with 550 JP¥: 
+
+```java
+new Product().setRealCurrency("JPY", Product.convertCurrency(DDNA.instance(), "JPY", 550); // realCurrencyAmount: 500
+```
+
+And to track a $4.99 purchase: 
+
+```java
+new Product().setRealCurrency("USD", Product.convertCurrency(DDNA.instance(), "USD", 4.99f); // realCurrencyAmount: 499
+```
+
+These will be converted automatically into a `convertedProductAmount` parameter that is used as a common currency for reporting. 
+
+Receipt validation can also be performed against purchases made via the Google Play Store. To validate in-app purchases made through the Google Play Store the following parameters should be added to the `transaction` event:
+
+* `transactionServer` - the server for which the receipt should be validated against, in this case 'GOOGLE'
+* `transactionReceipt` - the purchase data as a string 
+* `transactionReceiptSignature` - the in-app data signature 
+
+When a `transaction` event is received with the above parameters, the receipt will be checked against the store and the resulting event will be tagged with a `revenueValidated` parameter to allow for the filtering out of invalid revenue.
 
 This event may be more complex, but the structure is logical, flexible, and provides a mechanism for players spending or receiving any combination of currencies and items.
 
