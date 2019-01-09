@@ -5,6 +5,9 @@
 - Support for cross promotion.
 - Support for image message store action.
 
+### Fixed
+- Image messages not redrawing correctly on device re-orientation 
+
 ### Changed
 - `ImageMessageResultListener` returns parameters as `JSONObject` types.
 - `ImageMessageResultListener` callback methods are optional.
