@@ -1,5 +1,10 @@
 # Change Log
 
+
+## [4.10.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.3) (YYYY-MM-DD)
+### Fixed
+- Image messages not redrawing correctly on device re-orientation 
+
 ## [4.10.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.10.2) (2018-11-26)
 ### Fixed
 - Engage requests resulting in client error responses will no longer use the Engage cache.
