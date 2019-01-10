@@ -4,6 +4,7 @@
 ### Added
 - Support for cross promotion.
 - Support for image message store action.
+- Support for multiple Event-Triggered campaign actions from a single event. 
 
 ### Changed
 - `ImageMessageResultListener` returns parameters as `JSONObject` types.

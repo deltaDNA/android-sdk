@@ -16,6 +16,8 @@
 
 package com.deltadna.android.sdk;
 
+import com.deltadna.android.sdk.helpers.Settings;
+
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -32,33 +34,35 @@ import java.util.TreeSet;
  * {@link #run()}. The evaluation happens locally, as such it is instantaneous.
  */
 public class EventAction {
-    
+
     static final EventAction EMPTY = new EventAction(
             new Event("noop"),
             Collections.unmodifiableSortedSet(new TreeSet<>()),
-            null) { // null is fine here as it'll never be referenced
-        
+            null, null) { // null is fine here as it'll never be referenced
+
         @Override
         public EventAction add(EventActionHandler handler) {
             return this;
         }
-        
+
         @Override
         public void run() {}
     };
-    
+
     private final Event event;
     private final SortedSet<EventTrigger> triggers;
     private final ActionStore store;
-    
+
     private final Set<EventActionHandler> handlers = new LinkedHashSet<>();
-    
-    EventAction(Event event, SortedSet<EventTrigger> triggers, ActionStore store) {
+    private final Settings settings;
+
+    EventAction(Event event, SortedSet<EventTrigger> triggers, ActionStore store, Settings settings) {
         this.event = event;
         this.triggers = triggers;
         this.store = store;
+        this.settings = settings;
     }
-    
+
     /**
      * Register a handler to handle the parametrised action.
      *
@@ -70,18 +74,26 @@ public class EventAction {
         handlers.add(handler);
         return this;
     }
-    
+
     /**
      * Evaluates the registered handlers against the event and triggers
      * associated for the event.
      */
     public void run() {
+        boolean handledImageMessage = false;
         for (final EventTrigger trigger : triggers) {
             if (trigger.evaluate(event)) {
                 for (final EventActionHandler handler : handlers) {
-                    if (handler.handle(trigger, store)) return;
+                    if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
+                    boolean handled = handler.handle(trigger, store);
+                    if (handled) {
+                        if (!settings.isMultipleActionsForEventTriggerEnabled()) return;
+                        if ("imageMessage".equals(trigger.getAction())) handledImageMessage = true;
+                        break;
+                    }
                 }
             }
         }
     }
+
 }
