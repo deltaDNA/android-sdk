@@ -6,6 +6,9 @@
 - Support for image message store action.
 - Support for multiple Event-Triggered campaign actions from a single event. 
 
+### Fixed
+- Image messages not redrawing correctly on device re-orientation 
+
 ### Changed
 - `ImageMessageResultListener` returns parameters as `JSONObject` types.
 - `ImageMessageResultListener` callback methods are optional.

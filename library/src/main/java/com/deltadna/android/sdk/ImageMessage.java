@@ -352,7 +352,7 @@ public final class ImageMessage implements Serializable {
              * @param screenHeight The screen height to use.
              */
             public void init(int screenWidth, int screenHeight){
-                if(mFrame == null){
+
                     mFrame = new Rect();
 
                     int tp = 0;
@@ -415,7 +415,7 @@ public final class ImageMessage implements Serializable {
                     mFrame.top = y;
                     mFrame.right = x + pWidth;
                     mFrame.bottom = y + pHeight;
-                }
+
             }
         }
         
@@ -650,7 +650,7 @@ public final class ImageMessage implements Serializable {
              * @param scale The popup scale.
              */
             public void init(Rect frame, float scale){
-                if(mFrame == null){
+
                     mFrame = new Rect();
                     
                     final int btnX = frame.left + (int)(mX * scale);
@@ -660,7 +660,7 @@ public final class ImageMessage implements Serializable {
                     mFrame.top = btnY;
                     mFrame.right = btnX + (int) (imageW * scale);
                     mFrame.bottom = btnY + (int) (imageH * scale);
-                }
+
             }
 
         }
