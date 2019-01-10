@@ -200,7 +200,8 @@ final class DDNAImpl extends DDNA {
                 eventTriggers.containsKey(event.name)
                         ? eventTriggers.get(event.name)
                         : Collections.unmodifiableSortedSet(new TreeSet<>()),
-                actionStore);
+                actionStore,
+                settings);
     }
     
     @Override
@@ -325,13 +326,13 @@ final class DDNAImpl extends DDNA {
                 cacheImages.toArray(new String[0]));
         return this;
     }
-    
+
     @Nullable
     @Override
     public String getCrossGameUserId() {
         return preferences.getCrossGameUserId();
     }
-    
+
     @Override
     public DDNA setCrossGameUserId(String crossGameUserId) {
         if (TextUtils.isEmpty(crossGameUserId)) {
@@ -341,10 +342,10 @@ final class DDNAImpl extends DDNA {
             recordEvent(new Event("ddnaRegisterCrossGameUserID")
                     .putParam("ddnaCrossGameUserID", crossGameUserId));
         }
-        
+
         return this;
     }
-    
+
     @Override
     @Nullable
     public String getRegistrationId() {
@@ -424,7 +425,7 @@ final class DDNAImpl extends DDNA {
             if (!TextUtils.isEmpty(clientVersion)) {
                 event.putParam("clientVersion", clientVersion);
             }
-            
+
             if (!TextUtils.isEmpty(getCrossGameUserId())) {
                 event.putParam("ddnaCrossGameUserID", getCrossGameUserId());
             }
@@ -669,13 +670,13 @@ final class DDNAImpl extends DDNA {
                             
                             eventTriggers.put(trigger.getEventName(), set);
                         }
-                        
+
                         // save persistent actions
                         final JSONObject parameters = Objects.extract(
                                 trigger.getResponse(), "parameters");
                         if (    parameters != null
                                 && parameters.has("ddnaIsPersistent")
-                                && parameters.optBoolean("ddnaIsPersistent", false)) { 
+                                && parameters.optBoolean("ddnaIsPersistent", false)) {
                             actionStore.put(trigger, parameters);
                         }
                     }

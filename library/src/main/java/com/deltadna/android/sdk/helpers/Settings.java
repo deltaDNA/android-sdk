@@ -52,7 +52,7 @@ public class Settings{
 	 * Controls how fequently events are uploaded automatically.
 	 */
 	private int mBackgroundEventUploadRepeatRateSeconds = 60;
-    
+
     private int sessionTimeout = 5 * 60 * 1000;
     
     private int engageCacheExpiry = 12 * 60 * 60;
@@ -74,6 +74,11 @@ public class Settings{
     private boolean useInternalStorageForEvents;
     private boolean useInternalStorageForEngage;
     private boolean useInternalStorageForImageMessages;
+
+	/**
+	 * Controls whether multiple Event-Triggers can call the callback sequentially.
+	 */
+	private boolean mMultipleActionsForEventTriggerEnabled = false;
     
 	/**
 	 * TRUE to send new player event on first run of application.
@@ -365,4 +370,31 @@ public class Settings{
     public void setUseInternalStorageForImageMessages(boolean useInternal) {
         useInternalStorageForImageMessages = useInternal;
     }
+
+	/**
+	 * Gets whether multiple actions should be processed when evaluating Event-Triggers for an event.
+	 *
+	 * If true, all applicable actions will be passed to their respective action handler.
+	 * If false, only the first applicable parameter will be passed to the respective action handler.
+	 *
+	 * N.b. Even when true, Only the first image action will be handled; but this will not stop any subsequent parameter actions from being handled.
+	 *
+	 * @return whether multiple actions per event-trigger are enabled.
+	 */
+	public boolean isMultipleActionsForEventTriggerEnabled() {
+		return mMultipleActionsForEventTriggerEnabled;
+	}
+
+	/**
+	 * Sets whether multiple actions should be processed when evaluating Event-Triggers for an event.
+	 *
+	 * If true, all applicable actions will be passed to their respective action handler.
+	 * If false, only the first applicable parameter will be passed to the respective action handler.
+	 *
+	 * N.b. Even when true, Only the first image action will be handled; but this will not stop any subsequent parameter actions from being handled.
+	 *
+	 */
+	public void setMultipleActionsForEventTriggerEnabled(boolean multipleActionsForEventTriggerEnabled) {
+		this.mMultipleActionsForEventTriggerEnabled = multipleActionsForEventTriggerEnabled;
+	}
 }
