@@ -1,6 +1,6 @@
 # Change Log
 
-## [4.11.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.0) (YYYY-MM-DD)
+## [4.11.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.0) 
 ### Added
 - Support for cross promotion.
 - Support for image message store action.
