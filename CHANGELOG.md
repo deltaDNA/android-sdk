@@ -1,6 +1,13 @@
 # Change Log
 
-## [4.11.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.0) 
+## [4.11.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.1) 
+### Added 
+- Support for specifying default event-triggered action handlers.
+
+### Fixed 
+- Event-Triggered Campaigns will now correctly trigger off internal events.
+
+## [4.11.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.0)
 ### Added
 - Support for cross promotion.
 - Support for image message store action.
