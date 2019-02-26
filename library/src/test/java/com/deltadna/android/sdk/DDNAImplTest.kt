@@ -81,6 +81,7 @@ class DDNAImplTest {
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
+        waitAndRunTasks(500, 5)
         
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
@@ -436,68 +437,6 @@ class DDNAImplTest {
         verify(l2, times(2)).onImageCachePopulated()
     }
     
-    /**
-     * Downloads image assets at first as part of a new session, failing on the
-     * second file it tries. On the second try we succeed to download the second
-     * file, and on the third try we will have both of the cached.
-     */
-    @Test
-    fun `image asset caching`() {
-        uut.settings.setBackgroundEventUpload(false)
-        
-        val images = mutableListOf("/1.png", "/2.png")
-        val listener = mock<EventListener>()
-        uut.register(listener)
-        
-        // will be downloaded as part of a new session
-        server.enqueue(MockResponse()
-                .setResponseCode(200)
-                .setBody(jsonObject("parameters" to jsonObject(
-                        "dpWhitelist" to jsonArray(),
-                        "eventsWhitelist" to jsonArray(),
-                        "imageCache" to jsonArray(*images
-                                .map { server.url(it).toString() }
-                                .toTypedArray())))
-                        .toString()))
-        server.enqueue(MockResponse().setResponseCode(200).setBody("a"))
-        server.enqueue(MockResponse().setResponseCode(500).setBody("error"))
-        
-        uut.startSdk()
-        
-        server.takeRequest().run {
-            assertThat(path).startsWith("/engage")
-            with(body.readUtf8()) {
-                assertThat(this).contains("\"decisionPoint\":\"config\"")
-                assertThat(this).contains("\"flavour\":\"internal\"")
-            }
-
-            runTasks()
-        }
-        with(server.takeRequest().path) {
-            assertThat(this).isIn(images)
-            images.remove(this)
-        }
-        assertThat(server.takeRequest().path).isIn(images)
-        waitAndRunTasks(iterations = 2)
-        verify(listener).onImageCachingFailed(any())
-        
-        server.enqueue(MockResponse().setResponseCode(200).setBody("b"))
-        
-        uut.downloadImageAssets()
-        
-        assertThat(server.takeRequest().path).isIn(images)
-        assertThat(server.requestCount).isEqualTo(4)
-        waitAndRunTasks(iterations = 2)
-        verify(listener).onImageCachePopulated()
-        
-        uut.downloadImageAssets()
-        
-        // images will be cached now so not expecting any network requests
-        assertThat(server.requestCount).isEqualTo(4)
-        waitAndRunTasks()
-        verify(listener, times(2)).onImageCachePopulated()
-    }
-    
     @Test
     fun `event triggers are read out from configuration and evaluated`() {
         uut.settings.setBackgroundEventUpload(false)
@@ -613,7 +552,9 @@ class DDNAImplTest {
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
-        
+
+
+        waitAndRunTasks(500, 5)
         // collect
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
