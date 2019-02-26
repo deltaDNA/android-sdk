@@ -201,7 +201,7 @@ public final class DDNANotifications {
                     "DidReceivePushNotification",
                     Utils.convert(copy));
         } else {
-            DDNA.instance().recordNotificationOpened(launch, payload);
+            DDNA.instance().recordNotificationOpened(launch, payload).run();
         }
     }
     

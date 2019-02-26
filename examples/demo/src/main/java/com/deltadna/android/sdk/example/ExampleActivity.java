@@ -38,6 +38,7 @@ import com.deltadna.android.sdk.listeners.ImageMessageResultListener;
 
 import org.json.JSONObject;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 public class ExampleActivity extends AppCompatActivity {
@@ -60,7 +61,21 @@ public class ExampleActivity extends AppCompatActivity {
          * keeping your own user id then you may pass this into the overloaded
          * startSdk(String) method, or even provide it during initialisation.
          */
+
+
+        DDNA.instance().getSettings().setDefaultGameParametersHandler(new EventActionHandler.GameParametersHandler(gameParameters -> {
+                    // do something with the game parameters
+                    Log.i(BuildConfig.LOG_TAG,
+                            "Received game parameters from event trigger DEFAULT: " + gameParameters);
+                })
+        );
+        DDNA.instance().getSettings().setDefaultImageMessageHandler(new EventActionHandler.ImageMessageHandler(imageMessage -> {
+                    // the image message is already prepared so it will show instantly
+                    imageMessage.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
+                })
+        );
         DDNA.instance().startSdk();
+
         
         ((TextView) findViewById(R.id.user_id)).setText(getString(
                 R.string.user_id,
@@ -126,19 +141,7 @@ public class ExampleActivity extends AppCompatActivity {
     }
     
     public void onBasicEvent(View view) {
-        DDNA.instance().recordEvent(new Event("basicEvent")
-                .putParam("clientVersion", BuildConfig.VERSION_NAME)
-                .putParam("dataVersion", "1.1")
-                .putParam("serverVersion", "2.0"))
-                .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
-                    // do something with the game parameters
-                    Log.i(  BuildConfig.LOG_TAG,
-                            "Received game parameters from event trigger: " + gameParameters);
-                }))
-                .add(new EventActionHandler.ImageMessageHandler(imageMessage -> {
-                    // the image message is already prepared so it will show instantly
-                    imageMessage.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
-                }))
+        DDNA.instance().recordEvent(new Event("gameStarted"))
                 .run();
     }
     

@@ -82,6 +82,7 @@ final class DDNAImpl extends DDNA {
     private final Map<String, Integer> iso4217;
     
     private boolean started;
+    private boolean sentDefaultEvents = false;
     
     private Set<String> whitelistDps = Collections.emptySet();
     private Set<String> whitelistEvents = Collections.emptySet();
@@ -119,8 +120,6 @@ final class DDNAImpl extends DDNA {
                         settings.backgroundEventUploadRepeatRateSeconds());
             }
             
-            triggerDefaultEvents();
-            
             Log.d(TAG, "SDK started");
             performOn(iEventListeners, IEventListener::onStarted);
         }
@@ -135,7 +134,7 @@ final class DDNAImpl extends DDNA {
         if (!started) {
             Log.w(TAG, "SDK has not been started");
         } else {
-            recordEvent("gameEnded");
+            recordEvent("gameEnded").run();
             
             sessionHandler.unregister();
             eventHandler.stop(true);
@@ -143,6 +142,7 @@ final class DDNAImpl extends DDNA {
             imageMessageStore.cleanUp();
             
             started = false;
+            sentDefaultEvents = false;
             
             Log.d(TAG, "SDK stopped");
             performOn(iEventListeners, IEventListener::onStopped);
@@ -406,13 +406,14 @@ final class DDNAImpl extends DDNA {
      * {@link #startSdk(String)}.
      */
     private void triggerDefaultEvents() {
+        if (sentDefaultEvents) return;
         if (    settings.onFirstRunSendNewPlayerEvent()
                 && preferences.getFirstRun() > 0) {
             
             Log.d(TAG, "Recording 'newPlayer' event");
             
             recordEvent(new Event("newPlayer").putParam(
-                    "userCountry", ClientInfo.countryCode()));
+                    "userCountry", ClientInfo.countryCode())).run();
             
             preferences.setFirstRun(0);
         }
@@ -433,7 +434,7 @@ final class DDNAImpl extends DDNA {
                 event.putParam("androidRegistrationID", getRegistrationId());
             }
             
-            recordEvent(event);
+            recordEvent(event).run();
         }
         
         if (settings.onInitSendClientDeviceEvent()) {
@@ -447,8 +448,9 @@ final class DDNAImpl extends DDNA {
                     .putParam("operatingSystemVersion", ClientInfo.operatingSystemVersion())
                     .putParam("manufacturer", ClientInfo.manufacturer())
                     .putParam("timezoneOffset", ClientInfo.timezoneOffset())
-                    .putParam("userLanguage", ClientInfo.languageCode()));
+                    .putParam("userLanguage", ClientInfo.languageCode())).run();
         }
+        this.sentDefaultEvents = true;
     }
     
     DDNAImpl(
@@ -728,12 +730,15 @@ final class DDNAImpl extends DDNA {
                                 engagement.getStatusCode(),
                                 engagement.getError()))));
             }
+            triggerDefaultEvents();
         }
         
         @Override
         public void onError(Throwable t) {
             Log.w(TAG, "Failed to retrieve session configuration", t);
             performOn(eventListeners, it -> it.onSessionConfigurationFailed(t));
+            triggerDefaultEvents();
         }
+
     }
 }

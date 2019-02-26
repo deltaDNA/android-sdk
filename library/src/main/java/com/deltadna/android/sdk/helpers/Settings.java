@@ -16,6 +16,8 @@
 
 package com.deltadna.android.sdk.helpers;
 
+import com.deltadna.android.sdk.EventActionHandler;
+
 /**
  * DeltaDNA runtime setting.
  *
@@ -38,7 +40,7 @@ public class Settings{
 	/**
 	 * Controls if additional debug is output to the console.
 	 */
-	private boolean mDebugMode = false;
+	private boolean mDebugMode = true;
 	/**
 	 * Controls if events are uploaded automatically in the background.
 	 */
@@ -75,11 +77,17 @@ public class Settings{
     private boolean useInternalStorageForEngage;
     private boolean useInternalStorageForImageMessages;
 
+
+
 	/**
 	 * Controls whether multiple Event-Triggers can call the callback sequentially.
 	 */
 	private boolean mMultipleActionsForEventTriggerEnabled = false;
-    
+
+
+	private EventActionHandler.ImageMessageHandler defaultImageMessageHandler = null;
+	private	EventActionHandler.GameParametersHandler defaultGameParametersHandler = null;
+
 	/**
 	 * TRUE to send new player event on first run of application.
 	 *
@@ -396,5 +404,21 @@ public class Settings{
 	 */
 	public void setMultipleActionsForEventTriggerEnabled(boolean multipleActionsForEventTriggerEnabled) {
 		this.mMultipleActionsForEventTriggerEnabled = multipleActionsForEventTriggerEnabled;
+	}
+
+	public EventActionHandler.ImageMessageHandler getDefaultImageMessageHandler() {
+		return defaultImageMessageHandler;
+	}
+
+	public void setDefaultImageMessageHandler(EventActionHandler.ImageMessageHandler defaultImageMessageHandler) {
+		this.defaultImageMessageHandler = defaultImageMessageHandler;
+	}
+
+	public EventActionHandler.GameParametersHandler getDefaultGameParametersHandler() {
+		return defaultGameParametersHandler;
+	}
+
+	public void setDefaultGameParametersHandler(EventActionHandler.GameParametersHandler defaultGameParametersHandler) {
+		this.defaultGameParametersHandler = defaultGameParametersHandler;
 	}
 }

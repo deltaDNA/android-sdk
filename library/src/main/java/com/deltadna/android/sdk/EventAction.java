@@ -80,10 +80,17 @@ public class EventAction {
      * associated for the event.
      */
     public void run() {
+        Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
+        if (settings.getDefaultGameParametersHandler() != null){
+            modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
+        }
+        if (settings.getDefaultImageMessageHandler() != null){
+            modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
+        }
         boolean handledImageMessage = false;
         for (final EventTrigger trigger : triggers) {
             if (trigger.evaluate(event)) {
-                for (final EventActionHandler handler : handlers) {
+                for (final EventActionHandler handler : modifiedHandlerSet) {
                     if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
                     boolean handled = handler.handle(trigger, store);
                     if (handled) {

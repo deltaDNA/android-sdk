@@ -118,7 +118,7 @@ public final class ImageMessageActivity extends Activity {
                 event.putParam("imActionValue", action.getValue());
             }
             
-            DDNA.instance().recordEvent(event);
+            DDNA.instance().recordEvent(event).run();
             
             finish();
         }

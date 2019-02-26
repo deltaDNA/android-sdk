@@ -47,7 +47,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.11.0-SNAPSHOT'
+    implementation 'com.deltadna.android:deltadna-sdk:4.11.1-SNAPSHOT'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:
@@ -236,6 +236,22 @@ recordEvent(new Event("missionStarted").putParam("missionLevel", 1))
         .run();
 ``` 
 
+In Addition to the above mechanism, default handlers can be specified. These will be used every time `run()` is called on an EventAction, after any handlers which have been registered via the `add` method.
+These should be Specified before the SDK is started so they can be used to handle internal events such as `newPlayer` and `gameStarted` but they must be registered after the SDK is initialized. 
+You can specify these handlers like so: 
+
+```java
+        DDNA.instance().getSettings().setDefaultGameParametersHandler(new EventActionHandler.GameParametersHandler(gameParameters -> {
+                    // do something with the game parameters
+                })
+        );
+        DDNA.instance().getSettings().setDefaultImageMessageHandler(new EventActionHandler.ImageMessageHandler(imageMessage -> {
+                    // the image message is already prepared so it will show instantly
+                    imageMessage.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
+                })
+        );
+        
+```
 ## Engage
 An Engage request can be performed by calling `requestEngagement(Engagement, EngageListener)`, providing your `Engagement` and a an `EngageListener` for listening to the completion or error.
 ```java
