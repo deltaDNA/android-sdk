@@ -35,6 +35,11 @@ class EventActionTest {
     }
 
 
+    @Test
+    fun `empty event actions evaluate without issue`() {
+        EventAction.EMPTY.run();
+    }
+
 
     @Test
     fun `triggers are evaluated in order`() {

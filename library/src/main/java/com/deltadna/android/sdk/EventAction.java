@@ -81,11 +81,13 @@ public class EventAction {
      */
     public void run() {
         Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
-        if (settings.getDefaultGameParametersHandler() != null){
-            modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
-        }
-        if (settings.getDefaultImageMessageHandler() != null){
-            modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
+        if (settings != null) {
+            if (settings.getDefaultGameParametersHandler() != null) {
+                modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
+            }
+            if (settings.getDefaultImageMessageHandler() != null) {
+                modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
+            }
         }
         boolean handledImageMessage = false;
         for (final EventTrigger trigger : triggers) {
