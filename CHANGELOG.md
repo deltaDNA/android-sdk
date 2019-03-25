@@ -1,5 +1,9 @@
 # Change Log
 
+## [4.11.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.2) 
+### Fixed 
+- Evaluating non-whitelisted events for Event-Triggered Campaigns no longer fails.
+
 ## [4.11.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.1) 
 ### Added 
 - Support for specifying default event-triggered action handlers.
