@@ -19,15 +19,15 @@ package com.deltadna.android.sdk;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-
+import com.deltadna.android.sdk.triggers.ExecutionCountTriggerCondition;
+import com.deltadna.android.sdk.triggers.ExecutionRepeatTriggerCondition;
+import com.deltadna.android.sdk.triggers.TriggerCondition;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.ParseException;
-import java.util.ArrayDeque;
-import java.util.Date;
-import java.util.Deque;
-import java.util.Locale;
+import java.util.*;
 
 public final class EventTrigger implements Comparable<EventTrigger> {
     
@@ -37,8 +37,10 @@ public final class EventTrigger implements Comparable<EventTrigger> {
     
     private final DDNA ddna;
     private final int index;
+    private final List<TriggerCondition> campaignTriggerConditions;
     
     private final String eventName;
+    private final EventTriggeredCampaignMetricStore etcMetricStore;
     private final JSONObject response;
     
     private final int priority;
@@ -55,11 +57,12 @@ public final class EventTrigger implements Comparable<EventTrigger> {
 
     private int runs;
     
-    EventTrigger(DDNA ddna, int index, JSONObject json) {
+    EventTrigger(DDNA ddna, int index, JSONObject json, EventTriggeredCampaignMetricStore etcMetricStore) {
         this.ddna = ddna;
         this.index = index;
         
         eventName = json.optString("eventName", "");
+        this.etcMetricStore = etcMetricStore;
         final JSONObject response = json.optJSONObject("response");
         this.response = (response != null) ? response : new JSONObject();
 
@@ -80,9 +83,10 @@ public final class EventTrigger implements Comparable<EventTrigger> {
         } else {
             this.condition = new Object[0];
         }
-        
+
         campaignId = json.optInt("campaignID", -1);
         variantId = json.optInt("variantID", -1);
+        campaignTriggerConditions = parseShowConditions(json.optJSONObject("campaignLimitConfig"));
 
         final JSONObject nullableEventParams = this.response.optJSONObject("eventParams");
         final JSONObject eventParams = nullableEventParams != null ? nullableEventParams : new JSONObject();
@@ -129,7 +133,6 @@ public final class EventTrigger implements Comparable<EventTrigger> {
 
 
     boolean evaluate(Event event) {
-        if (limit != -1 && runs >= limit) return false;
         if (!event.name.equals(eventName)) return false;
         
         final Deque<Object> stack = new ArrayDeque<>();
@@ -223,7 +226,25 @@ public final class EventTrigger implements Comparable<EventTrigger> {
                 stack.push(token);
             }
         }
-        
+
+
+        if (limit != -1 && runs >= limit) return false;
+
+        // Default to true if no conditions exist
+        boolean anyCanExecute = campaignTriggerConditions.size() == 0;
+
+        // Only one condition needs to be true to flip conditions to true
+        etcMetricStore.recordETCExecution(campaignId);
+        for (TriggerCondition condition : campaignTriggerConditions){
+            if ( condition.canExecute() ) anyCanExecute = true;
+        }
+
+        // If none reached return false
+        if (!anyCanExecute) {
+            return false;
+        }
+
+
         if (stack.isEmpty() || (boolean) stack.pop()) {
             runs++;
             ddna.recordEvent(new Event("ddnaEventTriggeredAction")
@@ -234,14 +255,38 @@ public final class EventTrigger implements Comparable<EventTrigger> {
                     .putParam("ddnaEventTriggeredCampaignName", getCampaignName())
                     .putParam("ddnaEventTriggeredVariantName", getVariantName())
                     .putParam("ddnaEventTriggeredSessionCount", runs));
-
-            
             return true;
         } else {
             return false;
         }
     }
-    
+
+    private List<TriggerCondition> parseShowConditions(JSONObject campaignLimitsConfig) {
+        List<TriggerCondition> showConditions = new ArrayList<>();
+        if (campaignLimitsConfig == null) return showConditions;
+        if (campaignLimitsConfig.has("showConditions")) {
+            JSONArray showConditionsJson = campaignLimitsConfig.optJSONArray("showConditions");
+            for (int i = 0; i < showConditionsJson.length(); i++) {
+                try {
+                    JSONObject currentCondition = showConditionsJson.getJSONObject(i);
+                    if (currentCondition.has("executionsRequired")) {
+                        long executionsRequired = currentCondition.optLong("executionsRequired", 0L);
+                        showConditions.add(new ExecutionCountTriggerCondition(executionsRequired, etcMetricStore,
+                                variantId));
+                    }
+                    if (currentCondition.has("executionsRepeat")) {
+                        long repeatOn = currentCondition.optLong("executionsRepeat", 1L);
+                        long repeatTimesLimit = currentCondition.optLong("executionsRepeatLimit", -1L);
+                        showConditions.add(new ExecutionRepeatTriggerCondition(repeatOn, repeatTimesLimit, etcMetricStore, variantId));
+                    }
+                } catch (JSONException ignored) {
+                }
+            }
+        }
+        return showConditions;
+    }
+
+
     @Override
     public int compareTo(@NonNull EventTrigger trigger) {
         final int primary = Integer.compare(priority, trigger.priority) * -1;
@@ -251,6 +296,7 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             return primary;
         }
     }
+
 
 
     private enum Op {

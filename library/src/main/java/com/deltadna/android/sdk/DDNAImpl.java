@@ -22,7 +22,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.deltadna.android.sdk.exceptions.NotStartedException;
 import com.deltadna.android.sdk.exceptions.SessionConfigurationException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
@@ -33,7 +32,6 @@ import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.listeners.internal.IEventListener;
 import com.deltadna.android.sdk.net.Response;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,18 +42,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * {@inheritDoc}
@@ -80,7 +67,8 @@ final class DDNAImpl extends DDNA {
     private final EventHandler eventHandler;
     
     private final Map<String, Integer> iso4217;
-    
+    private final EventTriggeredCampaignMetricStore etcMetricStore;
+
     private boolean started;
     private boolean sentDefaultEvents = false;
     
@@ -382,6 +370,7 @@ final class DDNAImpl extends DDNA {
         engageStore.clear();
         actionStore.clear();
         imageMessageStore.clear();
+        etcMetricStore.clear();
         
         return this;
     }
@@ -508,6 +497,8 @@ final class DDNAImpl extends DDNA {
                 database,
                 network,
                 settings);
+
+        etcMetricStore = new EventTriggeredCampaignMetricStore(database);
         
         sessionHandler = new SessionRefreshHandler(
                 application,
@@ -655,7 +646,8 @@ final class DDNAImpl extends DDNA {
                             toBeSaved.add(new EventTrigger(
                                     DDNAImpl.this,
                                     i,
-                                    triggers.getJSONObject(i)));
+                                    triggers.getJSONObject(i) , etcMetricStore));
+
                         } catch (JSONException e) {
                             Log.w(TAG, "Failed deserialising event trigger", e);
                         }
