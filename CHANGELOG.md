@@ -1,5 +1,7 @@
 # Change Log
-
+## [4.12.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.12.0) 
+### Added 
+Improved support for event triggered campaigns 
 ## [4.11.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.2) 
 ### Fixed 
 - Evaluating non-whitelisted events for Event-Triggered Campaigns no longer fails.

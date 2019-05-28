@@ -24,7 +24,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 import android.support.annotation.Nullable;
 import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,7 +34,7 @@ import java.util.Locale;
 final class DatabaseHelper extends SQLiteOpenHelper {
     
     private static final String TAG = BuildConfig.LOG_TAG + ' ' + "DatabaseHelper";
-    private static final short VERSION = 4;
+    private static final short VERSION = 5;
     
     DatabaseHelper(Context context) {
         super(context, "com.deltadna.android.sdk", null, VERSION);
@@ -74,6 +73,12 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 + Actions.Column.PARAMETERS + " BLOB NOT NULL)");
         db.execSQL("CREATE INDEX " + Actions.TABLE + '_' + Actions.Column.CAMPAIGN_ID + "_idx "
                 + "ON " + Actions.TABLE + '(' + Actions.Column.CAMPAIGN_ID + ')');
+        db.execSQL("CREATE TABLE " + ETCExecutions.TABLE + "("
+                + ETCExecutions.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + ETCExecutions.Column.VARIANT_ID + " INTEGER NOT NULL UNIQUE ON CONFLICT REPLACE, "
+                + ETCExecutions.Column.EXECUTION_COUNT + " INTEGER NOT NULL )");
+        db.execSQL("CREATE INDEX " + ETCExecutions.TABLE + '_' + ETCExecutions.Column.VARIANT_ID + "_idx "
+                + "ON " + ETCExecutions.TABLE + '(' + ETCExecutions.Column.VARIANT_ID + ')');
     }
     
     @Override
@@ -126,6 +131,13 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                     db.execSQL("CREATE INDEX " + Actions.TABLE + '_' + Actions.Column.CAMPAIGN_ID + "_idx "
                             + "ON " + Actions.TABLE + '(' + Actions.Column.CAMPAIGN_ID + ')');
                     break;
+                case 5:
+                    db.execSQL("CREATE TABLE " + ETCExecutions.TABLE + "("
+                            + ETCExecutions.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                            + ETCExecutions.Column.VARIANT_ID + " INTEGER NOT NULL UNIQUE ON CONFLICT REPLACE, ");
+                    db.execSQL("CREATE INDEX " + ETCExecutions.TABLE + '_' + ETCExecutions.Column.VARIANT_ID + "_idx "
+                            + "ON " + ETCExecutions.TABLE + '(' + ETCExecutions.Column.VARIANT_ID + ')');
+
             }
         }
     }
@@ -362,6 +374,49 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     void removeActionRows() {
         getWritableDatabase().delete(Actions.TABLE, null, null);
     }
+
+    long getETCExecutionCount(long variantId){
+        long executions = 0;
+        try (
+                final Cursor cursor = getReadableDatabase().query(
+                ETCExecutions.TABLE,
+                new String[]{ETCExecutions.Column.EXECUTION_COUNT.name()},
+                ETCExecutions.Column.VARIANT_ID + " = ?",
+                new String[] { String.valueOf(variantId) },
+                null,
+                null,
+                null)) {
+            if (cursor.moveToFirst()) {
+               executions = cursor.getLong(0);
+            }
+        }
+
+        return executions;
+    }
+
+
+    void recordETCExecution(long campaignId) {
+
+
+        long etcExecutionCount = getETCExecutionCount(campaignId);
+        SQLiteDatabase database = this.getWritableDatabase();
+        if (etcExecutionCount == 0){
+            ContentValues values = new ContentValues();
+            values.put(ETCExecutions.Column.EXECUTION_COUNT.name(), 1);
+            values.put(ETCExecutions.Column.VARIANT_ID.name(), campaignId);
+            database.insert(ETCExecutions.TABLE, null, values );
+        }else {
+            ContentValues values = new ContentValues();
+            values.put(ETCExecutions.Column.EXECUTION_COUNT.name(), etcExecutionCount + 1);
+
+            database.update(ETCExecutions.TABLE, values, ETCExecutions.Column.VARIANT_ID + " = ?", new String[]{String.valueOf(campaignId)});
+        }
+
+    }
+
+    void clearETCExecutions() {
+        getWritableDatabase().delete(ETCExecutions.TABLE, null, null);
+    }
     
     static final class Events {
         
@@ -491,5 +546,34 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 return result;
             }
         }
+    }
+
+    private static final class ETCExecutions {
+
+        static final String TABLE = "etc_executions";
+        enum Column {
+            ID {
+                @Override
+                public String toString() {
+                    return BaseColumns._ID;
+                }
+            },
+            VARIANT_ID,
+            EXECUTION_COUNT;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase();
+            }
+
+            static String[] all() {
+                final String[] result = new String[values().length];
+                for (int i = 0; i < values().length; i++) {
+                    result[i] = values()[i].toString();
+                }
+                return result;
+            }
+        }
+
     }
 }
