@@ -238,7 +238,7 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             boolean anyCanExecute = campaignTriggerConditions.size() == 0;
 
             // Only one condition needs to be true to flip conditions to true
-            etcMetricStore.recordETCExecution(campaignId);
+            etcMetricStore.recordETCExecution(variantId);
             for (TriggerCondition condition : campaignTriggerConditions){
                 if ( condition.canExecute() ) anyCanExecute = true;
             }
