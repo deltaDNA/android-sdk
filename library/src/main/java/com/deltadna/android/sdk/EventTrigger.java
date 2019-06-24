@@ -86,7 +86,7 @@ public final class EventTrigger implements Comparable<EventTrigger> {
 
         campaignId = json.optInt("campaignID", -1);
         variantId = json.optInt("variantID", -1);
-        campaignTriggerConditions = parseShowConditions(json.optJSONObject("campaignLimitConfig"));
+        campaignTriggerConditions = parseShowConditions(json.optJSONObject("campaignExecutionConfig"));
 
         final JSONObject nullableEventParams = this.response.optJSONObject("eventParams");
         final JSONObject eventParams = nullableEventParams != null ? nullableEventParams : new JSONObject();
@@ -228,24 +228,27 @@ public final class EventTrigger implements Comparable<EventTrigger> {
         }
 
 
-        if (limit != -1 && runs >= limit) return false;
-
-        // Default to true if no conditions exist
-        boolean anyCanExecute = campaignTriggerConditions.size() == 0;
-
-        // Only one condition needs to be true to flip conditions to true
-        etcMetricStore.recordETCExecution(campaignId);
-        for (TriggerCondition condition : campaignTriggerConditions){
-            if ( condition.canExecute() ) anyCanExecute = true;
-        }
-
-        // If none reached return false
-        if (!anyCanExecute) {
-            return false;
-        }
 
 
         if (stack.isEmpty() || (boolean) stack.pop()) {
+
+
+
+            // Default to true if no conditions exist
+            boolean anyCanExecute = campaignTriggerConditions.size() == 0;
+
+            // Only one condition needs to be true to flip conditions to true
+            etcMetricStore.recordETCExecution(campaignId);
+            for (TriggerCondition condition : campaignTriggerConditions){
+                if ( condition.canExecute() ) anyCanExecute = true;
+            }
+
+            // If none reached return false
+            if (!anyCanExecute) {
+                return false;
+            }
+            if (limit != -1 && runs >= limit) return false;
+
             runs++;
             ddna.recordEvent(new Event("ddnaEventTriggeredAction")
                     .putParam("ddnaEventTriggeredCampaignID", campaignId)
@@ -269,9 +272,9 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             for (int i = 0; i < showConditionsJson.length(); i++) {
                 try {
                     JSONObject currentCondition = showConditionsJson.getJSONObject(i);
-                    if (currentCondition.has("executionsRequired")) {
-                        long executionsRequired = currentCondition.optLong("executionsRequired", 0L);
-                        showConditions.add(new ExecutionCountTriggerCondition(executionsRequired, etcMetricStore,
+                    if (currentCondition.has("executionsRequiredCount")) {
+                        long executionsRequiredCount = currentCondition.optLong("executionsRequiredCount", 0L);
+                        showConditions.add(new ExecutionCountTriggerCondition(executionsRequiredCount, etcMetricStore,
                                 variantId));
                     }
                     if (currentCondition.has("executionsRepeat")) {

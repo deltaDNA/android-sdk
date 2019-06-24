@@ -655,7 +655,7 @@ class EventTriggerTest {
                         "eventName" to "name",
                         "campaignID" to 2L,
                         "variantID" to 9989L,
-                        "campaignLimitConfig" to jsonObject("showConditions" to jsonArray(jsonObject("executionsRequired" to 999)))
+                        "campaignExecutionConfig" to jsonObject("showConditions" to jsonArray(jsonObject("executionsRequiredCount" to "999")))
                 )
                         .convert(), etcMetricStore))
         {
@@ -677,7 +677,7 @@ class EventTriggerTest {
                         "eventName" to "name",
                         "campaignID" to 2L,
                         "variantID" to 9989L,
-                        "campaignLimitConfig" to jsonObject("showConditions" to jsonArray(jsonObject("executionsRequired" to 10), jsonObject("executionsRequired" to 999)))
+                        "campaignExecutionConfig" to jsonObject("showConditions" to jsonArray(jsonObject("executionsRequiredCount" to "10"), jsonObject("executionsRequiredCount" to 999)))
                 )
                         .convert(), etcMetricStore))
         {

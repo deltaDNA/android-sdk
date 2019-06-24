@@ -4,14 +4,14 @@ import com.deltadna.android.sdk.EventTriggeredCampaignMetricStore;
 
 public class ExecutionCountTriggerCondition extends ExecutionCountBasedTriggerCondition {
 
-    private final long executionsRequired;
+    private final long executionsRequiredCount;
 
-    public ExecutionCountTriggerCondition(long executionsRequired, EventTriggeredCampaignMetricStore metricStore, long variantId) {
+    public ExecutionCountTriggerCondition(long executionsRequiredCount, EventTriggeredCampaignMetricStore metricStore, long variantId) {
         super(variantId, metricStore);
-        this.executionsRequired = executionsRequired;
+        this.executionsRequiredCount = executionsRequiredCount;
     }
 
     public boolean canExecute() {
-        return executionsRequired == getCurrentExecutionCount();
+        return executionsRequiredCount == getCurrentExecutionCount();
     }
 }
