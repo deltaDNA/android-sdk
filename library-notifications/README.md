@@ -41,8 +41,8 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.12.0-SNAPSHOT'
-    implementation 'com.deltadna.android:deltadna-sdk-notifications:4.12.0-SNAPSHOT'
+    implementation 'com.deltadna.android:deltadna-sdk:4.11.3-SNAPSHOT'
+    implementation 'com.deltadna.android:deltadna-sdk-notifications:4.11.3-SNAPSHOT'
 }
 ```
 
