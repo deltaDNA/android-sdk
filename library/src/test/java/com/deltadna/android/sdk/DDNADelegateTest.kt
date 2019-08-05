@@ -230,6 +230,7 @@ class DDNADelegateTest {
             verify(tracking).startSdk(same(this))
             assertThat(preferences.isForgetMe).isFalse()
             assertThat(preferences.isForgotten).isFalse()
+            assertThat(preferences.isStopTrackingMe).isFalse()
         }
     }
     
@@ -263,7 +264,96 @@ class DDNADelegateTest {
         assertThat(uut.forgetMe()).isSameAs(nonTracking)
         verifyNoMoreInteractions(tracking, nonTracking)
     }
+
+    @Test
+    fun stopTrackingMe() {
+        uut.stopTrackingMe()
+        inOrder(tracking, nonTracking) {
+            verify(tracking).stopTrackingMe()
+            verify(nonTracking).stopTrackingMe()
+        }
+
+        preferences.isStopTrackingMe = true
+
+        assertThat(uut.stopTrackingMe()).isSameAs(nonTracking)
+        verifyNoMoreInteractions(tracking, nonTracking)
+    }
+
+    @Test
+    fun forwardsToNonTrackingInstanceAfterStoppedTracking() {
+        preferences.isStopTrackingMe = true
+
+        uut.startSdk()
+        verify(nonTracking).startSdk()
+
+        uut.stopSdk()
+        verify(nonTracking).stopSdk()
+
+        uut.isStarted
+        verify(nonTracking).isStarted
+
+        with("event") {
+            uut.recordEvent(this)
+            verify(nonTracking).recordEvent(same(this))
+        }
+
+        with(KEvent("event")) {
+            uut.recordEvent(this)
+            verify(nonTracking).recordEvent(same(this))
+        }
+
+        uut.recordNotificationOpened(true, Bundle.EMPTY)
+        verify(nonTracking).recordNotificationOpened(eq(true), same(Bundle.EMPTY))
+
+        uut.recordNotificationDismissed(Bundle.EMPTY)
+        verify(nonTracking).recordNotificationDismissed(same(Bundle.EMPTY))
+
+        with(Pair("point", mock<EngageListener<Engagement<*>>>())) {
+            uut.requestEngagement(first, second)
+            verify(nonTracking).requestEngagement(same(first), same(second))
+        }
+
+        with(Pair(KEngagement("point"), mock<EngageListener<Engagement<*>>>())) {
+            uut.requestEngagement(first, second)
+            verify(nonTracking).requestEngagement(same(first), same(second))
+        }
+
+        uut.requestSessionConfiguration()
+        verify(nonTracking).requestSessionConfiguration()
+
+        uut.upload()
+        verify(nonTracking).upload()
+
+        uut.downloadImageAssets()
+        verify(nonTracking).downloadImageAssets()
+
+        uut.crossGameUserId
+        verify(nonTracking).crossGameUserId
+
+        with("id") {
+            uut.crossGameUserId = this
+            verify(nonTracking).setCrossGameUserId(same(this))
+        }
+
+        uut.registrationId
+        verify(nonTracking).registrationId
+
+        with("id") {
+            uut.registrationId = this
+            verify(nonTracking).setRegistrationId(same(this))
+        }
+
+        uut.clearRegistrationId()
+        verify(nonTracking).clearRegistrationId()
+
+        uut.iso4217
+        verify(nonTracking).iso4217
+
+        verifyZeroInteractions(tracking)
+    }
     
     private class KEvent(name: String) : Event<KEvent>(name)
     private class KEngagement(point: String) : Engagement<KEngagement>(point)
 }
+
+
