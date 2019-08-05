@@ -18,7 +18,6 @@ package com.deltadna.android.sdk;
 
 import android.support.annotation.Nullable;
 import android.util.Log;
-
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
@@ -26,17 +25,11 @@ import com.deltadna.android.sdk.net.CancelableRequest;
 import com.deltadna.android.sdk.net.NetworkManager;
 import com.deltadna.android.sdk.net.Response;
 import com.deltadna.android.sdk.util.CloseableIterator;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -163,7 +156,7 @@ final class EventHandler {
             // should never happen due to params enforcement
             throw new IllegalArgumentException(e);
         }
-        
+
         network.engage(event, new RequestListener<JSONObject>() {
             @Override
             public void onCompleted(Response<JSONObject> result) {
@@ -222,7 +215,7 @@ final class EventHandler {
                     listener.onError(t);
                 }
             }
-        });
+        }, "config".equalsIgnoreCase(engagement.name) && "internal".equalsIgnoreCase(engagement.flavour));
     }
     
     private void cancelUploadTask() {

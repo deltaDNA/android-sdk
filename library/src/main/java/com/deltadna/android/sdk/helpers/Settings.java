@@ -60,25 +60,32 @@ public class Settings{
     private int engageCacheExpiry = 12 * 60 * 60;
     
     private int httpRequestMaxRetries = 0;
-    /**
+	/**
      * In seconds.
      */
     private int httpRequestRetryDelay = 2;
-    /**
+	/**
      * In seconds.
      */
     private int httpRequestCollectTimeout = 55;
-    /**
+	/**
      * In seconds.
      */
     private int httpRequestEngageTimeout = 5;
-    
-    private boolean useInternalStorageForEvents;
-    private boolean useInternalStorageForEngage;
-    private boolean useInternalStorageForImageMessages;
+
+	private boolean useInternalStorageForEvents;
+	private boolean useInternalStorageForEngage;
+	private boolean useInternalStorageForImageMessages;
 
 
+	/**
+	 * In seconds.
+	 */
+	private int httpRequestConfigTimeout = 5;
 
+	private int httpRequestConfigRetryDelayFactor = 5;
+
+	private int httpRequestConfigMaxRetries = 5;
 	/**
 	 * Controls whether multiple Event-Triggers can call the callback sequentially.
 	 */
@@ -420,5 +427,71 @@ public class Settings{
 
 	public void setDefaultGameParametersHandler(EventActionHandler.GameParametersHandler defaultGameParametersHandler) {
 		this.defaultGameParametersHandler = defaultGameParametersHandler;
+	}
+
+	/**
+	 * Gets the connection timeout in seconds for Session Configuration HTTP requests.
+	 *
+	 * @return the timeout in seconds
+	 */
+	public int getHttpRequestConfigTimeout() {
+		return this.httpRequestConfigTimeout;
+	}
+
+	/**
+	 * Sets the connection timeout in seconds for Session Configuration HTTP requests.
+	 *
+	 */
+	public void setHttpRequestConfigTimeout(int timeoutInSeconds){
+		this.httpRequestConfigTimeout = timeoutInSeconds;
+	}
+
+	/**
+	 * Gets the time factor in seconds between failed Session Configuration HTTP requests.
+	 * This is used as part of an exponential backoff retry mechanism,
+	 * e.g. if this was set to 5 seconds,
+	 * the time before we retry failed config requests would be
+	 * 5s, 10s, 20s, 40s
+	 * And so on.
+	 *
+	 * @return the factor in seconds
+	 */
+	public int getHttpRequestConfigRetryDelayFactor() {
+		return httpRequestConfigRetryDelayFactor;
+	}
+
+
+
+	public void setHttpRequestConfigRetryDelayFactor(int httpRequestConfigRetryDelayFactor) {
+		this.httpRequestConfigRetryDelayFactor = httpRequestConfigRetryDelayFactor;
+	}
+
+
+	/**
+	 * Gets the number of retries to perform when an Session Configuration HTTP request fails. A
+	 * value of {@code 0} means no retries will be performed.
+	 * <p>
+	 * Only applies to Session Configuration requests.
+	 *
+	 *
+	 * @throws IllegalArgumentException if the {@code retries} is negative
+	 */
+	public int getHttpRequestConfigMaxRetries() {
+		return httpRequestConfigMaxRetries;
+	}
+
+	/**
+	 * Sets the number of retries to perform when an Session Configuration HTTP request fails. A
+	 * value of {@code 0} means no retries will be performed.
+	 * <p>
+	 * Only applies to Session Configuration requests.
+	 *
+	 * @param httpRequestConfigMaxRetries the number of retries
+	 *
+	 * @throws IllegalArgumentException if the {@code retries} is negative
+	 */
+	public void setHttpRequestConfigMaxRetries(int httpRequestConfigMaxRetries) {
+		Preconditions.checkArg(httpRequestConfigMaxRetries >= 0, "value cannot be negative");
+		this.httpRequestConfigMaxRetries = httpRequestConfigMaxRetries;
 	}
 }
