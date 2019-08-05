@@ -81,7 +81,7 @@ public class Settings{
 	/**
 	 * In seconds.
 	 */
-	private int httpRequestConfigTimeout = 5;
+	private int httpRequestConfigTimeout = 30;
 
 	private int httpRequestConfigRetryDelayFactor = 5;
 
