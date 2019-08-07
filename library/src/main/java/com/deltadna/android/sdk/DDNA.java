@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.deltadna.android.sdk.exceptions.NotInitialisedException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.Preconditions;
@@ -32,14 +31,7 @@ import com.deltadna.android.sdk.listeners.internal.IEventListener;
 import com.deltadna.android.sdk.net.NetworkManager;
 
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.WeakHashMap;
+import java.util.*;
 
 /**
  * Singleton class for accessing the deltaDNA SDK.
@@ -386,7 +378,7 @@ public abstract class DDNA {
     public abstract DDNA clearPersistentData();
     
     /**
-     * Forgets the current user and stops them from being tracked.
+     * Forgets the current user and stops them from being tracked. This will send a GDPR delete request.
      * <p>
      * Any subsequent calls on the SDK will succeed, but not send/request
      * anything to/from the Platform.
@@ -398,6 +390,21 @@ public abstract class DDNA {
      * @return this {@link DDNA} instance
      */
     public abstract DDNA forgetMe();
+
+    /**
+     * Stops tracking the current user. This will NOT send a GDPR delete request.
+     * <p>
+     * Any subsequent calls on the SDK will succeed, but not send/request
+     * anything to/from the Platform.
+     *
+     * <p>
+     * The status can be cleared by starting the SDK with a new user through
+     * {@link #startSdk(String)} or by clearing the persistent data with
+     * {@link #clearPersistentData()}.
+     *
+     * @return this {@link DDNA} instance
+     */
+    public abstract DDNA stopTrackingMe();
     
     abstract ImageMessageStore getImageMessageStore();
     

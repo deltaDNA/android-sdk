@@ -163,7 +163,7 @@ class DDNATest {
             null,
             mutableSetOf(),
             mutableSetOf()) {
-        
+
         override fun startSdk(): DDNA {
             listener.startSdk()
             return this
@@ -258,6 +258,11 @@ class DDNATest {
         
         override fun forgetMe(): DDNA {
             listener.forgetMe()
+            return this
+        }
+
+        override fun stopTrackingMe(): DDNA {
+            listener.stopTrackingMe()
             return this
         }
         

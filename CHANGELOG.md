@@ -1,7 +1,8 @@
 # Change Log
 ## [4.11.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.3) 
 ### Added 
-Improved support for event triggered campaigns 
+- Improved support for event triggered campaigns 
+- New `stopTrackingMe` method to stop sending analytics events on request
 
 ## [4.11.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.2) 
 ### Fixed 
