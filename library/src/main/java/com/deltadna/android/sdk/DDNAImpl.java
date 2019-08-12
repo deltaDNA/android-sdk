@@ -384,6 +384,11 @@ final class DDNAImpl extends DDNA {
     public DDNA forgetMe() {
         return stopSdk();
     }
+
+    @Override
+    public DDNA stopTrackingMe() {
+        return stopSdk();
+    }
     
     @Override
     ImageMessageStore getImageMessageStore() {

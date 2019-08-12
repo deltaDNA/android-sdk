@@ -3,6 +3,8 @@
 ### Added 
 - Improved support for event triggered campaigns.
 - Automatic Session Configuration retry mechanism to better deal with network related failures.
+- New `stopTrackingMe` method to stop sending analytics events on request
+
 ## [4.11.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.2) 
 ### Fixed 
 - Evaluating non-whitelisted events for Event-Triggered Campaigns no longer fails.

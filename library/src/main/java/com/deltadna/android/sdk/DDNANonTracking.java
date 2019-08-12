@@ -23,14 +23,12 @@ import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import com.deltadna.android.sdk.listeners.internal.IEventListener;
 import com.deltadna.android.sdk.net.Response;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -196,6 +194,15 @@ final class DDNANonTracking extends DDNA {
             handler.post(new ForgetMe());
         }
         
+        return this;
+    }
+
+    @Override
+    public synchronized DDNA stopTrackingMe() {
+        if (!preferences.isForgotten() && !preferences.isStopTrackingMe()) {
+            preferences.setStopTrackingMe(true);
+        }
+
         return this;
     }
     

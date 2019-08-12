@@ -38,6 +38,7 @@ final class Preferences {
     private static final String REGISTRATION_ID = "registration_id";
     private static final String ADVERTISING_ID = "advertising_id";
     private static final String FORGET_ME = "forget_me";
+    private static final String STOP_TRACKING_ME = "stop_tracking_me";
     private static final String FORGOTTEN = "forgotten";
     
     private final SharedPreferences prefs;
@@ -132,6 +133,15 @@ final class Preferences {
         prefs.edit().putBoolean(FORGET_ME, value).apply();
         return this;
     }
+
+    boolean isStopTrackingMe() {
+        return prefs.getBoolean(STOP_TRACKING_ME, false);
+    }
+
+    Preferences setStopTrackingMe(boolean value) {
+        prefs.edit().putBoolean(STOP_TRACKING_ME, value).apply();
+        return this;
+    }
     
     boolean isForgotten() {
         return prefs.getBoolean(FORGOTTEN, false);
@@ -156,6 +166,7 @@ final class Preferences {
         prefs   .edit()
                 .remove(FORGET_ME)
                 .remove(FORGOTTEN)
+                .remove(STOP_TRACKING_ME)
                 .apply();
         return this;
     }
