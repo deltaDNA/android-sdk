@@ -18,11 +18,9 @@ package com.deltadna.android.sdk.net;
 
 import android.support.annotation.Nullable;
 import android.util.Log;
-
 import com.deltadna.android.sdk.BuildConfig;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.RequestListener;
-
 import org.json.JSONObject;
 
 import java.io.File;
@@ -101,12 +99,20 @@ public class NetworkManager {
             RequestListener<JSONObject> listener) {
         
         // TODO tweak timeouts to make engage come back within the magic 5s
+        return engage(payload, listener, false);
+    }
+
+    public CancelableRequest engage(JSONObject payload,
+                                    RequestListener<JSONObject> listener,
+                                    boolean isConfigurationRequest){
+
+        int timeoutInSeconds = isConfigurationRequest ? settings.getHttpRequestConfigTimeout() : settings.getHttpRequestEngageTimeout();
         return dispatcher.enqueue(
                 new Request.Builder<JSONObject>()
                         .post(RequestBody.json(payload))
                         .url(buildHashedEndpoint(engageUrl, payload.toString()))
                         .header("Accept", "application/json")
-                        .connectionTimeout(settings.getHttpRequestEngageTimeout() * 1000)
+                        .connectionTimeout(timeoutInSeconds * 1000)
                         .build(),
                 ResponseBodyConverter.JSON,
                 listener);

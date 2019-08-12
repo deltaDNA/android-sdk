@@ -119,7 +119,7 @@ class EventHandlerTest {
         val engagement = KEngagement("point", "flavour")
         val listener = mock<EngageListener<KEngagement>>()
         val result = JSONObject().put("result", 1)
-        whenever(network.engage(any(), any())).thenAnswer {
+        whenever(network.engage(any(), any(), any())).thenAnswer {
             (it.arguments[1] as RequestListener<JSONObject>)
                     .onCompleted(Response(200, false, null, result, null))
             null
@@ -149,7 +149,7 @@ class EventHandlerTest {
     fun `handle Engagement with client error response`() {
         val engagement = KEngagement("point", "flavour")
         val listener = mock<EngageListener<KEngagement>>()
-        whenever(network.engage(any(), any())).thenAnswer {
+        whenever(network.engage(any(), any(), any())).thenAnswer {
             (it.arguments[1] as RequestListener<JSONObject>)
                     .onCompleted(Response(400, false, null, null, "Bad Request"))
             null
@@ -181,7 +181,7 @@ class EventHandlerTest {
         val engagement = KEngagement("point", "flavour")
         val listener = mock<EngageListener<KEngagement>>()
         val archived = JSONObject().put("archived", 1)
-        whenever(network.engage(any(), any())).thenAnswer {
+        whenever(network.engage(any(), any(), any())).thenAnswer {
             (it.arguments[1] as RequestListener<*>).onError(Exception())
             null
         }
@@ -214,7 +214,7 @@ class EventHandlerTest {
         val engagement = KEngagement("point", "flavour")
         val listener = mock<EngageListener<KEngagement>>()
         val cause = Exception()
-        whenever(network.engage(any(), any())).thenAnswer {
+        whenever(network.engage(any(), any(), any())).thenAnswer {
             (it.arguments[1] as RequestListener<*>).onError(cause)
             null
         }

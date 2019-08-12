@@ -43,6 +43,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@inheritDoc}
@@ -76,6 +79,8 @@ final class DDNAImpl extends DDNA {
     private Set<String> whitelistEvents = Collections.emptySet();
     private Set<String> cacheImages = Collections.emptySet();
     private Map<String, SortedSet<EventTrigger>> eventTriggers = Collections.emptyMap();
+    private static final ScheduledExecutorService futureWorker = Executors.newSingleThreadScheduledExecutor();
+    private int failedSessionConfigurations = 0;
     
     @Override
     public DDNA startSdk() {
@@ -107,12 +112,12 @@ final class DDNAImpl extends DDNA {
                         settings.backgroundEventUploadStartDelaySeconds(),
                         settings.backgroundEventUploadRepeatRateSeconds());
             }
-            
+            failedSessionConfigurations = 0;
             Log.d(TAG, "SDK started");
             performOn(iEventListeners, IEventListener::onStarted);
         }
-        
         return this;
+
     }
     
     @Override
@@ -734,6 +739,15 @@ final class DDNAImpl extends DDNA {
         public void onError(Throwable t) {
             Log.w(TAG, "Failed to retrieve session configuration", t);
             performOn(eventListeners, it -> it.onSessionConfigurationFailed(t));
+            if ( failedSessionConfigurations < settings.getHttpRequestConfigMaxRetries()){
+                int attempts = failedSessionConfigurations + 1;
+                Log.w(TAG, "Session Failed : Retry Attempt " + attempts +  " of " + settings.getHttpRequestConfigMaxRetries());
+                int backoffTime =  (int) Math.pow(2, failedSessionConfigurations) * settings.getHttpRequestConfigRetryDelayFactor();
+                Log.w(TAG, "Retrying session configuration request in " + backoffTime + " seconds");
+                Runnable task = DDNAImpl.this::requestSessionConfiguration;
+                failedSessionConfigurations++;
+                futureWorker.schedule(task, backoffTime, TimeUnit.SECONDS);
+            }
             triggerDefaultEvents();
         }
 
