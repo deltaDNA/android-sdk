@@ -1,0 +1,8 @@
+com.deltadna.android.sdk
+com.deltadna.android.sdk.exceptions
+com.deltadna.android.sdk.helpers
+com.deltadna.android.sdk.listeners
+com.deltadna.android.sdk.listeners.internal
+com.deltadna.android.sdk.net
+com.deltadna.android.sdk.triggers
+com.deltadna.android.sdk.util
