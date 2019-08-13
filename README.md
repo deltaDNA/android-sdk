@@ -47,7 +47,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.11.3-SNAPSHOT'
+    implementation 'com.deltadna.android:deltadna-sdk:4.11.3'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:
@@ -388,6 +388,7 @@ ImageMessageActivity.handleResult(
 
 ## Forgetting a user (GDPR)
 If a user no longer wishes to be tracked and would like to be forgotten the `forgetMe()` API can be used. This will stop the SDK from sending/receiving any further information to/from the Platform, as well as initiating a data deletion request on behalf of the user. The SDK will continue to work as it normally would, without any additional work required.
+If a user only wants to stop sending new data, consenting to keep already collected data in our system, the `stopTrackingMe()` method can be used instead. This will function the same as `forgetMe()`, except the data deletion request will not be sent, thus any data associated with that user will remain on the platform. It is possible to initiate a `forgetMe()` request after the `stopTrackingMe()` request if requested by the user.
 
 If the game supports changing of users then calling `startSdk(userId)` with a new user ID or `clearPersistentData()` will restore the previous SDK functionality.
 
