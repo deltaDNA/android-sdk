@@ -134,7 +134,8 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 case 5:
                     db.execSQL("CREATE TABLE " + ETCExecutions.TABLE + "("
                             + ETCExecutions.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                            + ETCExecutions.Column.VARIANT_ID + " INTEGER NOT NULL UNIQUE ON CONFLICT REPLACE, ");
+                            + ETCExecutions.Column.VARIANT_ID + " INTEGER NOT NULL UNIQUE ON CONFLICT REPLACE, "
+                            + ETCExecutions.Column.EXECUTION_COUNT + " INTEGER NOT NULL )");
                     db.execSQL("CREATE INDEX " + ETCExecutions.TABLE + '_' + ETCExecutions.Column.VARIANT_ID + "_idx "
                             + "ON " + ETCExecutions.TABLE + '(' + ETCExecutions.Column.VARIANT_ID + ')');
 

@@ -1,4 +1,8 @@
 # Change Log
+## [4.11.3.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.3.1) 
+### Fixed 
+- SQLLite related crashes when upgrading internal database. 
+
 ## [4.11.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.3) 
 ### Added 
 - Improved support for event triggered campaigns.
