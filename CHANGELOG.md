@@ -1,4 +1,8 @@
 # Change Log
+## [4.11.3.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.3.2) 
+### Fixed 
+- Issues with long-running tasks.
+
 ## [4.11.3.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.3.1) 
 ### Fixed 
 - SQLLite related crashes when upgrading internal database. 

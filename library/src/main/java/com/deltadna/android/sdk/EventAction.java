@@ -16,13 +16,10 @@
 
 package com.deltadna.android.sdk;
 
+import android.os.AsyncTask;
 import com.deltadna.android.sdk.helpers.Settings;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * An action associated with an event on which {@link EventActionHandler}s can
@@ -80,28 +77,37 @@ public class EventAction {
      * associated for the event.
      */
     public void run() {
-        Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
-        if (settings != null) {
-            if (settings.getDefaultGameParametersHandler() != null) {
-                modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
+        new EvaluateTriggersAsyncTask().execute();
+    }
+
+    private class EvaluateTriggersAsyncTask extends AsyncTask<Void, Void, Void>{
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
+            if (settings != null) {
+                if (settings.getDefaultGameParametersHandler() != null) {
+                    modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
+                }
+                if (settings.getDefaultImageMessageHandler() != null) {
+                    modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
+                }
             }
-            if (settings.getDefaultImageMessageHandler() != null) {
-                modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
-            }
-        }
-        boolean handledImageMessage = false;
-        for (final EventTrigger trigger : triggers) {
-            if (trigger.evaluate(event)) {
-                for (final EventActionHandler handler : modifiedHandlerSet) {
-                    if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
-                    boolean handled = handler.handle(trigger, store);
-                    if (handled) {
-                        if (!settings.isMultipleActionsForEventTriggerEnabled()) return;
-                        if ("imageMessage".equals(trigger.getAction())) handledImageMessage = true;
-                        break;
+            boolean handledImageMessage = false;
+            for (final EventTrigger trigger : triggers) {
+                if (trigger.evaluate(event)) {
+                    for (final EventActionHandler handler : modifiedHandlerSet) {
+                        if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
+                        boolean handled = handler.handle(trigger, store);
+                        if (handled) {
+                            if (!settings.isMultipleActionsForEventTriggerEnabled()) return null;
+                            if ("imageMessage".equals(trigger.getAction())) handledImageMessage = true;
+                            break;
+                        }
                     }
                 }
             }
+            return null;
         }
     }
 

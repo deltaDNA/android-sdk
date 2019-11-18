@@ -21,6 +21,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.AsyncTask;
 import android.provider.BaseColumns;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -32,14 +33,14 @@ import java.util.Date;
 import java.util.Locale;
 
 final class DatabaseHelper extends SQLiteOpenHelper {
-    
+
     private static final String TAG = BuildConfig.LOG_TAG + ' ' + "DatabaseHelper";
     private static final short VERSION = 5;
-    
+
     DatabaseHelper(Context context) {
         super(context, "com.deltadna.android.sdk", null, VERSION);
     }
-    
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE " + Events.TABLE + "("
@@ -80,24 +81,24 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX " + ETCExecutions.TABLE + '_' + ETCExecutions.Column.VARIANT_ID + "_idx "
                 + "ON " + ETCExecutions.TABLE + '(' + ETCExecutions.Column.VARIANT_ID + ')');
     }
-    
+
     @Override
     public void onUpgrade(
             SQLiteDatabase db,
             int oldVersion,
             int newVersion) {
-        
+
         Log.d(TAG, String.format(
                 Locale.ENGLISH,
                 "Upgrading %s from version %d to %d",
                 db,
                 oldVersion,
                 newVersion));
-        
+
         int version = oldVersion;
         while (version++ < newVersion) {
             Log.v(TAG, "Upgrading schema to version " + version);
-            
+
             switch (version) {
                 case 2:
                     db.execSQL("CREATE TABLE " + ImageMessages.TABLE + "("
@@ -108,7 +109,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                             + ImageMessages.Column.SIZE + " INTEGER NOT NULL, "
                             + ImageMessages.Column.DOWNLOADED + " INTEGER NOT NULL)");
                     break;
-                
+
                 case 3:
                     db.execSQL("CREATE TABLE " + Engagements.TABLE + "("
                             + Engagements.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -120,7 +121,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                             + Engagements.Column.DECISION_POINT + ','
                             + Engagements.Column.FLAVOUR + ") ON CONFLICT REPLACE)");
                     break;
-                
+
                 case 4:
                     db.execSQL("CREATE TABLE " + Actions.TABLE + "("
                             + Actions.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -142,21 +143,21 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             }
         }
     }
-    
+
     long getEventsSize() {
         Cursor cursor = null;
         try {
             cursor = getReadableDatabase().rawQuery(
                     "SELECT SUM(" + Events.Column.SIZE + ") " +
-                    "FROM " + Events.TABLE + ";",
-                    new String[] {});
-            
+                            "FROM " + Events.TABLE + ";",
+                    new String[]{});
+
             return (cursor.moveToFirst()) ? cursor.getLong(0) : 0;
         } finally {
             if (cursor != null) cursor.close();
         }
     }
-    
+
     Cursor getEventRows() {
         return getReadableDatabase().rawQuery(
                 String.format(
@@ -175,37 +176,36 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                         Events.Column.TIME),
                 new String[]{});
     }
-    
+
     boolean insertEventRow(
             long time,
             Location location,
             String name,
             @Nullable String hash,
             long size) {
-        
         final ContentValues values = new ContentValues(5);
         values.put(Events.Column.TIME.toString(), time);
         values.put(Events.Column.LOCATION.toString(), location.name());
         values.put(Events.Column.NAME.toString(), name);
         values.put(Events.Column.HASH.toString(), hash);
         values.put(Events.Column.SIZE.toString(), size);
-        
+
         return (getWritableDatabase().insert(Events.TABLE, null, values)
                 != -1);
     }
-    
+
     boolean removeEventRow(long id) {
         return (getWritableDatabase().delete(
                 Events.TABLE,
                 Events.Column.ID + " = ?",
-                new String[] { Long.toString(id) })
+                new String[]{Long.toString(id)})
                 == 1);
     }
-    
+
     void removeEventRows() {
         getWritableDatabase().delete(Events.TABLE, null, null);
     }
-    
+
     Cursor getEngagement(String decisionPoint, String flavour) {
         return getReadableDatabase().query(
                 Engagements.TABLE,
@@ -215,40 +215,49 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                         "%s = ? AND %s = ?",
                         Engagements.Column.DECISION_POINT,
                         Engagements.Column.FLAVOUR),
-                new String[] { decisionPoint, flavour },
+                new String[]{decisionPoint, flavour},
                 null,
                 null,
                 null);
     }
-    
+
     boolean insertEngagementRow(
             String decisionPoint,
             String flavour,
             Date cached,
             byte[] response) {
-        
+
         final ContentValues values = new ContentValues(4);
         values.put(Engagements.Column.DECISION_POINT.toString(), decisionPoint);
         values.put(Engagements.Column.FLAVOUR.toString(), flavour);
         values.put(Engagements.Column.CACHED.toString(), cached.getTime());
         values.put(Engagements.Column.RESPONSE.toString(), response);
-        
-        return (getWritableDatabase().insert(Engagements.TABLE, null, values)
-                != -1);
+        new InsertEngagementAsyncTask().execute(values);
+        return true;
     }
-    
+
+    public class InsertEngagementAsyncTask extends AsyncTask<ContentValues, Void, Void>{
+
+        @Override
+        protected Void doInBackground(ContentValues... contentValues) {
+            ContentValues value = contentValues[0];
+            getWritableDatabase().insert(Engagements.TABLE, null, value);
+            return null;
+        }
+    }
+
     boolean removeEngagementRow(long id) {
         return (getWritableDatabase().delete(
                 Engagements.TABLE,
                 Engagements.Column.ID + " = ?",
-                new String[] { Long.toString(id) })
+                new String[]{Long.toString(id)})
                 == 1);
     }
-    
+
     void removeEngagementRows() {
         getWritableDatabase().delete(Engagements.TABLE, null, null);
     }
-    
+
     Cursor getImageMessages() {
         return getReadableDatabase().query(
                 ImageMessages.TABLE,
@@ -259,7 +268,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 null,
                 null);
     }
-    
+
     Cursor getImageMessage(String url) {
         final String other;
         if (url.startsWith("http://")) {
@@ -269,7 +278,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         } else {
             other = url;
         }
-        
+
         return getReadableDatabase().query(
                 ImageMessages.TABLE,
                 ImageMessages.Column.all(),
@@ -278,49 +287,48 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                         "%s = ? OR %s = ?",
                         ImageMessages.Column.URL,
                         ImageMessages.Column.URL),
-                new String[] { url, other },
+                new String[]{url, other},
                 null,
                 null,
                 null);
     }
-    
+
     boolean removeImageMessage(long id) {
         return (getWritableDatabase().delete(
                 ImageMessages.TABLE,
                 ImageMessages.Column.ID + " = ?",
-                new String[] { Long.toString(id) })
+                new String[]{Long.toString(id)})
                 == 1);
     }
-    
+
     void removeImageMessageRows() {
         getWritableDatabase().delete(ImageMessages.TABLE, null, null);
     }
-    
+
     boolean insertImageMessage(
             String url,
             Location location,
             String name,
             long size,
             Date downloaded) {
-        
         final ContentValues values = new ContentValues(4);
         values.put(ImageMessages.Column.URL.toString(), url);
         values.put(ImageMessages.Column.LOCATION.toString(), location.name());
         values.put(ImageMessages.Column.NAME.toString(), name);
         values.put(ImageMessages.Column.SIZE.toString(), size);
         values.put(ImageMessages.Column.DOWNLOADED.toString(), downloaded.getTime());
-        
+
         return (getWritableDatabase().insert(ImageMessages.TABLE, null, values)
                 != -1);
     }
-    
+
     @Nullable
     JSONObject getAction(long campaignId) {
         try (final Cursor cursor = getReadableDatabase().query(
                 Actions.TABLE,
                 Actions.Column.all(),
                 Actions.Column.CAMPAIGN_ID + " = ?",
-                new String[] { String.valueOf(campaignId) },
+                new String[]{String.valueOf(campaignId)},
                 null,
                 null,
                 null)) {
@@ -331,22 +339,22 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                                     Actions.Column.PARAMETERS.toString())),
                             "UTF-8"));
                 } catch (UnsupportedEncodingException | JSONException e) {
-                    Log.w(  TAG,
+                    Log.w(TAG,
                             "Failed deserialising action into JSON for " + campaignId,
                             e);
                 }
             }
         }
-        
+
         return null;
     }
-    
+
     boolean insertActionRow(
             String name,
             long campaignId,
             Date cached,
             JSONObject parameters) {
-        
+
         final ContentValues values = new ContentValues(4);
         values.put(Actions.Column.NAME.toString(), name);
         values.put(Actions.Column.CAMPAIGN_ID.toString(), campaignId);
@@ -359,36 +367,46 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             Log.w(TAG, "Failed inserting action: " + parameters, e);
             return false;
         }
-        
-        return (getWritableDatabase().insert(Actions.TABLE, null, values)
-                != -1);
+        new InsertActionRowAsyncTask().execute(values);
+        return true;
     }
-    
+
+
+    public class InsertActionRowAsyncTask extends AsyncTask<ContentValues, Void, Void>{
+
+        @Override
+        protected Void doInBackground(ContentValues... values) {
+
+            getWritableDatabase().insert(Actions.TABLE, null, values[0]);
+            return null;
+        }
+    }
+
     boolean removeActionRow(long campaignId) {
         return (getWritableDatabase().delete(
                 Actions.TABLE,
                 Actions.Column.CAMPAIGN_ID + " = ?",
-                new String[] { Long.toString(campaignId) })
+                new String[]{Long.toString(campaignId)})
                 == 1);
     }
-    
+
     void removeActionRows() {
         getWritableDatabase().delete(Actions.TABLE, null, null);
     }
 
-    long getETCExecutionCount(long variantId){
+    long getETCExecutionCount(long variantId) {
         long executions = 0;
         try (
                 final Cursor cursor = getReadableDatabase().query(
-                ETCExecutions.TABLE,
-                new String[]{ETCExecutions.Column.EXECUTION_COUNT.name()},
-                ETCExecutions.Column.VARIANT_ID + " = ?",
-                new String[] { String.valueOf(variantId) },
-                null,
-                null,
-                null)) {
+                        ETCExecutions.TABLE,
+                        new String[]{ETCExecutions.Column.EXECUTION_COUNT.name()},
+                        ETCExecutions.Column.VARIANT_ID + " = ?",
+                        new String[]{String.valueOf(variantId)},
+                        null,
+                        null,
+                        null)) {
             if (cursor.moveToFirst()) {
-               executions = cursor.getLong(0);
+                executions = cursor.getLong(0);
             }
         }
 
@@ -397,16 +415,14 @@ final class DatabaseHelper extends SQLiteOpenHelper {
 
 
     void recordETCExecution(long campaignId) {
-
-
         long etcExecutionCount = getETCExecutionCount(campaignId);
         SQLiteDatabase database = this.getWritableDatabase();
-        if (etcExecutionCount == 0){
+        if (etcExecutionCount == 0) {
             ContentValues values = new ContentValues();
             values.put(ETCExecutions.Column.EXECUTION_COUNT.name(), 1);
             values.put(ETCExecutions.Column.VARIANT_ID.name(), campaignId);
-            database.insert(ETCExecutions.TABLE, null, values );
-        }else {
+            database.insert(ETCExecutions.TABLE, null, values);
+        } else {
             ContentValues values = new ContentValues();
             values.put(ETCExecutions.Column.EXECUTION_COUNT.name(), etcExecutionCount + 1);
 
@@ -418,10 +434,11 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     void clearETCExecutions() {
         getWritableDatabase().delete(ETCExecutions.TABLE, null, null);
     }
-    
+
     static final class Events {
-        
+
         static final String TABLE = "Events";
+
         enum Column {
             ID {
                 @Override
@@ -434,26 +451,28 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             LOCATION,
             HASH,
             SIZE;
-            
+
             private final String value;
-            
+
             Column() {
                 value = name().substring(0, 1).toUpperCase(Locale.ENGLISH)
                         + name().substring(1).toLowerCase(Locale.ENGLISH);
             }
-            
+
             @Override
             public String toString() {
                 return value;
             }
         }
-        
-        private Events() {}
+
+        private Events() {
+        }
     }
-    
+
     static final class Engagements {
-        
+
         static final String TABLE = "engagements";
+
         enum Column {
             ID {
                 @Override
@@ -465,12 +484,12 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             FLAVOUR,
             CACHED,
             RESPONSE;
-            
+
             @Override
             public String toString() {
                 return super.toString().toLowerCase(Locale.ENGLISH);
             }
-            
+
             static String[] all() {
                 final String[] result = new String[values().length];
                 for (int i = 0; i < values().length; i++) {
@@ -480,10 +499,11 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             }
         }
     }
-    
+
     static final class ImageMessages {
-        
+
         static final String TABLE = "ImageMessages";
+
         enum Column {
             ID {
                 @Override
@@ -496,19 +516,19 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             NAME,
             SIZE,
             DOWNLOADED;
-            
+
             private final String value;
-            
+
             Column() {
                 value = name().substring(0, 1).toUpperCase(Locale.ENGLISH)
                         + name().substring(1).toLowerCase(Locale.ENGLISH);
             }
-            
+
             @Override
             public String toString() {
                 return value;
             }
-            
+
             static String[] all() {
                 final String[] result = new String[values().length];
                 for (int i = 0; i < values().length; i++) {
@@ -518,10 +538,11 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             }
         }
     }
-    
+
     private static final class Actions {
-        
+
         static final String TABLE = "actions";
+
         enum Column {
             ID {
                 @Override
@@ -533,12 +554,12 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             CAMPAIGN_ID,
             CACHED,
             PARAMETERS;
-            
+
             @Override
             public String toString() {
                 return name().toLowerCase();
             }
-            
+
             static String[] all() {
                 final String[] result = new String[values().length];
                 for (int i = 0; i < values().length; i++) {
@@ -552,6 +573,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     private static final class ETCExecutions {
 
         static final String TABLE = "etc_executions";
+
         enum Column {
             ID {
                 @Override

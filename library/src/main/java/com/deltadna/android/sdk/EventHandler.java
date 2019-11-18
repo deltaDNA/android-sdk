@@ -16,6 +16,7 @@
 
 package com.deltadna.android.sdk;
 
+import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import com.deltadna.android.sdk.helpers.ClientInfo;
@@ -125,6 +126,122 @@ final class EventHandler {
     /**
      * Handles an engage {@code event}.
      */
+
+    public class HandleEngagementTask<E extends Engagement> extends AsyncTask<Void , Void, Void> {
+
+        final E engagement;
+        final EngageListener<E> listener;
+        String userId;
+        String sessionId;
+        final int engageApiVersion;
+        String sdkVersion;
+        String platform;
+
+        public HandleEngagementTask(
+                                    final E engagement,
+                                    final EngageListener<E> listener,
+                                    String userId,
+                                    String sessionId,
+                                    final int engageApiVersion,
+                                    String sdkVersion,
+                                    String platform) {
+            this.engagement = engagement;
+            this.listener = listener;
+            this.userId = userId;
+            this.sessionId = sessionId;
+            this.engageApiVersion = engageApiVersion;
+            this.sdkVersion = sdkVersion;
+            this.platform = platform;
+        }
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            final JSONObject event;
+            try {
+                event = new JSONObject()
+                        .put("userID", userId)
+                        .put("decisionPoint", engagement.name)
+                        .put("flavour", engagement.flavour)
+                        .put("sessionID", sessionId)
+                        .put("version", engageApiVersion)
+                        .put("sdkVersion", sdkVersion)
+                        .put("platform", platform)
+                        .put("manufacturer", ClientInfo.manufacturer())
+                        .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
+                        .put("timezoneOffset", ClientInfo.timezoneOffset())
+                        .put("locale", ClientInfo.locale());
+
+                if (!engagement.params.isEmpty()) {
+                    event.put("parameters", engagement.params.json);
+                }
+            } catch (JSONException e) {
+                // should never happen due to params enforcement
+                throw new IllegalArgumentException(e);
+            }
+
+            network.engage(event, new RequestListener<JSONObject>() {
+                @Override
+                public void onCompleted(Response<JSONObject> result) {
+                    engagement.setResponse(result);
+                    if (engagement.isSuccessful()) {
+                        engagements.put(engagement);
+                    } else if (engagement.isCacheCandidate() ){
+                        Log.w(TAG, String.format(
+                                Locale.US,
+                                "Not caching %s due to failure, checking cache",
+                                engagement));
+
+                        final JSONObject cached = engagements.get(engagement);
+                        if (cached != null) {
+                            try {
+                                engagement.setResponse(new Response<>(
+                                        engagement.getStatusCode(),
+                                        true,
+                                        null,
+                                        cached.put("isCachedResponse", true),
+                                        engagement.getError()));
+
+                                Log.d(  TAG,
+                                        "Using cached response " + engagement.getJson());
+                            } catch (JSONException ignored) {}
+                        }
+                    } else {
+                        Log.w(TAG, String.format(
+                                Locale.US,
+                                "Not caching %s due to failure, and not checking cache due to client error response",
+                                engagement));
+
+                    }
+                    listener.onCompleted(engagement);
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    final JSONObject cached = engagements.get(engagement);
+                    if (cached != null) {
+                        try {
+                            engagement.setResponse(new Response<>(
+                                    200,
+                                    true,
+                                    null,
+                                    cached.put("isCachedResponse", true),
+                                    null));
+
+                            Log.d(TAG, "Using cached response " + engagement.getJson());
+
+                            listener.onCompleted(engagement);
+                        } catch (JSONException e) {
+                            listener.onError(e);
+                        }
+                    } else {
+                        listener.onError(t);
+                    }
+                }
+            }, "config".equalsIgnoreCase(engagement.name) && "internal".equalsIgnoreCase(engagement.flavour));
+            return null;
+        }
+    }
     <E extends Engagement> void handleEngagement(
             final E engagement,
             final EngageListener<E> listener,
@@ -133,90 +250,10 @@ final class EventHandler {
             final int engageApiVersion,
             String sdkVersion,
             String platform) {
-        
-        final JSONObject event;
-        try {
-            event = new JSONObject()
-                    .put("userID", userId)
-                    .put("decisionPoint", engagement.name)
-                    .put("flavour", engagement.flavour)
-                    .put("sessionID", sessionId)
-                    .put("version", engageApiVersion)
-                    .put("sdkVersion", sdkVersion)
-                    .put("platform", platform)
-                    .put("manufacturer", ClientInfo.manufacturer())
-                    .put("operatingSystemVersion", ClientInfo.operatingSystemVersion())
-                    .put("timezoneOffset", ClientInfo.timezoneOffset())
-                    .put("locale", ClientInfo.locale());
-            
-            if (!engagement.params.isEmpty()) {
-                event.put("parameters", engagement.params.json);
-            }
-        } catch (JSONException e) {
-            // should never happen due to params enforcement
-            throw new IllegalArgumentException(e);
-        }
-
-        network.engage(event, new RequestListener<JSONObject>() {
-            @Override
-            public void onCompleted(Response<JSONObject> result) {
-                engagement.setResponse(result);
-                if (engagement.isSuccessful()) {
-                    engagements.put(engagement);
-                } else if (engagement.isCacheCandidate() ){
-                    Log.w(TAG, String.format(
-                            Locale.US,
-                            "Not caching %s due to failure, checking cache",
-                            engagement));
-                    
-                    final JSONObject cached = engagements.get(engagement);
-                    if (cached != null) {
-                        try {
-                            engagement.setResponse(new Response<>(
-                                    engagement.getStatusCode(),
-                                    true,
-                                    null,
-                                    cached.put("isCachedResponse", true),
-                                    engagement.getError()));
-                            
-                            Log.d(  TAG,
-                                    "Using cached response " + engagement.getJson());
-                        } catch (JSONException ignored) {}
-                    }
-                } else {
-                    Log.w(TAG, String.format(
-                            Locale.US,
-                            "Not caching %s due to failure, and not checking cache due to client error response",
-                            engagement));
-
-                }
-                listener.onCompleted(engagement);
-            }
-            
-            @Override
-            public void onError(Throwable t) {
-                final JSONObject cached = engagements.get(engagement);
-                if (cached != null) {
-                    try {
-                        engagement.setResponse(new Response<>(
-                                200,
-                                true,
-                                null,
-                                cached.put("isCachedResponse", true),
-                                null));
-                        
-                        Log.d(TAG, "Using cached response " + engagement.getJson());
-                        
-                        listener.onCompleted(engagement);
-                    } catch (JSONException e) {
-                        listener.onError(e);
-                    }
-                } else {
-                    listener.onError(t);
-                }
-            }
-        }, "config".equalsIgnoreCase(engagement.name) && "internal".equalsIgnoreCase(engagement.flavour));
+            new HandleEngagementTask<E>(engagement, listener, userId, sessionId, engageApiVersion, sdkVersion, platform).execute();
     }
+        
+
     
     private void cancelUploadTask() {
         if (uploadTask != null) {
@@ -235,30 +272,38 @@ final class EventHandler {
         @Override
         public void run() {
             Log.v(TAG, "Starting event upload");
-            
+            new UploadAsyncTask().execute();
+        }
+    }
+
+    private class UploadAsyncTask extends AsyncTask<Void, Void, Void>{
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
             final CloseableIterator<EventStoreItem> items = events.items();
             final AtomicReference<CloseableIterator.Mode> clearEvents =
                     new AtomicReference<>(CloseableIterator.Mode.ALL);
-            
+
             try {
                 if (!items.hasNext()) {
                     Log.d(TAG, "No stored events to upload");
-                    
+
                     clearEvents.set(CloseableIterator.Mode.NONE);
-                    return;
+                    return null;
                 }
-                
+
                 final StringBuilder builder = new StringBuilder("{\"eventList\":[");
                 int count = 0;
                 while (items.hasNext()) {
                     final EventStoreItem event = items.next();
-                    
+
                     if (event.available()) {
                         final String content = event.get();
                         if (content != null) {
                             builder.append(content);
                             builder.append(',');
-                            
+
                             count++;
                         } else {
                             Log.w(TAG, "Failed retrieving event, skipping");
@@ -273,17 +318,17 @@ final class EventHandler {
                     builder.deleteCharAt(builder.length() - 1);
                 }
                 builder.append("]}");
-                
+
                 final JSONObject payload;
                 try {
                     payload = new JSONObject(builder.toString());
                 } catch (JSONException e) {
                     Log.w(TAG, e);
-                    
+
                     clearEvents.set(CloseableIterator.Mode.NONE);
-                    return;
+                    return null;
                 }
-                
+
                 Log.d(TAG, "Uploading " + count + " events");
                 final CountDownLatch latch = new CountDownLatch(1);
                 final CancelableRequest request = network.collect(
@@ -300,26 +345,26 @@ final class EventHandler {
                                         clearEvents.set(CloseableIterator.Mode.ALL);
                                     }
                                 }
-                                
+
                                 latch.countDown();
                             }
-                            
+
                             @Override
                             public void onError(Throwable t) {
                                 Log.w(TAG,
                                         "Failed to upload events, will retry later",
                                         t);
-                                
+
                                 clearEvents.set(CloseableIterator.Mode.NONE);
                                 latch.countDown();
                             }
                         });
-                
+
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
                     Log.w(TAG, "Cancelling event upload", e);
-                    
+
                     clearEvents.set(CloseableIterator.Mode.NONE);
                     request.cancel();
                 }
@@ -327,6 +372,7 @@ final class EventHandler {
                 Log.v(TAG, "Finished event upload");
                 items.close(clearEvents.get());
             }
+            return null;
         }
     }
 }
