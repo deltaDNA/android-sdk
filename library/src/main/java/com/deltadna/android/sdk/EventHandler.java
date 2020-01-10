@@ -272,15 +272,6 @@ final class EventHandler {
         @Override
         public void run() {
             Log.v(TAG, "Starting event upload");
-            new UploadAsyncTask().execute();
-        }
-    }
-
-    private class UploadAsyncTask extends AsyncTask<Void, Void, Void>{
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-
             final CloseableIterator<EventStoreItem> items = events.items();
             final AtomicReference<CloseableIterator.Mode> clearEvents =
                     new AtomicReference<>(CloseableIterator.Mode.ALL);
@@ -290,7 +281,6 @@ final class EventHandler {
                     Log.d(TAG, "No stored events to upload");
 
                     clearEvents.set(CloseableIterator.Mode.NONE);
-                    return null;
                 }
 
                 final StringBuilder builder = new StringBuilder("{\"eventList\":[");
@@ -319,14 +309,13 @@ final class EventHandler {
                 }
                 builder.append("]}");
 
-                final JSONObject payload;
+                JSONObject payload = null;
                 try {
                     payload = new JSONObject(builder.toString());
                 } catch (JSONException e) {
                     Log.w(TAG, e);
 
                     clearEvents.set(CloseableIterator.Mode.NONE);
-                    return null;
                 }
 
                 Log.d(TAG, "Uploading " + count + " events");
@@ -372,7 +361,7 @@ final class EventHandler {
                 Log.v(TAG, "Finished event upload");
                 items.close(clearEvents.get());
             }
-            return null;
         }
     }
+
 }

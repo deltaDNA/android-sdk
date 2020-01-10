@@ -32,6 +32,7 @@ import com.squareup.okhttp.mockwebserver.MockWebServer
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -43,18 +44,18 @@ import com.deltadna.android.sdk.EventActionHandler.GameParametersHandler as GPH
 
 @RunWith(RobolectricTestRunner::class)
 class DDNAImplTest {
-    
+
     private lateinit var server: MockWebServer
-    
+
     private lateinit var uut: DDNAImpl
-    
+
     @Before
     fun before() {
         ShadowLog.stream = System.out
-        
+
         server = MockWebServer()
         server.start()
-        
+
         uut = DDNAImpl(
                 RuntimeEnvironment.application,
                 "environmentKey",
@@ -68,21 +69,21 @@ class DDNAImplTest {
                 mutableSetOf(),
                 mutableSetOf())
     }
-    
+
     @After
     fun after() {
         server.shutdown()
     }
-    
+
     @Test
     fun `starting sdk sends default events`() {
         uut.startSdk()
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
         waitAndRunTasks(500, 5)
-        
+
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
@@ -93,21 +94,21 @@ class DDNAImplTest {
             }
         }
     }
-    
+
     @Test
     fun `default events are not sent when disabled`() {
         uut.settings.setOnFirstRunSendNewPlayerEvent(false)
         uut.settings.setOnInitSendClientDeviceEvent(false)
         uut.settings.setOnInitSendGameStartedEvent(false)
         uut.startSdk()
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         assertThat(server.takeRequest().path).startsWith("/engage")
-        
+
         assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
     }
-    
+
     @Test
     fun `starting sdk with new user clears engage and action store`() {
         uut.settings.setBackgroundEventUpload(false)
@@ -115,68 +116,68 @@ class DDNAImplTest {
         val database = DatabaseHelper(RuntimeEnvironment.application)
         database.insertEngagementRow("dp", "flavour", Date(), byteArrayOf())
         database.insertActionRow("name", 1L, Date(), JSONObject())
-        
+
         uut.startSdk("id2")
-        
+
         with(database.getEngagement("dp", "flavour")) {
             assertThat(this.count).isEqualTo(0)
         }
         assertThat(database.getAction(1L)).isNull()
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
     }
-    
+
     @Test
     fun `starting sdk notifies listener`() {
         uut.settings.setBackgroundEventUpload(false)
-        
+
         with(mock<IEventListener>()) {
             uut.register(this)
             uut.startSdk()
-            
+
             inOrder(this) {
                 verify(this@with).onNewSession()
                 verify(this@with).onStarted()
             }
         }
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
     }
-    
+
     @Test
     fun `stopping sdk sends event`() {
         uut.settings.setBackgroundEventUpload(false)
-        
+
         uut.startSdk()
         uut.stopSdk()
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
-        
+
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
             assertThat(body.readUtf8()).contains("\"eventName\":\"gameEnded\"")
         }
     }
-    
-    @Test
+
+    @Test 
     fun `stopping sdk notifies listener`() {
         uut.settings.setBackgroundEventUpload(false)
-        
+
         with(mock<IEventListener>()) {
             uut.register(this)
             uut.startSdk()
             uut.stopSdk()
-            
+
             verify(this).onStopped()
         }
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
@@ -184,7 +185,7 @@ class DDNAImplTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
     }
-    
+
     @Test
     fun `request engagement`() {
         uut.settings.setBackgroundEventUpload(false)
@@ -196,10 +197,10 @@ class DDNAImplTest {
         // engage response
         server.enqueue(MockResponse().setResponseCode(200).setBody(
                 jsonObject("key" to "value").toString()))
-        
+
         with(mock<EngageListener<Engagement<*>>>()) {
             uut.requestEngagement("point", this)
-            
+
             with(server.takeRequest()) {
                 assertThat(path).startsWith("/engage")
                 assertThat(body.readUtf8()).contains("\"decisionPoint\":\"point\"")
@@ -215,7 +216,7 @@ class DDNAImplTest {
             })
         }
     }
-    
+
     @Test
     fun `request engagement not successful`() {
         uut.settings.setBackgroundEventUpload(false)
@@ -226,10 +227,10 @@ class DDNAImplTest {
         runTasks()
         // engage response
         server.enqueue(MockResponse().setResponseCode(500).setBody("error"))
-        
+
         with(mock<EngageListener<Engagement<*>>>()) {
             uut.requestEngagement("point", this)
-            
+
             with(server.takeRequest()) {
                 assertThat(path).startsWith("/engage")
                 assertThat(body.readUtf8()).contains("\"decisionPoint\":\"point\"")
@@ -245,17 +246,17 @@ class DDNAImplTest {
             })
         }
     }
-    
+
     @Test
     fun `request engagement fails when sdk not started`() {
         with(mock<EngageListener<Engagement<*>>>()) {
             uut.requestEngagement("point", this)
-            
+
             assertThat(server.takeRequest(500, TimeUnit.MILLISECONDS)).isNull()
             verify(this).onError(isA<NotStartedException>())
         }
     }
-    
+
     @Test
     fun `event whitelisting`() {
         // session config
@@ -264,15 +265,15 @@ class DDNAImplTest {
         uut.settings.setBackgroundEventUpload(false)
         uut.startSdk()
         server.takeRequest()
-        
+
         uut.recordEvent("a")
         uut.upload()
-        
+
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
             assertThat(body.readUtf8()).contains("\"eventName\":\"a\"")
         }
-        
+
         // apply new session config
         server.enqueue(MockResponse()
                 .setResponseCode(200)
@@ -283,11 +284,11 @@ class DDNAImplTest {
         server.takeRequest()
         server.enqueue(MockResponse().setResponseCode(200))
         waitAndRunTasks(iterations = 2)
-        
+
         uut.recordEvent("a")
         uut.recordEvent("b")
         uut.upload()
-        
+
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
             with(body.readUtf8()) {
@@ -296,12 +297,12 @@ class DDNAImplTest {
             }
         }
     }
-    
+
     @Test
     fun `decision point whitelisting`() {
         val listenerA = mock<EngageListener<Engagement<*>>>()
         val listenerB = mock<EngageListener<Engagement<*>>>()
-        
+
         // session config
         uut.settings.setBackgroundEventUpload(false)
         uut.startSdk()
@@ -310,16 +311,16 @@ class DDNAImplTest {
         runTasks()
         // engagement response
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
-        
+
         uut.requestEngagement("a", listenerA)
-        
+
         with(server.takeRequest()) {
             assertThat(path).startsWith("/engage")
             assertThat(body.readUtf8()).contains("\"decisionPoint\":\"a\"")
         }
         waitAndRunTasks()
         verify(listenerA).onCompleted(any())
-        
+
         // apply new session config
         server.enqueue(MockResponse()
                 .setResponseCode(200)
@@ -331,10 +332,10 @@ class DDNAImplTest {
         waitAndRunTasks()
         // engagement response
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
-        
+
         uut.requestEngagement("a", listenerA)
         uut.requestEngagement("b", listenerB)
-        
+
         with(server.takeRequest()) {
             assertThat(path).startsWith("/engage")
             assertThat(body.readUtf8()).contains("\"decisionPoint\":\"b\"")
@@ -351,7 +352,7 @@ class DDNAImplTest {
         })
         verify(listenerB).onCompleted(any())
     }
-    
+
     /**
      * First request as part of a new session fails, the second request succeeds,
      * and the third request fails but comes back the the previously cached
@@ -368,7 +369,7 @@ class DDNAImplTest {
                 .toString()
         val l1 = mock<IEventListener>()
         val l2 = mock<EventListener>()
-        
+
         uut.register(l1)
         uut.register(l2)
         server.enqueue(MockResponse()
@@ -380,9 +381,9 @@ class DDNAImplTest {
         server.enqueue(MockResponse()
                 .setResponseCode(500)
                 .setBody("error"))
-        
+
         uut.startSdk()
-        
+
         server.takeRequest().run {
             assertThat(path).startsWith("/engage")
             with(body.readUtf8()) {
@@ -399,9 +400,9 @@ class DDNAImplTest {
         verify(l1, never()).onSessionConfigured(any(), any())
         verify(l2, never()).onImageCachePopulated()
         verify(l2, never()).onImageCachingFailed(any())
-        
+
         uut.requestSessionConfiguration()
-        
+
         server.takeRequest().run {
             assertThat(path).startsWith("/engage")
             with(body.readUtf8()) {
@@ -410,15 +411,15 @@ class DDNAImplTest {
                 assertThat(this).contains("\"timeSinceFirstSession\":")
                 assertThat(this).contains("\"timeSinceLastSession\":")
             }
-            
+
             waitAndRunTasks()
         }
         verify(l1).onSessionConfigured(eq(false), argThat { toString() == config })
         verify(l2).onSessionConfigured(eq(false))
         verify(l2).onImageCachePopulated()
-        
+
         uut.requestSessionConfiguration()
-        
+
         server.takeRequest().run {
             assertThat(path).startsWith("/engage")
             with(body.readUtf8()) {
@@ -427,7 +428,7 @@ class DDNAImplTest {
                 assertThat(this).contains("\"timeSinceFirstSession\":")
                 assertThat(this).contains("\"timeSinceLastSession\":")
             }
-            
+
             waitAndRunTasks()
         }
         verify(l1).onSessionConfigured(
@@ -436,11 +437,11 @@ class DDNAImplTest {
         verify(l2).onSessionConfigured(eq(true))
         verify(l2, times(2)).onImageCachePopulated()
     }
-    
+
     @Test
     fun `event triggers are read out from configuration and evaluated`() {
         uut.settings.setBackgroundEventUpload(false)
-        
+
         uut.startSdk()
         server.enqueue(MockResponse()
                 .setResponseCode(200)
@@ -474,16 +475,16 @@ class DDNAImplTest {
                         .toString()))
         server.takeRequest()
         waitAndRunTasks()
-        
+
         with(mock<EventActionHandler.Callback<JSONObject>>()) {
             uut.recordEvent(KEvent("a").putParam("c", 2)).add(GPH(this)).run()
-            
+
             verify(this).handle(argThat {
                 toString() == jsonObject("e" to 5).toString()
             })
         }
     }
-    
+
     @Test
     fun `persistent actions are persisted from session config`() {
         val database = DatabaseHelper(RuntimeEnvironment.application)
@@ -505,32 +506,32 @@ class DDNAImplTest {
                                         "campaignID" to 2L))))
                         .toString()))
         uut.settings.setBackgroundEventUpload(false)
-        
+
         uut.startSdk()
         server.takeRequest()
         waitAndRunTasks()
-        
+
         assertThat("${database.getAction(1L)}").isEqualTo("$params")
         assertThat(database.getAction(2L)).isNull()
     }
-    
+
     @Test
     fun `cross game user id is set and recorded`() {
         uut.settings.setBackgroundEventUpload(false)
         uut.startSdk()
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
-        
+
         assertThat(uut.crossGameUserId).isNull()
-        
+
         // collect
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
-        
+
         uut.crossGameUserId = "id"
         uut.upload()
-        
+
         assertThat(uut.crossGameUserId).isEqualTo("id")
         server.takeRequest().run {
             assertThat(path).startsWith("/collect")
@@ -540,21 +541,21 @@ class DDNAImplTest {
             }
         }
     }
-    
-    @Test
+
+    @Test @Ignore
     fun `cross game user id is sent on game started event`() {
         uut.settings.setOnFirstRunSendNewPlayerEvent(false)
         uut.settings.setOnInitSendClientDeviceEvent(false)
         uut.preferences.crossGameUserId = "id"
         uut.startSdk()
         uut.upload()
-        
+        waitAndRunTasks()
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
 
 
-        waitAndRunTasks(500, 5)
+        waitAndRunTasks()
         // collect
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest().run {
@@ -565,18 +566,18 @@ class DDNAImplTest {
             }
         }
     }
-    
+
     @Test
     fun `cross game user id cannot be null or empty`() {
         uut.crossGameUserId = "id"
-        
+
         uut.crossGameUserId = null as String? // workaround for compiler ambiguity
         assertThat(uut.crossGameUserId).isNotNull()
-        
+
         uut.crossGameUserId = ""
         assertThat(uut.crossGameUserId).isNotEqualTo("")
     }
-    
+
     @Test
     fun `persistent data is cleared`() {
         val database = DatabaseHelper(RuntimeEnvironment.application).apply {
@@ -587,28 +588,28 @@ class DDNAImplTest {
         }
         uut.settings.setBackgroundEventUpload(false)
         uut.startSdk()
-        
+
         uut.clearPersistentData()
-        
+
         assertThat(uut.isStarted).isFalse()
         assertThat(uut.preferences.prefs.all).isEmpty()
         assertThat(database.eventsSize).isEqualTo(0)
         assertThat(database.getEngagement("dp", "flavour").count).isEqualTo(0)
         assertThat(database.getAction(1L)).isNull()
         assertThat(database.imageMessages.count).isEqualTo(0)
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()
     }
-    
+
     @Test
     fun `forget me stops sdk`() {
         uut.settings.setBackgroundEventUpload(false)
-        
+
         uut.startSdk()
         assertThat(uut.isStarted).isTrue()
-        
+
         // session config
         server.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
         server.takeRequest()

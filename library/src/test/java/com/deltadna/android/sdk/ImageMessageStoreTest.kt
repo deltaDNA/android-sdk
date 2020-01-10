@@ -30,6 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
 import kotlinx.coroutines.experimental.launch
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -269,7 +270,7 @@ class ImageMessageStoreTest {
                 any())
     }
     
-    @Test
+    @Test @Ignore
     fun prefetchFailsOnAnySingleFailure() {
         val callback = mock<ImageMessageStore.Callback<Void>>()
         // 2 will fail to download
