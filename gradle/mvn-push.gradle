@@ -22,11 +22,11 @@ def isReleaseBuild() {
 }
 
 def getReleaseRepositoryUrl() {
-    return "https://artifactory.deltadna.net/deltadna-repo"
+    return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL : ""
 }
 
 def getSnapshotRepositoryUrl() {
-    return "https://artifactory.deltadna.net/development-repo"
+    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL : ""
 }
 
 def getReleaseRepositoryUsername() {
