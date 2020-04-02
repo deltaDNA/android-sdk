@@ -1,4 +1,11 @@
 # Change Log
+## [4.11.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.4)
+### Added
+- Support for automatically open Link action URLs on an Image Message.
+
+### Fixed 
+- Issues with producing duplicate events
+
 ## [4.11.3.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.11.3.2) 
 ### Fixed 
 - Issues with long-running tasks.

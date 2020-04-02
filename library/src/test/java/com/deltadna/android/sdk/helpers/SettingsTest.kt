@@ -111,4 +111,13 @@ class SettingsTest {
         uut.httpRequestEngageTimeout = 0
         assertThat(uut.httpRequestEngageTimeout).isEqualTo(0)
     }
+
+    @Test
+    fun imageMessageAutoNavigateLinkEnabled() {
+        assertThat(uut.imageMessageAutoNavigateLinkEnabled).isEqualTo(true)
+
+        uut.imageMessageAutoNavigateLinkEnabled = false
+
+        assertThat(uut.imageMessageAutoNavigateLinkEnabled).isEqualTo(false)
+    }
 }

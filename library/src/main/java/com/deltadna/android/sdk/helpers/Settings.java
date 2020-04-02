@@ -95,6 +95,8 @@ public class Settings{
 	private EventActionHandler.ImageMessageHandler defaultImageMessageHandler = null;
 	private	EventActionHandler.GameParametersHandler defaultGameParametersHandler = null;
 
+	private boolean mImageMessageAutoNavigateLinkEnabled = true;
+
 	/**
 	 * TRUE to send new player event on first run of application.
 	 *
@@ -493,5 +495,22 @@ public class Settings{
 	public void setHttpRequestConfigMaxRetries(int httpRequestConfigMaxRetries) {
 		Preconditions.checkArg(httpRequestConfigMaxRetries >= 0, "value cannot be negative");
 		this.httpRequestConfigMaxRetries = httpRequestConfigMaxRetries;
+	}
+
+	/**
+	 * Sets the flag to automatically open Link action URLs on the player's device after the player interacts with a component
+	 * that is set to use them on an Image Message.
+	 * @param enabled enabled flag
+	 */
+	public void setImageMessageAutoNavigateLinkEnabled(boolean enabled) {
+		mImageMessageAutoNavigateLinkEnabled = enabled;
+	}
+
+	/**
+	 * Get the flag to check whether the url is automatically opened when the user perform the URL action.
+	 * @return enable flag
+	 */
+	public boolean getImageMessageAutoNavigateLinkEnabled() {
+		return mImageMessageAutoNavigateLinkEnabled;
 	}
 }
