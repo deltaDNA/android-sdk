@@ -33,11 +33,12 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowAsyncTask
 import java.io.File
 import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
-@Config(shadows = [EngageStoreTest.ShadowBase64::class])
+@Config(shadows = [EngageStoreTest.ShadowBase64::class, ShadowAsyncTask::class])
 class EngageStoreTest {
     
     private val settings = Settings()

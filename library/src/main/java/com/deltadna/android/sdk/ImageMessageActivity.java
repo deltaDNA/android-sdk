@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -62,7 +63,7 @@ public final class ImageMessageActivity extends Activity {
     
     int screenWidth = 0;
     int screenHeight = 0;
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -111,6 +112,7 @@ public final class ImageMessageActivity extends Activity {
             if (action instanceof ImageMessage.DismissAction) {
                 setResult(Activity.RESULT_CANCELED);
             } else {
+                performAutoNavigateToLink(action);
                 setResult(Activity.RESULT_OK, new Intent()
                         .putExtra(EXTRA_ACTION, action)
                         .putExtra(EXTRA_PARAMS, imageMessage.parameters().toString()));
@@ -121,6 +123,18 @@ public final class ImageMessageActivity extends Activity {
             DDNA.instance().recordEvent(event).run();
             
             finish();
+        }
+    }
+
+    private void performAutoNavigateToLink(@Nullable ImageMessage.BaseAction action) {
+        boolean autoNavigateEnabled = DDNA.instance().getSettings().getImageMessageAutoNavigateLinkEnabled();
+        boolean actionIsLinkAction = action instanceof ImageMessage.LinkAction;
+        if (autoNavigateEnabled && actionIsLinkAction) {
+            final String value = ((ImageMessage.LinkAction) action).getValue();
+            if (value != null) {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(value));
+                startActivity(browserIntent);
+            }
         }
     }
     
@@ -205,7 +219,7 @@ public final class ImageMessageActivity extends Activity {
             callback.onCancelled();
         }
     }
-    
+
     private class ImageMessageView extends View implements
             View.OnTouchListener {
         

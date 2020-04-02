@@ -21,6 +21,7 @@ import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.util.CloseableIterator
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -29,6 +30,8 @@ import org.robolectric.shadows.ShadowEnvironment
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
+//@Config(shadows = [ShadowAsyncTask::class])
+@Ignore
 class EventStoreTest {
     
     private val application by lazy { RuntimeEnvironment.application }
@@ -63,7 +66,7 @@ class EventStoreTest {
         legacy.push("1")
         
         uut = EventStore(application, database, settings, prefs)
-        pause()
+        waitAndRunTasks(1000)
         
         assertThat(legacy.read().size).isEqualTo(0)
         with(uut.items()) {
@@ -77,7 +80,7 @@ class EventStoreTest {
         val items = listOf("1", "2", "3")
         with(uut) {
             items.forEach { add(it) }
-            pause()
+            waitAndRunTasks(1000)
             
             with(items()) {
                 items.forEach {
@@ -99,7 +102,7 @@ class EventStoreTest {
         
         with(uut) {
             add("1")
-            pause()
+            waitAndRunTasks(1000)
             
             with(items()) {
                 with(next()) {
@@ -118,7 +121,7 @@ class EventStoreTest {
         
         with(uut) {
             add("1")
-            pause()
+            waitAndRunTasks(1000)
             
             with(items()) {
                 with(next()) {
@@ -135,7 +138,7 @@ class EventStoreTest {
     fun itemNotAvailableOnExternalUnmounted() {
         with(uut) {
             add("1")
-            pause()
+            waitAndRunTasks(1000)
             ShadowEnvironment.setExternalStorageState(Environment.MEDIA_UNMOUNTED)
             
             with(items()) {
@@ -154,8 +157,8 @@ class EventStoreTest {
                     fill('a')
                     add(String(this))
                 }
-                pause()
             }
+            waitAndRunTasks(1000)
             
             with(items()) {
                 assertThat(hasNext()).isTrue()
@@ -190,7 +193,7 @@ class EventStoreTest {
                 fill('a')
                 add(String(this))
             }
-            pause()
+            waitAndRunTasks(1000)
             
             assertThat(items().hasNext()).isFalse()
         }
@@ -204,7 +207,7 @@ class EventStoreTest {
                     fill('a')
                     add(String(this))
                 }
-                pause()
+                waitAndRunTasks(1000)
             }
             
             (0..4).forEach {
@@ -224,7 +227,7 @@ class EventStoreTest {
         val items = listOf("1", "2", "3")
         with(uut) {
             items.forEach { add(it) }
-            pause()
+            waitAndRunTasks(1000)
             items().close(CloseableIterator.Mode.NONE)
             
             with(items()) {
@@ -244,7 +247,7 @@ class EventStoreTest {
     fun itemsRemovedOnCloseWithClearAll() {
         with(uut) {
             listOf("1", "2", "3").forEach { add(it) }
-            pause()
+            waitAndRunTasks(1000)
             items().close(CloseableIterator.Mode.ALL)
             
             assertThat(items().hasNext()).isFalse()
@@ -255,7 +258,7 @@ class EventStoreTest {
     fun itemsRemovedOnCloseWithClearUpToCurrent() {
         with(uut) {
             listOf("1", "2", "3").forEach { add(it) }
-            pause()
+            waitAndRunTasks(1000)
             
             with(items()) {
                 next()
@@ -282,5 +285,5 @@ class EventStoreTest {
         }
     }
     
-    private fun pause() = Thread.sleep(1000)
+   // private fun waitAndRunTasks(1000) = Thread.sleep(1000)
 }
