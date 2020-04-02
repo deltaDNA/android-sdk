@@ -141,14 +141,11 @@ class EventStore extends BroadcastReceiver {
 
         @Override
         protected void onPostExecute(Boolean isEnoughSpace) {
-            if (isEnoughSpace) {
-                new SaveTask(bytes).execute();
-            } else {
+            if (!isEnoughSpace) {
                 Log.w(TAG, "Skipping " + content + " due to full event store");
-                return;
+            } else {
+                new SaveTask(bytes).execute();
             }
-
-            new SaveTask(bytes).execute();
         }
     }
 
