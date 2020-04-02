@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 buildscript {
     ext {
         firebaseVersion = '15.0.2'
@@ -22,7 +22,6 @@ buildscript {
         kotsonVersion = '2.5.0'
         mockWebServerVersion = '2.7.5'
         supportVersion = '26.1.0'
-        
         logTagName  = 'LOG_TAG'
         logTagValue = 'deltaDNA'
     }
