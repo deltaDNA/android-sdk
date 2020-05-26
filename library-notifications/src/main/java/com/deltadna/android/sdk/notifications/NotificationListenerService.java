@@ -115,7 +115,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
             
             final int id = (int) pushMessage.id;
             final NotificationInfo info = new NotificationInfo(id, pushMessage);
-            
+
             final Notification notification = factory.create(
                     factory.configure(
                             new NotificationCompat.Builder(this),

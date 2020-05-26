@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk.notifications
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
@@ -24,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.net.URL
 
 @RunWith(RobolectricTestRunner::class)
 class PushMessageTest {
@@ -81,6 +83,13 @@ class PushMessageTest {
     fun message() {
         assertThat(msg().message).isEmpty()
         assertThat(msg(data = mapOf(PushMessage.MESSAGE to "1")).message).isEqualTo("1")
+    }
+
+    @Test
+    fun imageUrl(){
+        assertThat(msg().imageUrl).isNull()
+        val actualBitMap = msg(data = mapOf(PushMessage.IMAGE_URL to "https://download.deltadna.net/10359/a989170225ed48aa9a1b92028ffbfc81.png")).imageUrl
+        assertThat(actualBitMap).isNotNull()
     }
     
     private fun msg(

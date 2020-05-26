@@ -19,11 +19,17 @@ package com.deltadna.android.sdk.notifications;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.DrawableRes;
 import android.util.Log;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -35,6 +41,7 @@ public class PushMessage implements Serializable {
     
     protected static final String TITLE = "title";
     protected static final String MESSAGE = "alert";
+    protected static final String IMAGE_URL = "imageUrl";
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
@@ -66,7 +73,12 @@ public class PushMessage implements Serializable {
      * Message for the push message.
      */
     public final String message;
-    
+
+    /**
+     * ImageUrl for the push message
+     */
+    public transient final Bitmap imageUrl;
+
     /**
      * Creates a new instance.
      *
@@ -82,6 +94,7 @@ public class PushMessage implements Serializable {
         icon = getIcon(context);
         title = getTitle(context, data);
         message = getMessage(data);
+        imageUrl = getImageUrl(data);
     }
     
     /**
@@ -205,7 +218,28 @@ public class PushMessage implements Serializable {
         return String.valueOf(context.getPackageManager().getApplicationLabel(
                 context.getApplicationInfo()));
     }
-    
+
+    /**
+     * @param data
+     * @return
+     */
+    protected Bitmap getImageUrl(Map<String, String> data){
+        Bitmap myBitMap = null;
+
+      if(data.containsKey(IMAGE_URL)){
+          try{
+              URL url = new URL(data.get(IMAGE_URL));
+              myBitMap =  BitmapFactory.decodeStream(url.openConnection().getInputStream());
+
+          }catch (IOException e){
+              Log.w(TAG, "Failed to convert image to bitmap "+e.getMessage());
+          }
+      }else{
+          Log.w(TAG, "No imageUrl found in the notification message in payload");
+      }
+        return myBitMap;
+    }
+
     /**
      * Extracts the message from a push payload to be used for posting a
      * notification.
@@ -216,7 +250,7 @@ public class PushMessage implements Serializable {
      */
     protected String getMessage(Map<String, String> data) {
         if (!data.containsKey(MESSAGE)) {
-            Log.w(TAG, "Failed to find notification message in playload");
+            Log.w(TAG, "Failed to find notification message in payload");
             return "";
         } else {
             return data.get(MESSAGE);
@@ -227,13 +261,14 @@ public class PushMessage implements Serializable {
     public String toString() {
         return String.format(
                 Locale.US,
-                "%s{from: %s, data: %s, id: %d, icon: %s, title: %s, message: %s}",
+                "%s{from: %s, data: %s, id: %d, icon: %s, title: %s, message: %s, imageUrl: %s}",
                 getClass().getSimpleName(),
                 from,
                 data,
                 id,
                 icon,
                 title,
-                message);
+                message,
+                imageUrl);
     }
 }
