@@ -23,9 +23,15 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Factory class responsible for filling details from a push message and
@@ -67,17 +73,27 @@ public class NotificationFactory {
      */
     public NotificationCompat.Builder configure(
             NotificationCompat.Builder builder,
-            PushMessage message) {
+            PushMessage message){
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder.setChannelId(getChannel().getId());
         }
-        
-        return builder
-                .setSmallIcon(message.icon)
-                .setContentTitle(message.title)
-                .setContentText(message.message)
-                .setAutoCancel(true);
+
+
+        builder = builder
+                    .setSmallIcon(message.icon)
+                    .setContentTitle(message.title)
+                    .setContentText(message.message)
+                    .setAutoCancel(true);
+
+        if(message.imageUrl != null){
+            builder.setLargeIcon(message.imageUrl)
+                    .setStyle(new NotificationCompat.BigPictureStyle()
+                                .bigPicture( message.imageUrl).bigLargeIcon(null));
+        }
+
+        return builder;
+
     }
     
     /**
