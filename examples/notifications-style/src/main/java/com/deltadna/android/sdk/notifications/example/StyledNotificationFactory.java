@@ -17,15 +17,10 @@
 package com.deltadna.android.sdk.notifications.example;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 
 import com.deltadna.android.sdk.notifications.NotificationFactory;
 import com.deltadna.android.sdk.notifications.PushMessage;
-
-import java.io.IOException;
-import java.net.URL;
 
 /**
  * Example of a {@link NotificationFactory} which changes the look of the

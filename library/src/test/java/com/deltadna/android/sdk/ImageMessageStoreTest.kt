@@ -41,6 +41,7 @@ import java.io.File
 import java.util.*
 import java.lang.System.currentTimeMillis as now
 
+@Ignore
 @RunWith(RobolectricTestRunner::class)
 class ImageMessageStoreTest {
     

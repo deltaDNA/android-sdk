@@ -18,7 +18,7 @@ package com.deltadna.android.sdk.support
 
 import android.os.Bundle
 import android.os.Debug
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.View
 import com.deltadna.android.sdk.DDNA
 import com.deltadna.android.sdk.Event

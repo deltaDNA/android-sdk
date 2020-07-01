@@ -26,7 +26,9 @@ class MetaData {
     
     static final String APPLICATION_ID = "ddna_application_id";
     static final String SENDER_ID = "ddna_sender_id";
-    
+    static final String PROJECT_ID = "ddna_fcm_project_id";
+    static final String FCM_API_KEY = "ddna_fcm_api_key";
+
     static final String NOTIFICATION_ICON = "ddna_notification_icon";
     static final String NOTIFICATION_TITLE = "ddna_notification_title";
     

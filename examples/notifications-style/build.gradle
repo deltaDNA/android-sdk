@@ -37,20 +37,19 @@ android {
             signingConfig signingConfigs.release
         }
         
-        // https://code.google.com/p/android/issues/detail?id=187483
-        // none of the suggested workarounds work so will need to wait for a fix
-        //releaseOptimized {
-            // minifyEnabled true
-            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
-            //    
-            //signingConfig signingConfigs.release
-        //}
+//        // https://code.google.com/p/android/issues/detail?id=187483
+//        // none of the suggested workarounds work so will need to wait for a fix
+//        releaseOptimized {
+//             minifyEnabled true
+//             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
+//
+//            signingConfig signingConfigs.release
+//        }
     }
 }
 
 dependencies {
     implementation project(':library')
     implementation project(':library-notifications')
-    
-    implementation "com.android.support:appcompat-v7:$supportVersion"
+
 }

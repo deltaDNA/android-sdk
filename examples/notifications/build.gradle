@@ -51,6 +51,6 @@ android {
 dependencies {
     implementation project(':library')
     implementation project(':library-notifications')
-    
-    implementation "com.android.support:appcompat-v7:$supportVersion"
+
+
 }
