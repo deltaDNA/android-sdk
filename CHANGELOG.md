@@ -1,6 +1,10 @@
 # Change Log
 ## [4.12.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.12.0)
-## Fixed
+
+### Added
+- Support for Rich Push Notifications.
+
+### Fixed
 - Support for latest versions of firebase cloud messaging added in `library-notifications`. 
   - Please follow the migration guide to ensure that you populate the new required values for this functionality.
 
