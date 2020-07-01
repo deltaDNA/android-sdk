@@ -18,20 +18,23 @@ package com.deltadna.android.sdk.notifications;
 
 import android.util.Log;
 
-import com.google.firebase.iid.FirebaseInstanceIdService;
+import androidx.annotation.NonNull;
+import androidx.annotation.WorkerThread;
+import com.google.firebase.messaging.FirebaseMessagingService;
 
 /**
- * {@link FirebaseInstanceIdService} which gets notified when the registration
+ * {@link FirebaseMessagingService} which gets notified when the registration
  * token has been updated.
  */
-public final class InstanceIdListenerService extends FirebaseInstanceIdService {
+public final class InstanceIdListenerService extends FirebaseMessagingService {
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + InstanceIdListenerService.class.getSimpleName();
     
     @Override
-    public void onTokenRefresh() {
+    @WorkerThread
+    public void onNewToken(@NonNull String var1) {
         Log.d(TAG, "Registration token has been refreshed");
         RegistrationTokenFetcher.fetch(this);
     }

@@ -37,19 +37,19 @@ android {
             signingConfig signingConfigs.release
         }
         
-        /*
-        releaseOptimized {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
-            
-            signingConfig signingConfigs.release
-        }
-        */
+
+//        releaseOptimized {
+//            minifyEnabled true
+//            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard.cfg'
+//
+//            signingConfig signingConfigs.release
+//        }
+
     }
 }
 
 dependencies {
     implementation project(':library')
-    
-    implementation "com.android.support:appcompat-v7:$supportVersion"
+
+
 }

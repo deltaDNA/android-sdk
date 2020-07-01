@@ -54,5 +54,9 @@ limitations under the License.
         <meta-data
             android:name="ddna_sender_id"
             android:resource="@string/sender_id"/>
+        <meta-data android:name="ddna_fcm_project_id"
+                   android:resource="@string/fcm_project_id" />
+        <meta-data android:name="ddna_fcm_api_key"
+                   android:resource="@string/fcm_api_key" />
     </application>
 </manifest>

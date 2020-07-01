@@ -6,7 +6,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/b5546fd90d3b4b2182961602da6086d8)](https://www.codacy.com/app/deltaDNA/android-sdk)
 [![Apache2 licensed](https://img.shields.io/badge/license-Apache-blue.svg)](./LICENSE)
 [![Download](https://api.bintray.com/packages/deltadna/android/deltadna-sdk/images/download.svg)](https://bintray.com/deltadna/android/deltadna-sdk/_latestVersion)
-
+ 
 ## Contents
 * [Overview](#overview)
 * [Adding to a project](#adding-to-a-project)
@@ -47,7 +47,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.11.4'
+    implementation 'com.deltadna.android:deltadna-sdk:4.12.0'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:
@@ -426,7 +426,9 @@ Can be found [here](CHANGELOG.md).
 * Version 4.9
   * The SDK has been updated to use Java 8 features, as such projects will need to be updated to use 1.8 for the Java source and target compatibility as per the [official documentation](https://developer.android.com/studio/write/java8-support).
   * `recordEvent` methods have been changed to to return an `EventAction` object, which can be used for Event-Triggered Campaigns. This means that chaining calls on the `DDNA` SDK instance after calling `recordEvent` is no longer supported.
-
+* [Version 4.12](docs/migrations/4.12.md) 
+  * Critical updates have been made to the Firebase integration in library-notifications. Please follow this guide if you are using push notifications in your project and are updating to this version of the SDK or later. 
+    
 ## License
 The sources are available under the Apache 2.0 license.
 

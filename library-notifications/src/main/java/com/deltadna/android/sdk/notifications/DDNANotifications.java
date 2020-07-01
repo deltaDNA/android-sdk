@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2016 deltaDNA Ltd. All rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@ package com.deltadna.android.sdk.notifications;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 
 import com.deltadna.android.sdk.DDNA;
@@ -36,16 +36,16 @@ import java.util.concurrent.Executors;
  */
 @UnityInterOp
 public final class DDNANotifications {
-    
+
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
             + DDNANotifications.class.getSimpleName();
     private static final String NAME = "deltadna-sdk-notifications";
     private static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
-    
+
     @Nullable
     static Class<? extends EventReceiver> receiver = null;
-    
+
     /**
      * Register the client for push notifications.
      * <p>
@@ -67,7 +67,7 @@ public final class DDNANotifications {
     public static void register(Context context) {
         register(context, false);
     }
-    
+
     /**
      * Register the client for push notifications.
      * <p>
@@ -93,36 +93,42 @@ public final class DDNANotifications {
      */
     public static void register(final Context context, boolean secondary) {
         Log.d(TAG, "Registering for push notifications");
-        
+
         final String applicationId;
         final String senderId;
+        final String projectId;
+        final String apiKey;
         try {
             final Bundle metaData = MetaData.get(context);
-            
+
             applicationId = context.getString(
                     metaData.getInt(MetaData.APPLICATION_ID));
             senderId = context.getString(
                     metaData.getInt(MetaData.SENDER_ID));
+            projectId = context.getString(
+                    metaData.getInt(MetaData.PROJECT_ID));
+            apiKey = context.getString(
+                    metaData.getInt(MetaData.FCM_API_KEY));
         } catch (final Resources.NotFoundException e) {
             throw new IllegalStateException(
                     String.format(
                             Locale.US,
-                            "Failed to find configuration meta-data, have %s and %s been defined in the manifest?",
+                            "Failed to find configuration meta-data, have %s , %s , %s and %s  been defined in the manifest?",
                             MetaData.APPLICATION_ID,
-                            MetaData.SENDER_ID),
+                            MetaData.SENDER_ID, MetaData.PROJECT_ID, MetaData.FCM_API_KEY),
                     e);
         }
-        
+
         synchronized (DDNANotifications.class) {
             final String name = secondary ? NAME : FirebaseApp.DEFAULT_APP_NAME;
-            
+
             boolean found = false;
             for (FirebaseApp app : FirebaseApp.getApps(context)) {
                 if (app.getName().equals(name)) {
                     found = true;
                 }
             }
-            
+
             if (!found) {
                 /*
                  * Running this the first time will force a token refresh, in
@@ -135,19 +141,21 @@ public final class DDNANotifications {
                         new FirebaseOptions.Builder()
                                 .setApplicationId(applicationId)
                                 .setGcmSenderId(senderId)
+                                .setProjectId(projectId)
+                                .setApiKey(apiKey)
                                 .build(),
                         name);
-            } else {
-                EXECUTOR.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        RegistrationTokenFetcher.fetch(context);
-                    }
-                });
             }
+            EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    RegistrationTokenFetcher.fetch(context);
+                }
+            });
+
         }
     }
-    
+
     /**
      * Unregister the client from push notifications.
      *
@@ -160,12 +168,12 @@ public final class DDNANotifications {
             throw new UnsupportedOperationException(
                     "Unity SDK should unregister from its own code");
         }
-        
+
         Log.d(TAG, "Unregistering from push notifications");
-        
+
         DDNA.instance().clearRegistrationId();
     }
-    
+
     /**
      * Allows for a {@link EventReceiver} class to be registered for event
      * broadcasts published by the SDK. This method should be used if your
@@ -176,12 +184,12 @@ public final class DDNANotifications {
      */
     public static void setReceiver(
             @Nullable Class<? extends EventReceiver> receiver) {
-        
+
         synchronized (DDNANotifications.class) {
             DDNANotifications.receiver = receiver;
         }
     }
-    
+
     /**
      * Notifies the SDK that a push notification has been opened by the user.
      *
@@ -191,11 +199,11 @@ public final class DDNANotifications {
     public static void recordNotificationOpened(
             Bundle payload,
             boolean launch) {
-        
+
         if (UnityForwarder.isPresent()) {
             final Bundle copy = new Bundle(payload);
             copy.putBoolean("_ddLaunch", launch);
-            
+
             UnityForwarder.getInstance().forward(
                     "DeltaDNA.AndroidNotifications",
                     "DidReceivePushNotification",
@@ -204,10 +212,10 @@ public final class DDNANotifications {
             DDNA.instance().recordNotificationOpened(launch, payload).run();
         }
     }
-    
+
     public static void markUnityLoaded() {
         UnityForwarder.getInstance().markLoaded();
     }
-    
+
     private DDNANotifications() {}
 }

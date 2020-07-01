@@ -21,9 +21,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.AnyThread;
-import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
+import androidx.annotation.AnyThread;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 import android.util.Log;
 
 import com.deltadna.android.sdk.helpers.Settings;

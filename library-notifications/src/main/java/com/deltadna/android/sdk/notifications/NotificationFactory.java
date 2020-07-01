@@ -26,8 +26,8 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -63,7 +63,7 @@ public class NotificationFactory {
     }
     
     /**
-     * Fills a {@link android.support.v4.app.NotificationCompat.Builder}
+     * Fills a {@link androidx.core.app.NotificationCompat.Builder}
      * with details from a {@link PushMessage}.
      *
      * @param builder   the notification builder to be configured

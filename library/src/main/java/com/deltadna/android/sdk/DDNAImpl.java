@@ -19,7 +19,7 @@ package com.deltadna.android.sdk;
 import android.app.Application;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 import com.deltadna.android.sdk.exceptions.NotStartedException;

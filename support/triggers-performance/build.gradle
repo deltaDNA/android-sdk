@@ -32,8 +32,7 @@ android {
 
 dependencies {
     implementation project(':library')
-    
-    implementation "com.android.support:appcompat-v7:$supportVersion"
+
     implementation "com.github.salomonbrys.kotson:kotson:$kotsonVersion"
     implementation "com.squareup.okhttp:mockwebserver:$mockWebServerVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"

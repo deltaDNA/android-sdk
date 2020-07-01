@@ -30,7 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-
+@Ignore
 @RunWith(RobolectricTestRunner::class)
 class NetworkDispatcherTest {
     

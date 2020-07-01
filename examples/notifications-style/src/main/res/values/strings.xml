@@ -20,7 +20,8 @@ limitations under the License.
     <string name="example_title">Example Notifications Activity</string>
     <string name="sender_id">936623925074</string>
     <string name="application_id">1:936623925074:android:67648654c0349f59</string>
-    
+    <string name="fcm_api_key">AIzaSyC_jcuEgIRF7lTOz0qWCpW-ZBntvycNzT8</string>
+    <string name="fcm_project_id">android-notification-exa-d1db1</string>
     <string name="user_id">User ID: %s</string>
     <string name="registration_token">Registration Token: %s</string>
     

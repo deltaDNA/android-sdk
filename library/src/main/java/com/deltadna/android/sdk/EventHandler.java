@@ -17,7 +17,7 @@
 package com.deltadna.android.sdk;
 
 import android.os.AsyncTask;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.listeners.EngageListener;

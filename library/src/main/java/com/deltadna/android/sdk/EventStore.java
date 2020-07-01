@@ -19,7 +19,7 @@ package com.deltadna.android.sdk;
 import android.content.*;
 import android.database.Cursor;
 import android.os.AsyncTask;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 import com.deltadna.android.sdk.DatabaseHelper.Events;
 import com.deltadna.android.sdk.helpers.Settings;

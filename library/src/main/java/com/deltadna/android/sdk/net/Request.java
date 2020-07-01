@@ -16,7 +16,7 @@
 
 package com.deltadna.android.sdk.net;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.deltadna.android.sdk.helpers.Objects;
 import com.deltadna.android.sdk.helpers.Preconditions;

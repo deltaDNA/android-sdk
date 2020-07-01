@@ -16,7 +16,7 @@
 
 package com.deltadna.android.sdk.net;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 import com.deltadna.android.sdk.BuildConfig;
 import com.deltadna.android.sdk.helpers.Settings;
