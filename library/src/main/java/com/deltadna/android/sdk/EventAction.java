@@ -44,6 +44,9 @@ public class EventAction {
 
         @Override
         public void run() {}
+
+        @Override
+        public void run(boolean runAsync) {}
     };
 
     private final Event event;
@@ -74,39 +77,59 @@ public class EventAction {
 
     /**
      * Evaluates the registered handlers against the event and triggers
-     * associated for the event.
+     * associated for the event. The evaluation is done async.
      */
     public void run() {
         new EvaluateTriggersAsyncTask().execute();
+    }
+
+    /**
+     * Evaluates the registered handlers against the event and triggers
+     * associated for the event.
+     *
+     * @param runAsync Choose to run the evaluation async(true) or on the current thread(false)
+     *
+     */
+    public void run(boolean runAsync) {
+        if (runAsync) new EvaluateTriggersAsyncTask().execute();
+        else evaluateTriggers();
+    }
+
+    /**
+     * Evaluates the registered handlers against the event and triggers
+     * associated for the event.
+     */
+    private void evaluateTriggers() {
+        Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
+        if (settings != null) {
+            if (settings.getDefaultGameParametersHandler() != null) {
+                modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
+            }
+            if (settings.getDefaultImageMessageHandler() != null) {
+                modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
+            }
+        }
+        boolean handledImageMessage = false;
+        for (final EventTrigger trigger : triggers) {
+            if (trigger.evaluate(event)) {
+                for (final EventActionHandler handler : modifiedHandlerSet) {
+                    if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
+                    boolean handled = handler.handle(trigger, store);
+                    if (handled) {
+                        if (!settings.isMultipleActionsForEventTriggerEnabled()) return;
+                        if ("imageMessage".equals(trigger.getAction())) handledImageMessage = true;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private class EvaluateTriggersAsyncTask extends AsyncTask<Void, Void, Void>{
 
         @Override
         protected Void doInBackground(Void... voids) {
-            Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
-            if (settings != null) {
-                if (settings.getDefaultGameParametersHandler() != null) {
-                    modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
-                }
-                if (settings.getDefaultImageMessageHandler() != null) {
-                    modifiedHandlerSet.add(settings.getDefaultImageMessageHandler());
-                }
-            }
-            boolean handledImageMessage = false;
-            for (final EventTrigger trigger : triggers) {
-                if (trigger.evaluate(event)) {
-                    for (final EventActionHandler handler : modifiedHandlerSet) {
-                        if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
-                        boolean handled = handler.handle(trigger, store);
-                        if (handled) {
-                            if (!settings.isMultipleActionsForEventTriggerEnabled()) return null;
-                            if ("imageMessage".equals(trigger.getAction())) handledImageMessage = true;
-                            break;
-                        }
-                    }
-                }
-            }
+            evaluateTriggers();
             return null;
         }
     }
