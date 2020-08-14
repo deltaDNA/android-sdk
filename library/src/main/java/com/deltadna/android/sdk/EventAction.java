@@ -53,6 +53,8 @@ public class EventAction {
     private final Set<EventActionHandler> handlers = new LinkedHashSet<>();
     private final Settings settings;
 
+    private EventActionExecutionCompleteHandler completionHandler = null;
+
     EventAction(Event event, SortedSet<EventTrigger> triggers, ActionStore store, Settings settings) {
         this.event = event;
         this.triggers = triggers;
@@ -69,6 +71,16 @@ public class EventAction {
      */
     public EventAction add(EventActionHandler<?> handler) {
         handlers.add(handler);
+        return this;
+    }
+
+    /**
+     * Register an execution complete handler
+     * @param completionHandler the completion handler to register
+     * @return this {@link EventAction} instance
+     */
+    public EventAction addExecutionCompleteHandler(EventActionExecutionCompleteHandler completionHandler) {
+        this.completionHandler = completionHandler;
         return this;
     }
 
@@ -106,6 +118,9 @@ public class EventAction {
                         }
                     }
                 }
+            }
+            if (completionHandler != null) {
+                completionHandler.onComplete(event);
             }
             return null;
         }
