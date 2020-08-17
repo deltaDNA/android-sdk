@@ -35,81 +35,89 @@ limitations under the License.
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:baselineAligned="false">
-        
+
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="166dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:focusableInTouchMode="false">
-            
+            android:focusableInTouchMode="false"
+            android:orientation="vertical">
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/upload_events"
-                android:onClick="onUploadEvents"/>
-            
+                android:onClick="onUploadEvents"
+                android:text="@string/upload_events" />
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/simple_event"
-                android:onClick="onSimpleEvent"/>
-            
+                android:onClick="onSimpleEvent"
+                android:text="@string/simple_event" />
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/basic_event"
-                android:onClick="onBasicEvent"/>
-            
+                android:onClick="onBasicEvent"
+                android:text="@string/basic_event" />
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/complex_event"
-                android:onClick="onComplexEvent"/>
-            
+                android:onClick="onComplexEvent"
+                android:text="@string/complex_event" />
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/engage"
-                android:onClick="onEngage"/>
-            
+                android:onClick="onEventCompleteHandler"
+                android:text="@string/event_handler" />
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="@string/image_message"
-                android:onClick="onImageMessage"/>
-            
+                android:onClick="onEngage"
+                android:text="@string/engage" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:onClick="onImageMessage"
+                android:text="@string/image_message" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
-                android:background="@android:color/darker_gray"/>
-            
+                android:background="@android:color/darker_gray" />
+
             <EditText
                 android:id="@+id/cross_game_user_id"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:hint="@string/input_cross_id"/>
-            
+                android:hint="@string/input_cross_id" />
+
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/set_cross_id"
-                android:onClick="onSetCrossGameUserId"/>
+                android:onClick="onSetCrossGameUserId"
+                android:text="@string/set_cross_id" />
         </LinearLayout>
         
         <LinearLayout

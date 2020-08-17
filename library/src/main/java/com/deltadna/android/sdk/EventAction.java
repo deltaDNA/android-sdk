@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk;
 
 import android.os.AsyncTask;
+
 import com.deltadna.android.sdk.helpers.Settings;
 
 import java.util.*;
@@ -43,7 +44,8 @@ public class EventAction {
         }
 
         @Override
-        public void run() {}
+        public void run() {
+        }
     };
 
     private final Event event;
@@ -52,6 +54,8 @@ public class EventAction {
 
     private final Set<EventActionHandler> handlers = new LinkedHashSet<>();
     private final Settings settings;
+
+    private EventActionEvaluateCompleteHandler evaluateCompleteHandler = null;
 
     EventAction(Event event, SortedSet<EventTrigger> triggers, ActionStore store, Settings settings) {
         this.event = event;
@@ -64,11 +68,21 @@ public class EventAction {
      * Register a handler to handle the parametrised action.
      *
      * @param handler the handler to register
-     *
      * @return this {@link EventAction} instance
      */
     public EventAction add(EventActionHandler<?> handler) {
         handlers.add(handler);
+        return this;
+    }
+
+    /**
+     * Register an evaluate complete handler
+     *
+     * @param evaluateCompleteHandler the evaluate complete handler to register
+     * @return this {@link EventAction} instance
+     */
+    public EventAction addEvaluateCompleteHandler(EventActionEvaluateCompleteHandler evaluateCompleteHandler) {
+        this.evaluateCompleteHandler = evaluateCompleteHandler;
         return this;
     }
 
@@ -80,11 +94,13 @@ public class EventAction {
         new EvaluateTriggersAsyncTask().execute();
     }
 
-    private class EvaluateTriggersAsyncTask extends AsyncTask<Void, Void, Void>{
+    private class EvaluateTriggersAsyncTask extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
             Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
+            boolean isEvaluationComplete = false;
+
             if (settings != null) {
                 if (settings.getDefaultGameParametersHandler() != null) {
                     modifiedHandlerSet.add(settings.getDefaultGameParametersHandler());
@@ -97,15 +113,27 @@ public class EventAction {
             for (final EventTrigger trigger : triggers) {
                 if (trigger.evaluate(event)) {
                     for (final EventActionHandler handler : modifiedHandlerSet) {
-                        if (handledImageMessage && "imageMessage".equals(trigger.getAction())) break;
+                        if (isEvaluationComplete) {
+                            break;
+                        }
+                        if (handledImageMessage && "imageMessage".equals(trigger.getAction()))
+                            break;
+
                         boolean handled = handler.handle(trigger, store);
                         if (handled) {
-                            if (!settings.isMultipleActionsForEventTriggerEnabled()) return null;
-                            if ("imageMessage".equals(trigger.getAction())) handledImageMessage = true;
+                            if (!settings.isMultipleActionsForEventTriggerEnabled()) {
+                                isEvaluationComplete = true;
+                            }
+                            if ("imageMessage".equals(trigger.getAction())) {
+                                handledImageMessage = true;
+                            }
                             break;
                         }
                     }
                 }
+            }
+            if (evaluateCompleteHandler != null) {
+                evaluateCompleteHandler.onComplete(event);
             }
             return null;
         }

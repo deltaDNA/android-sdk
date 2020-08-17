@@ -23,6 +23,7 @@ limitations under the License.
     <string name="simple_event">Simple event</string>
     <string name="basic_event">Basic event</string>
     <string name="complex_event">Complex event</string>
+    <string name="event_handler">Event Complete handler</string>
     <string name="engage">Engage</string>
     <string name="image_message">Image Message</string>
     <string name="start_sdk">Start SDK</string>
