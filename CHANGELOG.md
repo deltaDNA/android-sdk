@@ -1,8 +1,8 @@
 # Change Log
-## [4.13.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.13)
+## [4.13.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.0)
 
 ### Added
-- A EventActionEvaluateCompleteHandler that will execute after the EventAction is evaluated.
+- A EventActionEvaluateCompleteHandler that allow developer to execute a command after the EventAction is evaluated.
 
 ## [4.12.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.12.0)
 
