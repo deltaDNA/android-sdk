@@ -223,7 +223,10 @@ When a `transaction` event is received with the above parameters, the receipt wi
 This event may be more complex, but the structure is logical, flexible, and provides a mechanism for players spending or receiving any combination of currencies and items.
 
 ### Event triggers
-All `recordEvent` methods return an `EventAction` instance on which `EventActionHandler`s can be registered through the `add` method, for handling triggers which match the conditions setup on the Platform for Event-Triggered Campaigns. Once all the handlers have been registered `run()` needs to be called in order for the event triggers to be evaluated and for a matching handler to be run. This happens on the client without any network use and as such it is instantaneous.
+All `recordEvent` methods return an `EventAction` instance on which `EventActionHandler`s can be registered through the `add` method, for handling triggers which match the conditions setup on the Platform for Event-Triggered Campaigns.
+You can also add an `EventActionEvaluateCompleteHandler` to get a callback when once the event is evaluated by using the `addEvaluateCompleteHandler` method.
+Once all the handlers have been registered `run()` needs to be called in order for the event triggers to be evaluated and for a matching handler to be run.
+This happens on the client without any network use and as such it is instantaneous.
 ```java
 recordEvent(new Event("missionStarted").putParam("missionLevel", 1))
         .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
@@ -233,8 +236,14 @@ recordEvent(new Event("missionStarted").putParam("missionLevel", 1))
             // the image message is already prepared so it will show instantly
             imageMessage.show(MyActivity.this, MY_REQUEST_CODE);
         }))
+        .addEvaluateCompleteHandler(new EventActionEvaluateCompleteHandler() {
+                            @Override
+                            public void onComplete(Event event) {
+                               // do something with the event
+                            }
+        })
         .run();
-``` 
+```
 
 In Addition to the above mechanism, default handlers can be specified. These will be used every time `run()` is called on an EventAction, after any handlers which have been registered via the `add` method.
 These should be Specified before the SDK is started so they can be used to handle internal events such as `newPlayer` and `gameStarted` but they must be registered after the SDK is initialized. 
