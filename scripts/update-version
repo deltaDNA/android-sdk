@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Update Android SDK version from v$1 to v$2 in gradle.properties and README files"
+
 if [ -z "$1" ]; then
   echo "Old version not supplied as the first argument"
   exit 1
@@ -8,6 +10,8 @@ elif [ -z "$2" ]; then
   exit 1
 fi
 
-sed -i "s/$1/$2/g" gradle.properties README.md README-CN.md library-notifications/README.md library-notifications/README-CN.md
+sed -i '' "s/$1/$2/g" gradle.properties README.md README-CN.md library-notifications/README.md library-notifications/README-CN.md
 
-echo "Have you updated the changelog?"
+echo "---------------------------------------------------------------------"
+echo "Have you updated the CHANGELOG.md with changes in v$2 ?"
+echo "---------------------------------------------------------------------"
