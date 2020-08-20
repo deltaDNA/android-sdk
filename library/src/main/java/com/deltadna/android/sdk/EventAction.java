@@ -99,7 +99,6 @@ public class EventAction {
         @Override
         protected Void doInBackground(Void... voids) {
             Set<EventActionHandler> modifiedHandlerSet = new LinkedHashSet<>(handlers);
-            boolean isEvaluationComplete = false;
 
             if (settings != null) {
                 if (settings.getDefaultGameParametersHandler() != null) {
@@ -113,16 +112,13 @@ public class EventAction {
             for (final EventTrigger trigger : triggers) {
                 if (trigger.evaluate(event)) {
                     for (final EventActionHandler handler : modifiedHandlerSet) {
-                        if (isEvaluationComplete) {
-                            break;
-                        }
                         if (handledImageMessage && "imageMessage".equals(trigger.getAction()))
                             break;
 
                         boolean handled = handler.handle(trigger, store);
                         if (handled) {
                             if (!settings.isMultipleActionsForEventTriggerEnabled()) {
-                                isEvaluationComplete = true;
+                                break;
                             }
                             if ("imageMessage".equals(trigger.getAction())) {
                                 handledImageMessage = true;
