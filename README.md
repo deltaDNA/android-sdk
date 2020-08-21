@@ -259,8 +259,29 @@ You can specify these handlers like so:
                     imageMessage.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
                 })
         );
-        
 ```
+
+#### Event Trigger Evaluation Handler
+An EventAction instance is returned when recording events that you expect to match the conditions setup in the platform for an Event Triggered Campaign, EventActionHandlers can be registered with the add method through this.
+There is the option of adding an EventActionEvaluateCompleteHandler to get a callback once the event is evaluated by using the addEvaluateCompleteHandler method.
+Once all the handlers have been registered .run() needs to be called in order for these event triggers to be evaluated, this happens on the client without any network use and as such, is instantaneous.
+```recordEvent(new Event("missionStarted").putParam("missionLevel", 1))
+        .add(new EventActionHandler.GameParametersHandler(gameParameters -> {
+            // do something with the game parameters
+        }))
+        .add(new EventActionHandler.ImageMessageHandler(imageMessage -> {
+            // the image message is already prepared so it will show instantly
+            imageMessage.show(MyActivity.this, MY_REQUEST_CODE);
+        }))
+        .addEvaluateCompleteHandler(new EventActionEvaluateCompleteHandler() {
+                            @Override
+                            public void onComplete(Event event) {
+                               // do something with the event
+                            }
+        })
+        .run();
+```
+
 ## Engage
 An Engage request can be performed by calling `requestEngagement(Engagement, EngageListener)`, providing your `Engagement` and a an `EngageListener` for listening to the completion or error.
 ```java
