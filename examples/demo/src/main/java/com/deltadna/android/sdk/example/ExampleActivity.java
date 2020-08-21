@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2016 deltaDNA Ltd. All rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,9 @@ package com.deltadna.android.sdk.example;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -28,6 +30,7 @@ import android.widget.TextView;
 import com.deltadna.android.sdk.DDNA;
 import com.deltadna.android.sdk.Engagement;
 import com.deltadna.android.sdk.Event;
+import com.deltadna.android.sdk.EventActionEvaluateCompleteHandler;
 import com.deltadna.android.sdk.EventActionHandler;
 import com.deltadna.android.sdk.ImageMessage;
 import com.deltadna.android.sdk.ImageMessageActivity;
@@ -42,20 +45,20 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class ExampleActivity extends AppCompatActivity {
-    
+
     private static final int REQUEST_CODE_IMAGE_MSG = 1;
-    
+
     private EditText crossGameUserId;
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         setContentView(R.layout.activity_example);
-        
+
         crossGameUserId = (EditText) findViewById(R.id.cross_game_user_id);
         crossGameUserId.setText(DDNA.instance().getCrossGameUserId());
-        
+
         /*
          * In this case the SDK will generate its own user id, but if you're
          * keeping your own user id then you may pass this into the overloaded
@@ -76,23 +79,23 @@ public class ExampleActivity extends AppCompatActivity {
         );
         DDNA.instance().startSdk();
 
-        
+
         ((TextView) findViewById(R.id.user_id)).setText(getString(
                 R.string.user_id,
                 DDNA.instance().getUserId()));
     }
-    
+
     @Override
     public void onDestroy() {
         DDNA.instance().stopSdk();
-        
+
         super.onDestroy();
     }
-    
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        
+
         // handle the request code which we used for the Image Message engagement
         if (requestCode == REQUEST_CODE_IMAGE_MSG) {
             ImageMessageActivity.handleResult(
@@ -106,7 +109,7 @@ public class ExampleActivity extends AppCompatActivity {
                                     value,
                                     params));
                         }
-                        
+
                         @Override
                         public void onLink(String value, JSONObject params) {
                             showImageMessageDialog(getString(
@@ -114,7 +117,7 @@ public class ExampleActivity extends AppCompatActivity {
                                     value,
                                     params));
                         }
-                        
+
                         @Override
                         public void onStore(String value, JSONObject params) {
                             showImageMessageDialog(getString(
@@ -122,7 +125,7 @@ public class ExampleActivity extends AppCompatActivity {
                                     value,
                                     params));
                         }
-                        
+
                         @Override
                         public void onCancelled() {
                             showImageMessageDialog(getString(
@@ -131,20 +134,20 @@ public class ExampleActivity extends AppCompatActivity {
                     });
         }
     }
-    
+
     public void onUploadEvents(View view) {
         DDNA.instance().upload();
     }
-    
+
     public void onSimpleEvent(View view) {
         DDNA.instance().recordEvent("simpleEvent");
     }
-    
+
     public void onBasicEvent(View view) {
         DDNA.instance().recordEvent(new Event("gameStarted"))
                 .run();
     }
-    
+
     public void onComplexEvent(View view) {
         DDNA.instance().recordEvent(new Transaction(
                 "IAP - Large Treasure Chest",
@@ -166,13 +169,13 @@ public class ExampleActivity extends AppCompatActivity {
                 .setServer("GOOGLE")
                 .setReceipt("ewok9Ja81............991KS=="));
     }
-    
+
     public void onEngage(View view) {
         DDNA.instance().requestEngagement(
                 "testEngage",
                 new EngageListenerExample());
     }
-    
+
     public void onImageMessage(View view) {
         DDNA.instance().getEngageFactory().requestImageMessage(
                 "testImageMessage",
@@ -182,19 +185,19 @@ public class ExampleActivity extends AppCompatActivity {
                     }
                 });
     }
-    
+
     public void onSetCrossGameUserId(View view) {
         DDNA.instance().setCrossGameUserId(crossGameUserId.getText().toString());
     }
-    
+
     public void onStartSdk(View view) {
         DDNA.instance().startSdk();
     }
-    
+
     public void onStopSdk(View view) {
         DDNA.instance().stopSdk();
     }
-    
+
     private void showImageMessageDialog(String msg) {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.image_message)
@@ -202,36 +205,44 @@ public class ExampleActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.dismiss, null)
                 .show();
     }
-    
+
+    public void onEventCompleteHandler(View view) {
+        DDNA.instance().recordEvent(new Event("simpleEvent"))
+                .addEvaluateCompleteHandler(event ->
+                        Log.v(BuildConfig.LOG_TAG, "Evaluation complete for event" + event.toString())
+                )
+                .run();
+    }
+
     /**
      * Example implementation of the {@link EngageListener} which prints the
      * result, or failure, to the log.
      */
     private class EngageListenerExample implements EngageListener<Engagement> {
-        
+
         @Override
         public void onCompleted(Engagement engagement) {
             Log.d(BuildConfig.LOG_TAG, "Engagement success: " + engagement);
         }
-        
+
         @Override
         public void onError(Throwable t) {
             Log.w(BuildConfig.LOG_TAG, "Engagement error", t);
         }
     }
-    
+
     /**
      * Example implementation of the
      * {@link com.deltadna.android.sdk.ImageMessage.PrepareListener} which
      * shows the {@link ImageMessage} once it has been prepared.
      */
     private class ImageMessageListener implements ImageMessage.PrepareListener {
-        
+
         @Override
         public void onPrepared(ImageMessage src) {
             src.show(ExampleActivity.this, REQUEST_CODE_IMAGE_MSG);
         }
-        
+
         @Override
         public void onError(Throwable reason) {
             Log.w(BuildConfig.LOG_TAG, "Image Message preparation error", reason);

@@ -211,6 +211,24 @@ class EventActionTest {
         verify(h3, never()).handle(same(t2),same(store))
     }
 
+    @Test
+    fun `evaluate completion handler is called`() {
+        val mockEvent = mock<Event<*>>()
+        val mockEventTrigger = mock<EventTrigger>()
+        whenever(mockEventTrigger.evaluate(mockEvent)).then { true }
+        val mockSettings = mock<Settings>()
+        whenever(mockSettings.isMultipleActionsForEventTriggerEnabled).then { true }
+        whenever(mockEventTrigger.action).then{""}
+
+        val mockEvaluateCompleteHandler = mock<EventActionEvaluateCompleteHandler>()
+
+        EventAction(mockEvent, TreeSet<EventTrigger>().apply { add(mockEventTrigger); }, store, mockSettings)
+                .addEvaluateCompleteHandler(mockEvaluateCompleteHandler)
+                .run()
+
+        verify(mockEvaluateCompleteHandler).onComplete(mockEvent)
+    }
+
 
     private fun order(vararg triggers: EventTrigger) {
         for (i in 0 until triggers.size) {
