@@ -1,4 +1,7 @@
 # Change Log
+
+## [4.13.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.1)
+
 ## [4.13.0](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.0)
 
 ### Added
