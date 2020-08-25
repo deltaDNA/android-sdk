@@ -18,6 +18,9 @@ package com.deltadna.android.sdk;
 
 import android.os.AsyncTask;
 import androidx.annotation.Nullable;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.listeners.EngageListener;
@@ -48,6 +51,8 @@ final class EventHandler {
             new ScheduledThreadPoolExecutor(1, r -> new Thread(
                     r,
                     EventHandler.class.getSimpleName()));
+
+    private final Handler handler = new Handler(Looper.getMainLooper());
     
     private final EventStore events;
     private final EngageStore engagements;
@@ -218,25 +223,45 @@ final class EventHandler {
 
                 @Override
                 public void onError(Throwable t) {
-                    final JSONObject cached = engagements.get(engagement);
-                    if (cached != null) {
-                        try {
-                            engagement.setResponse(new Response<>(
-                                    200,
-                                    true,
-                                    null,
-                                    cached.put("isCachedResponse", true),
-                                    null));
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            final JSONObject cached = engagements.get(engagement);
+                            if (cached != null) {
+                                try {
+                                    engagement.setResponse(new Response<>(
+                                            200,
+                                            true,
+                                            null,
+                                            cached.put("isCachedResponse", true),
+                                            null));
 
-                            Log.d(TAG, "Using cached response " + engagement.getJson());
+                                    Log.d(TAG, "Using cached response " + engagement.getJson());
 
-                            listener.onCompleted(engagement);
-                        } catch (JSONException e) {
-                            listener.onError(e);
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            listener.onCompleted(engagement);
+                                        }
+                                    });
+                                } catch (JSONException e) {
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            listener.onError(e);
+                                        }
+                                    });
+                                }
+                            } else {
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        listener.onError(t);
+                                    }
+                                });
+                            }
                         }
-                    } else {
-                        listener.onError(t);
-                    }
+                    });
                 }
             }, "config".equalsIgnoreCase(engagement.name) && "internal".equalsIgnoreCase(engagement.flavour));
             return null;
