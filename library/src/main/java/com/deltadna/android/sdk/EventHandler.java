@@ -52,7 +52,7 @@ final class EventHandler {
                     r,
                     EventHandler.class.getSimpleName()));
 
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Handler mainThreadTaskHandler = new Handler(Looper.getMainLooper());
     
     private final EventStore events;
     private final EngageStore engagements;
@@ -223,43 +223,27 @@ final class EventHandler {
 
                 @Override
                 public void onError(Throwable t) {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            final JSONObject cached = engagements.get(engagement);
-                            if (cached != null) {
-                                try {
-                                    engagement.setResponse(new Response<>(
-                                            200,
-                                            true,
-                                            null,
-                                            cached.put("isCachedResponse", true),
-                                            null));
+                    // This needs to be run off the main thread, as it involves blocking database
+                    // operations that can cause ANRs.
+                    executor.execute(() -> {
+                        final JSONObject cached = engagements.get(engagement);
+                        if (cached != null) {
+                            try {
+                                engagement.setResponse(new Response<>(
+                                        200,
+                                        true,
+                                        null,
+                                        cached.put("isCachedResponse", true),
+                                        null));
 
-                                    Log.d(TAG, "Using cached response " + engagement.getJson());
+                                Log.d(TAG, "Using cached response " + engagement.getJson());
 
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            listener.onCompleted(engagement);
-                                        }
-                                    });
-                                } catch (JSONException e) {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            listener.onError(e);
-                                        }
-                                    });
-                                }
-                            } else {
-                                handler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        listener.onError(t);
-                                    }
-                                });
+                                mainThreadTaskHandler.post(() -> listener.onCompleted(engagement));
+                            } catch (JSONException e) {
+                                mainThreadTaskHandler.post(() -> listener.onError(e));
                             }
+                        } else {
+                            mainThreadTaskHandler.post(() -> listener.onError(t));
                         }
                     });
                 }
