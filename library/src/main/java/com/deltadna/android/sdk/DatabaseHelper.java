@@ -557,7 +557,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
 
             @Override
             public String toString() {
-                return name().toLowerCase();
+                return name().toLowerCase(Locale.ENGLISH);
             }
 
             static String[] all() {
@@ -586,7 +586,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
 
             @Override
             public String toString() {
-                return name().toLowerCase();
+                return name().toLowerCase(Locale.ENGLISH);
             }
 
             static String[] all() {
