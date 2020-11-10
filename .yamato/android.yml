@@ -1,0 +1,19 @@
+# This job is equivalent to the old jenkins jobs android-sdk-release and android-sdk-release-tags-and-docs
+# They were merged here as for a normal Android release we want to run both these jobs together always anyway.
+# WARNING: This job pushes to the public GitHub, only run this to perform a release from a relevant release tag.
+release:
+    name: Android SDK Release
+    agent: 
+        type: Unity::VM
+        image: mobile/android-linux-build:latest
+        flavor: i1.large
+    commands:
+        - ./gradlew clean build
+        - ./docsAndTags.sh
+    artifacts:
+        packages:
+            paths:
+                - "**/outputs/aar/*.aar"
+                - "**/libs/*.jar"
+                - "**/outputs/apk/*.apk"
+
