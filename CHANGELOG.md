@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.13.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.2)
+
+### Fixed
+- Fixed a crash that could happen on devices with certain locales
+
 ## [4.13.1](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.1)
 
 ### Fixed
