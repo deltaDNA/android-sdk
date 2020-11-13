@@ -150,6 +150,12 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
+tasks.whenTaskAdded { task ->
+    if(task.name.contains("Test") || task.name.contains("test")) {
+        task.enabled = false
+    }
+}
+
 static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
 }
