@@ -1,6 +1,4 @@
-# This job is equivalent to the old jenkins jobs android-sdk-release and android-sdk-release-tags-and-docs
-# They were merged here as for a normal Android release we want to run both these jobs together always anyway.
-# WARNING: This job pushes to the public GitHub, only run this to perform a release from a relevant release tag.
+# This job publishes our Android library to the public Bintray.
 release:
     name: Android SDK Release (Publish Artifacts)
     agent: 
@@ -18,6 +16,7 @@ release:
                 - "**/libs/*.jar"
                 - "**/outputs/apk/*.apk"
 
+# This job publishes our code to the external GitHub
 publishToExternalGithub:
     name: Android SDK Release (Publish to external GitHub)
     agent: 
