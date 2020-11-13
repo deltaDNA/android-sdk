@@ -1,8 +1,6 @@
-# This job is equivalent to the old jenkins jobs android-sdk-release and android-sdk-release-tags-and-docs
-# They were merged here as for a normal Android release we want to run both these jobs together always anyway.
-# WARNING: This job pushes to the public GitHub, only run this to perform a release from a relevant release tag.
+# This job publishes our Android library to the public Bintray.
 release:
-    name: Android SDK Release
+    name: Android SDK Release (Publish Artifacts)
     agent: 
         type: Unity::VM
         image: mobile/android-linux-build:latest
@@ -11,8 +9,6 @@ release:
         ARTIFACTORY_URL: artifactory.deltadna.net
     commands:
         - ./gradlew -PSNAPSHOT_REPOSITORY_URL=https://https://artifactory.deltadna.net/artifactory/deltadna-repo -PMAVEN_SNAPSHOT_USERNAME=$MAVEN_SNAPSHOT_USERNAME -PMAVEN_SNAPSHOT_PASSWORD=$MAVEN_SNAPSHOT_PASSWORD -PRELEASE_REPOSITORY_URL="https://api.bintray.com/maven/deltadna/android/deltadna-sdk/;publish=1" -PMAVEN_RELEASE_USERNAME=$MAVEN_RELEASE_USERNAME -PMAVEN_RELEASE_PASSWORD=$MAVEN_RELEASE_PASSWORD clean build check uploadArchives
-        - rm -rf .yamato
-        - ./docsAndTags.sh
     artifacts:
         packages:
             paths:
@@ -20,3 +16,13 @@ release:
                 - "**/libs/*.jar"
                 - "**/outputs/apk/*.apk"
 
+# This job publishes our code to the external GitHub
+publishToExternalGithub:
+    name: Android SDK Release (Publish to external GitHub)
+    agent: 
+        type: Unity::VM
+        image: mobile/android-linux-build:latest
+        flavor: i1.large
+    commands:
+        - rm -rf .yamato
+        - ./docsAndTags.sh  
