@@ -28,3 +28,9 @@ dependencies {
     
     compileOnly project(':library')
 }
+
+tasks.whenTaskAdded { task ->
+    if(task.name.contains("Test") || task.name.contains("test")) {
+        task.enabled = false
+    }
+}
