@@ -34,10 +34,10 @@ public class StyledNotificationFactory extends NotificationFactory {
     
     @Override
     public NotificationCompat.Builder configure(
-            NotificationCompat.Builder builder,
+            Context context,
             PushMessage message){
 
-        return super.configure(builder, message);
+        return super.configure(context, message);
 
     }
 }
