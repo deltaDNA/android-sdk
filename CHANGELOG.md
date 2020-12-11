@@ -1,5 +1,10 @@
 # Change Log
 
+## [4.13.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.3)
+
+### Fixed
+- Fixed a bug that caused the notificationOpened callback not to be called in some circumstances
+
 ## [4.13.2](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.2)
 
 ### Fixed

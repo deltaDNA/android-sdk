@@ -118,7 +118,7 @@ public class NotificationListenerService extends FirebaseMessagingService {
 
             final Notification notification = factory.create(
                     factory.configure(
-                            new NotificationCompat.Builder(this),
+                            this,
                             pushMessage),
                     info);
             if (notification != null) {

@@ -44,7 +44,7 @@ import java.net.URL;
  * {@code Intent} of your application.
  * <p>
  * The default behaviour can be customised by extending the class and overriding
- * {@link #configure(NotificationCompat.Builder, PushMessage)}. The
+ * {@link #configure(Context, PushMessage)}. The
  * {@link NotificationListenerService} will then need to be extended in order
  * to define the new factory to be used for creating notifications.
  */
@@ -66,17 +66,20 @@ public class NotificationFactory {
      * Fills a {@link androidx.core.app.NotificationCompat.Builder}
      * with details from a {@link PushMessage}.
      *
-     * @param builder   the notification builder to be configured
+     * @param context   the context for the notification
      * @param message   the push message
      *
      * @return          configured notification builder
      */
     public NotificationCompat.Builder configure(
-            NotificationCompat.Builder builder,
+            Context context,
             PushMessage message){
-        
+
+        NotificationCompat.Builder builder;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setChannelId(getChannel().getId());
+            builder = new NotificationCompat.Builder(context, getChannel().getId());
+        } else {
+            builder = new NotificationCompat.Builder(context);
         }
 
 
