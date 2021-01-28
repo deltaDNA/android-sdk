@@ -1,0 +1,21 @@
+# Git Attributes
+
+# ------------------------------------------------------------------------------
+# Line Endings
+
+* text=auto
+
+# Source Files
+*.java eol=lf
+*.kt eol=lf
+
+*.txt eol=lf
+*.md eol=lf
+
+# Batch Files
+*.sh text eol=lf
+*.{bat,[bB][aA][tT]} text eol=crlf
+*.{cmd,[cC][mM][dD]} text eol=crlf
+
+# Other files
+*.gradle text eol=lf
