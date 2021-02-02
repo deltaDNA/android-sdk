@@ -18,6 +18,7 @@ package com.deltadna.android.sdk;
 
 import android.content.*;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteException;
 import android.os.AsyncTask;
 import androidx.annotation.Nullable;
 import android.util.Log;
@@ -316,7 +317,15 @@ class EventStore extends BroadcastReceiver {
                 }
             }
 
-            if (!db.insertEventRow(time, location, name, hash, file.length())) {
+            boolean dbInsertSucceeded;
+            try {
+                dbInsertSucceeded = db.insertEventRow(time, location, name, hash, file.length());
+            } catch (SQLiteException e) {
+                Log.e(TAG, "An error occurred when trying to insert event row into the database", e);
+                dbInsertSucceeded = false;
+            }
+
+            if (!dbInsertSucceeded) {
                 Log.w(TAG, "Failed inserting " + new String(content));
                 //noinspection ResultOfMethodCallIgnored
                 file.delete();

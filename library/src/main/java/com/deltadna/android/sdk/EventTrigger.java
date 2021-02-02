@@ -18,6 +18,8 @@ package com.deltadna.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 import com.deltadna.android.sdk.triggers.ExecutionCountTriggerCondition;
 import com.deltadna.android.sdk.triggers.ExecutionRepeatTriggerCondition;
@@ -227,18 +229,18 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             }
         }
 
-
-
-
         if (stack.isEmpty() || (boolean) stack.pop()) {
-
-
-
             // Default to true if no conditions exist
             boolean anyCanExecute = campaignTriggerConditions.size() == 0;
 
             // Only one condition needs to be true to flip conditions to true
-            etcMetricStore.recordETCExecution(variantId);
+            try {
+                etcMetricStore.recordETCExecution(variantId);
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to record the ETC execution", e);
+                return false;
+            }
+
             for (TriggerCondition condition : campaignTriggerConditions){
                 if ( condition.canExecute() ) anyCanExecute = true;
             }
