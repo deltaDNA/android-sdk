@@ -496,8 +496,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             @Override
             boolean evaluate(String left, String right) throws InvalidOperation {
                 return CONTAINS.evaluate(
-                        left.toLowerCase(Locale.getDefault()),
-                        right.toLowerCase(Locale.getDefault()));
+                        left.toLowerCase(Locale.ENGLISH),
+                        right.toLowerCase(Locale.ENGLISH));
             }
         },
         STARTS_WITH("starts with") {
@@ -520,8 +520,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             @Override
             boolean evaluate(String left, String right) throws InvalidOperation {
                 return STARTS_WITH.evaluate(
-                        left.toLowerCase(Locale.getDefault()),
-                        right.toLowerCase(Locale.getDefault()));
+                        left.toLowerCase(Locale.ENGLISH),
+                        right.toLowerCase(Locale.ENGLISH));
             }
         },
         ENDS_WITH("ends with") {
@@ -544,8 +544,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             @Override
             boolean evaluate(String left, String right) throws InvalidOperation {
                 return ENDS_WITH.evaluate(
-                        left.toLowerCase(Locale.getDefault()),
-                        right.toLowerCase(Locale.getDefault()));
+                        left.toLowerCase(Locale.ENGLISH),
+                        right.toLowerCase(Locale.ENGLISH));
             }
         };
         
