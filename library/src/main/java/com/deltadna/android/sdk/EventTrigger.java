@@ -18,6 +18,8 @@ package com.deltadna.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 import com.deltadna.android.sdk.triggers.ExecutionCountTriggerCondition;
 import com.deltadna.android.sdk.triggers.ExecutionRepeatTriggerCondition;
@@ -227,18 +229,18 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             }
         }
 
-
-
-
         if (stack.isEmpty() || (boolean) stack.pop()) {
-
-
-
             // Default to true if no conditions exist
             boolean anyCanExecute = campaignTriggerConditions.size() == 0;
 
             // Only one condition needs to be true to flip conditions to true
-            etcMetricStore.recordETCExecution(variantId);
+            try {
+                etcMetricStore.recordETCExecution(variantId);
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to record the ETC execution", e);
+                return false;
+            }
+
             for (TriggerCondition condition : campaignTriggerConditions){
                 if ( condition.canExecute() ) anyCanExecute = true;
             }
@@ -494,8 +496,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             @Override
             boolean evaluate(String left, String right) throws InvalidOperation {
                 return CONTAINS.evaluate(
-                        left.toLowerCase(Locale.getDefault()),
-                        right.toLowerCase(Locale.getDefault()));
+                        left.toLowerCase(Locale.ENGLISH),
+                        right.toLowerCase(Locale.ENGLISH));
             }
         },
         STARTS_WITH("starts with") {
@@ -518,8 +520,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             @Override
             boolean evaluate(String left, String right) throws InvalidOperation {
                 return STARTS_WITH.evaluate(
-                        left.toLowerCase(Locale.getDefault()),
-                        right.toLowerCase(Locale.getDefault()));
+                        left.toLowerCase(Locale.ENGLISH),
+                        right.toLowerCase(Locale.ENGLISH));
             }
         },
         ENDS_WITH("ends with") {
@@ -542,8 +544,8 @@ public final class EventTrigger implements Comparable<EventTrigger> {
             @Override
             boolean evaluate(String left, String right) throws InvalidOperation {
                 return ENDS_WITH.evaluate(
-                        left.toLowerCase(Locale.getDefault()),
-                        right.toLowerCase(Locale.getDefault()));
+                        left.toLowerCase(Locale.ENGLISH),
+                        right.toLowerCase(Locale.ENGLISH));
             }
         };
         

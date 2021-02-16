@@ -18,6 +18,7 @@ package com.deltadna.android.sdk;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -222,12 +223,16 @@ class ImageMessageStore {
                             "Successfully fetched %s to %s",
                             url,
                             file));
-                    database.insertImageMessage(
-                            url,
-                            location,
-                            name,
-                            file.length(),
-                            new Date());
+                    try {
+                        database.insertImageMessage(
+                                url,
+                                location,
+                                name,
+                                file.length(),
+                                new Date());
+                    } catch (SQLiteException e) {
+                        error.set(new FetchingException(url, file, e));
+                    }
                 } else {
                     Log.w(TAG, String.format(
                             Locale.ENGLISH,

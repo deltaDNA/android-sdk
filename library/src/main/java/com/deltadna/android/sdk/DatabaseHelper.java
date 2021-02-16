@@ -19,7 +19,9 @@ package com.deltadna.android.sdk;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.os.AsyncTask;
 import android.provider.BaseColumns;
@@ -42,7 +44,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(SQLiteDatabase db) throws SQLException {
         db.execSQL("CREATE TABLE " + Events.TABLE + "("
                 + Events.Column.ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + Events.Column.TIME + " INTEGER NOT NULL, "
@@ -83,11 +85,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onUpgrade(
-            SQLiteDatabase db,
-            int oldVersion,
-            int newVersion) {
-
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) throws SQLException {
         Log.d(TAG, String.format(
                 Locale.ENGLISH,
                 "Upgrading %s from version %d to %d",
@@ -158,7 +156,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    Cursor getEventRows() {
+    Cursor getEventRows() throws SQLiteException {
         return getReadableDatabase().rawQuery(
                 String.format(
                         Locale.US,
@@ -182,7 +180,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             Location location,
             String name,
             @Nullable String hash,
-            long size) {
+            long size) throws SQLiteException {
         final ContentValues values = new ContentValues(5);
         values.put(Events.Column.TIME.toString(), time);
         values.put(Events.Column.LOCATION.toString(), location.name());
@@ -194,7 +192,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 != -1);
     }
 
-    boolean removeEventRow(long id) {
+    boolean removeEventRow(long id) throws SQLiteException {
         return (getWritableDatabase().delete(
                 Events.TABLE,
                 Events.Column.ID + " = ?",
@@ -202,11 +200,11 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 == 1);
     }
 
-    void removeEventRows() {
+    void removeEventRows() throws SQLiteException {
         getWritableDatabase().delete(Events.TABLE, null, null);
     }
 
-    Cursor getEngagement(String decisionPoint, String flavour) {
+    Cursor getEngagement(String decisionPoint, String flavour) throws SQLiteException {
         return getReadableDatabase().query(
                 Engagements.TABLE,
                 Engagements.Column.all(),
@@ -239,14 +237,14 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     public class InsertEngagementAsyncTask extends AsyncTask<ContentValues, Void, Void>{
 
         @Override
-        protected Void doInBackground(ContentValues... contentValues) {
+        protected Void doInBackground(ContentValues... contentValues) throws SQLiteException {
             ContentValues value = contentValues[0];
             getWritableDatabase().insert(Engagements.TABLE, null, value);
             return null;
         }
     }
 
-    boolean removeEngagementRow(long id) {
+    boolean removeEngagementRow(long id) throws SQLiteException {
         return (getWritableDatabase().delete(
                 Engagements.TABLE,
                 Engagements.Column.ID + " = ?",
@@ -254,11 +252,11 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 == 1);
     }
 
-    void removeEngagementRows() {
+    void removeEngagementRows() throws SQLiteException {
         getWritableDatabase().delete(Engagements.TABLE, null, null);
     }
 
-    Cursor getImageMessages() {
+    Cursor getImageMessages() throws SQLiteException {
         return getReadableDatabase().query(
                 ImageMessages.TABLE,
                 ImageMessages.Column.all(),
@@ -269,7 +267,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 null);
     }
 
-    Cursor getImageMessage(String url) {
+    Cursor getImageMessage(String url) throws SQLiteException {
         final String other;
         if (url.startsWith("http://")) {
             other = "https" + url.substring("http".length(), url.length());
@@ -293,7 +291,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 null);
     }
 
-    boolean removeImageMessage(long id) {
+    boolean removeImageMessage(long id) throws SQLiteException {
         return (getWritableDatabase().delete(
                 ImageMessages.TABLE,
                 ImageMessages.Column.ID + " = ?",
@@ -301,7 +299,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 == 1);
     }
 
-    void removeImageMessageRows() {
+    void removeImageMessageRows() throws SQLiteException {
         getWritableDatabase().delete(ImageMessages.TABLE, null, null);
     }
 
@@ -310,7 +308,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
             Location location,
             String name,
             long size,
-            Date downloaded) {
+            Date downloaded) throws SQLiteException {
         final ContentValues values = new ContentValues(4);
         values.put(ImageMessages.Column.URL.toString(), url);
         values.put(ImageMessages.Column.LOCATION.toString(), location.name());
@@ -323,7 +321,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     @Nullable
-    JSONObject getAction(long campaignId) {
+    JSONObject getAction(long campaignId) throws SQLiteException {
         try (final Cursor cursor = getReadableDatabase().query(
                 Actions.TABLE,
                 Actions.Column.all(),
@@ -371,18 +369,15 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         return true;
     }
 
-
     public class InsertActionRowAsyncTask extends AsyncTask<ContentValues, Void, Void>{
-
         @Override
-        protected Void doInBackground(ContentValues... values) {
-
+        protected Void doInBackground(ContentValues... values) throws SQLiteException {
             getWritableDatabase().insert(Actions.TABLE, null, values[0]);
             return null;
         }
     }
 
-    boolean removeActionRow(long campaignId) {
+    boolean removeActionRow(long campaignId) throws SQLiteException {
         return (getWritableDatabase().delete(
                 Actions.TABLE,
                 Actions.Column.CAMPAIGN_ID + " = ?",
@@ -390,11 +385,11 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 == 1);
     }
 
-    void removeActionRows() {
+    void removeActionRows() throws SQLiteException {
         getWritableDatabase().delete(Actions.TABLE, null, null);
     }
 
-    long getETCExecutionCount(long variantId) {
+    long getETCExecutionCount(long variantId) throws SQLiteException {
         long executions = 0;
         try (
                 final Cursor cursor = getReadableDatabase().query(
@@ -413,8 +408,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
         return executions;
     }
 
-
-    void recordETCExecution(long campaignId) {
+    void recordETCExecution(long campaignId) throws SQLiteException {
         long etcExecutionCount = getETCExecutionCount(campaignId);
         SQLiteDatabase database = this.getWritableDatabase();
         if (etcExecutionCount == 0) {
@@ -431,7 +425,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-    void clearETCExecutions() {
+    void clearETCExecutions() throws SQLiteException {
         getWritableDatabase().delete(ETCExecutions.TABLE, null, null);
     }
 
