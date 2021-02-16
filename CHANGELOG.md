@@ -1,5 +1,11 @@
 # Change Log
 
+## [4.13.4](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.4)
+
+### Fixed
+- Fixed a bug where changing the OS language could crash the app.
+- Improved handling of database exceptions.
+
 ## [4.13.3](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.3)
 
 ### Fixed
