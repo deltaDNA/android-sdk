@@ -67,6 +67,8 @@ subprojects {
     apply plugin: 'com.google.android.gms.strict-version-matcher-plugin'
     apply plugin: 'kotlin-android'
     apply plugin: 'kotlin-android-extensions'
+    apply plugin: 'maven-publish'
+
     
     if (isLibrary) {
         // workaround for group/version not picked up through project() dependency
@@ -163,8 +165,6 @@ static def getSha() {
 }
 
 publishing {
-  apply plugin: 'maven-publish'
-
   repositories {
     maven {
       name = "GitHubPackages"
