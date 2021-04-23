@@ -162,6 +162,10 @@ static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
 }
 
+plugins {
+  id 'maven-publish'
+}
+
 publishing {
   repositories {
     maven {
