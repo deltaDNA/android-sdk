@@ -163,7 +163,9 @@ static def getSha() {
 }
 
 plugins {
-  id("maven-publish")
+  `java-library`
+  `maven-publish`
+  signing
 }
 
 publishing {
@@ -178,7 +180,7 @@ publishing {
     }
   }
   publications {
-    register("jar", MavenPublication::class) {
+    create<MavenPublication>("main") {
       from(components["java"])
       group = 'deltaDNA'
       artifactId = 'android-sdk'
