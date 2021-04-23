@@ -141,9 +141,9 @@ subprojects {
 
     }
     
-    if (isLibrary) {
-        apply from: "$rootProject.projectDir/gradle/mvn-push.gradle"
-    }
+//    if (isLibrary) {
+//        apply from: "$rootProject.projectDir/gradle/mvn-push.gradle"
+//    }
 }
 
 wrapper {
@@ -164,7 +164,6 @@ static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
 }
 
-/*
 publishing {
   repositories {
     maven {
@@ -177,4 +176,3 @@ publishing {
     }
   }
 }
-*/
