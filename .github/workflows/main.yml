@@ -19,7 +19,11 @@ jobs:
         with:
           java-version: '11'
           distribution: 'adopt'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build with Gradle
+        run: ./gradlew build
       - name: Publish package
-        run: gradle build
+        run: /gradlew publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
