@@ -163,9 +163,9 @@ static def getSha() {
 }
 
 plugins {
-  `java-library`
-  `maven-publish`
-  signing
+  id("java-library")
+  id("maven-publish")
+ // signing
 }
 
 publishing {
