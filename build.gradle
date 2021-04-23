@@ -162,11 +162,7 @@ static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
 }
 
-plugins {
-  id("java-library")
-  id("maven-publish")
- // signing
-}
+apply plugin: "maven-publish"
 
 publishing {
   repositories {
@@ -180,11 +176,14 @@ publishing {
     }
   }
   publications {
-    create<MavenPublication>("main") {
+    register("jar", MavenPublication) {
       from(components["java"])
       group = 'deltaDNA'
       artifactId = 'android-sdk'
       version = VERSION_NAME
+      pom {
+        url.set("https://github.com/deltaDNA/adroid-sdk.git")
+      }
     }
   }
 }
