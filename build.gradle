@@ -179,7 +179,7 @@ publishing {
       artifactId = 'android-sdk'
       version = VERSION_NAME
 
-      from android.sourceSets.main.java.sourceFiles
+      from(components.java)
     }
   }
 }
