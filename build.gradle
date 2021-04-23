@@ -163,6 +163,8 @@ static def getSha() {
 }
 
 publishing {
+  apply plugin: 'maven-publish'
+
   repositories {
     maven {
       name = "GitHubPackages"
