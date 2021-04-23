@@ -173,4 +173,13 @@ publishing {
       }
     }
   }
+  publications {
+    gpr(MavenPublication) {
+      groupId = 'deltaDNA'
+      artifactId = 'android-sdk'
+      version = VERSION_NAME
+
+      from android.sourceSets.main.java.sourceFiles
+    }
+  }
 }
