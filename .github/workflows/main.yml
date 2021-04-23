@@ -20,6 +20,6 @@ jobs:
           java-version: '11'
           distribution: 'adopt'
       - name: Publish package
-        run: gradle -v
+        run: gradle mvn-push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
