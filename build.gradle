@@ -51,6 +51,7 @@ allprojects {
         maven { url 'https://maven.google.com' }
         jcenter()
     }
+    apply plugin: 'maven-publish'
 }
 
 subprojects {
