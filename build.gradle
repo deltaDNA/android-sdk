@@ -51,6 +51,7 @@ allprojects {
         maven { url 'https://maven.google.com' }
         jcenter()
     }
+    apply plugin: 'maven-publish'
 }
 
 subprojects {
@@ -67,7 +68,6 @@ subprojects {
     apply plugin: 'com.google.android.gms.strict-version-matcher-plugin'
     apply plugin: 'kotlin-android'
     apply plugin: 'kotlin-android-extensions'
-    apply plugin: 'maven-publish'
 
     
     if (isLibrary) {
