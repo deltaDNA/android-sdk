@@ -140,7 +140,7 @@ subprojects {
     if (isLibrary) {
         apply from: "$rootProject.projectDir/gradle/mvn-push.gradle"
     }
-}
+3.10}
 
 wrapper {
     gradleVersion = '4.4'
@@ -158,4 +158,17 @@ tasks.whenTaskAdded { task ->
 
 static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
+}
+
+publishing {
+  repositories {
+    maven {
+      name = "GitHubPackages"
+      url = "https://maven.pkg.github.com/deltaDNA/deltadna-sdk"
+      credentials {
+        username = System.getenv("GITHUB_ACTOR")
+        password = System.getenv("GITHUB_TOKEN")
+      }
+    }
+  }
 }
