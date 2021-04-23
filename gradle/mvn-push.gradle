@@ -47,6 +47,7 @@ def getSnapshotRepositoryPassword() {
 }
 
 afterEvaluate { project ->
+    /*
     uploadArchives {
         repositories {
             mavenDeployer {
@@ -59,11 +60,9 @@ afterEvaluate { project ->
                 repository(url: getReleaseRepositoryUrl()) {
                     authentication(userName: getReleaseRepositoryUsername(), password: getReleaseRepositoryPassword())
                 }
-                /*
-                snapshotRepository(url: getSnapshotRepositoryUrl()) {
-                    authentication(userName: getSnapshotRepositoryUsername(), password: getSnapshotRepositoryPassword())
-                }
-                */
+//                snapshotRepository(url: getSnapshotRepositoryUrl()) {
+//                    authentication(userName: getSnapshotRepositoryUsername(), password: getSnapshotRepositoryPassword())
+//                }
                 
                 pom.project {
                     name POM_NAME
@@ -88,6 +87,7 @@ afterEvaluate { project ->
             }
         }
     }
+    */
     
     signing {
         required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
@@ -136,5 +136,18 @@ afterEvaluate { project ->
                 repository url: "file://${System.properties['user.home']}/.m2/repository"
             }
         }
+    }
+
+    publishing {
+      repositories {
+        maven {
+          name = "GitHubPackages"
+          url = "https://maven.pkg.github.com/deltaDNA/android-sdk"
+          credentials {
+            username = System.getenv("GITHUB_ACTOR")
+            password = System.getenv("GITHUB_TOKEN")
+          }
+        }
+      }
     }
 }
