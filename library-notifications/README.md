@@ -5,7 +5,6 @@
 [![codecov.io](https://codecov.io/github/deltaDNA/android-sdk/coverage.svg)](https://codecov.io/github/deltaDNA/android-sdk)
 [![Codacy Badge](https://api.codacy.com/project/badge/grade/b5546fd90d3b4b2182961602da6086d8)](https://www.codacy.com/app/deltaDNA/android-sdk)
 [![Apache2 licensed](https://img.shields.io/badge/license-Apache-blue.svg)](./LICENSE)
-[![Download](https://api.bintray.com/packages/deltadna/android/deltadna-sdk/images/download.svg)](https://bintray.com/deltadna/android/deltadna-sdk/_latestVersion)
 
 ## Contents
 * [Overview](#overview)
@@ -34,7 +33,13 @@ In your top-level build script:
 ```groovy
 allprojects {
     repositories {
-        maven { url 'http://deltadna.bintray.com/android' }
+        maven {
+            url 'https://maven.pkg.github.com/deltaDNA/android-sdk'
+            credentials {
+                username = "github_username"
+                password = "github_personal_access_token"
+            }
+        }
     }
 }
 ```

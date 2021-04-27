@@ -50,6 +50,7 @@ allprojects {
         maven { url 'https://maven.google.com' }
         jcenter()
     }
+    apply plugin: 'maven-publish'
 }
 
 subprojects {
@@ -65,6 +66,7 @@ subprojects {
     apply plugin: 'com.google.android.gms.strict-version-matcher-plugin'
     apply plugin: 'kotlin-android'
     apply plugin: 'kotlin-android-extensions'
+
     
     if (isLibrary) {
         // workaround for group/version not picked up through project() dependency
@@ -159,3 +161,4 @@ tasks.whenTaskAdded { task ->
 static def getSha() {
     return 'git rev-parse --short HEAD'.execute().text.trim()
 }
+
