@@ -20,6 +20,6 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
       - name: Publish package
-        run: gradle publish --rerun-tasks --stacktrace --info
+        run: ./gradlew uploadArchives
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
