@@ -221,7 +221,7 @@ public final class ImageMessage implements Serializable {
      *
      * @return the user parameters
      */
-    JSONObject parameters() {
+    public JSONObject parameters() {
         try {
             return new JSONObject(parameters);
         } catch (JSONException e) {
