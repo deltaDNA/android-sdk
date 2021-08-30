@@ -1,9 +1,6 @@
 ![deltaDNA logo](https://deltadna.com/wp-content/uploads/2015/06/deltadna_www@1x.png)
 
 # deltaDNA Android SDK
-[![Build Status](https://travis-ci.org/deltaDNA/android-sdk.svg)](https://travis-ci.org/deltaDNA/android-sdk)
-[![codecov.io](https://codecov.io/github/deltaDNA/android-sdk/coverage.svg)](https://codecov.io/github/deltaDNA/android-sdk)
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/b5546fd90d3b4b2182961602da6086d8)](https://www.codacy.com/app/deltaDNA/android-sdk)
 [![Apache2 licensed](https://img.shields.io/badge/license-Apache-blue.svg)](./LICENSE)
 
 ## Contents
@@ -52,7 +49,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.13.5'
+    implementation 'com.deltadna.android:deltadna-sdk:4.13.6'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:

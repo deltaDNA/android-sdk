@@ -128,7 +128,7 @@ public class NotificationFactory {
         
         builder.setContentIntent(PendingIntent.getBroadcast(
                 context,
-                0,
+                info.id,
                 new Intent(Actions.NOTIFICATION_OPENED_INTERNAL)
                         .setPackage(context.getPackageName())
                         .setClass(context, NotificationInteractionReceiver.class)
@@ -136,7 +136,7 @@ public class NotificationFactory {
                 PendingIntent.FLAG_UPDATE_CURRENT));
         builder.setDeleteIntent(PendingIntent.getBroadcast(
                 context,
-                0,
+                info.id,
                 new Intent(Actions.NOTIFICATION_DISMISSED_INTERNAL)
                         .setPackage(context.getPackageName())
                         .setClass(context, NotificationInteractionReceiver.class)
