@@ -1,6 +1,12 @@
 # Change Log
 
+## [4.13.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.6)
+
+### Fixed
+- Fixed an issue where multiple notifications could lead to the wrong campaign being triggered when the notification was tapped
+
 ## [4.13.5](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.5)
+
 ### Fixed
 - Fixed a regression on visibility of game parameters in an image message
 
