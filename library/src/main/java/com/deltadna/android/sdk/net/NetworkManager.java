@@ -19,6 +19,8 @@ package com.deltadna.android.sdk.net;
 import androidx.annotation.Nullable;
 import android.util.Log;
 import com.deltadna.android.sdk.BuildConfig;
+import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.consent.ConsentStatus;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.RequestListener;
 import org.json.JSONObject;
@@ -75,23 +77,34 @@ public class NetworkManager {
         
         dispatcher = new NetworkDispatcher();
     }
+
+    public CancelableRequest get(String url, @Nullable RequestListener<JSONObject> listener) {
+        Request<JSONObject> request = new Request.Builder<JSONObject>()
+                .get()
+                .url(url)
+                .maxRetries(settings.getHttpRequestMaxRetries())
+                .retryDelay(settings.getHttpRequestRetryDelay() * 1000)
+                .build();
+        return dispatcher.enqueue(request, ResponseBodyConverter.JSON, listener);
+    }
     
     public CancelableRequest collect(
             JSONObject payload,
             @Nullable RequestListener<Void> listener) {
+
+        Request.Builder<Void> builder = new Request.Builder<Void>()
+                .post(RequestBody.json(payload))
+                .url(payload.has("eventList")
+                        ? buildHashedEndpoint(collectUrl + "/bulk", payload.toString())
+                        : buildHashedEndpoint(collectUrl, payload.toString()))
+                .header("Accept", "application/json")
+                .maxRetries(settings.getHttpRequestMaxRetries())
+                .retryDelay(settings.getHttpRequestRetryDelay() * 1000)
+                .connectionTimeout(settings.getHttpRequestCollectTimeout() * 1000);
+
+        addPIPLHeadersToRequest(builder);
         
-        return dispatcher.enqueue(
-                new Request.Builder<Void>()
-                        .post(RequestBody.json(payload))
-                        .url(payload.has("eventList")
-                                ? buildHashedEndpoint(collectUrl + "/bulk", payload.toString())
-                                : buildHashedEndpoint(collectUrl, payload.toString()))
-                        .header("Accept", "application/json")
-                        .maxRetries(settings.getHttpRequestMaxRetries())
-                        .retryDelay(settings.getHttpRequestRetryDelay() * 1000)
-                        .connectionTimeout(settings.getHttpRequestCollectTimeout() * 1000)
-                        .build(),
-                listener);
+        return dispatcher.enqueue(builder.build(), listener);
     }
     
     public CancelableRequest engage(
@@ -105,15 +118,18 @@ public class NetworkManager {
     public CancelableRequest engage(JSONObject payload,
                                     RequestListener<JSONObject> listener,
                                     boolean isConfigurationRequest){
-
         int timeoutInSeconds = isConfigurationRequest ? settings.getHttpRequestConfigTimeout() : settings.getHttpRequestEngageTimeout();
+
+        Request.Builder<JSONObject> builder = new Request.Builder<JSONObject>()
+                .post(RequestBody.json(payload))
+                .url(buildHashedEndpoint(engageUrl, payload.toString()))
+                .header("Accept", "application/json")
+                .connectionTimeout(timeoutInSeconds * 1000);
+
+        addPIPLHeadersToRequest(builder);
+
         return dispatcher.enqueue(
-                new Request.Builder<JSONObject>()
-                        .post(RequestBody.json(payload))
-                        .url(buildHashedEndpoint(engageUrl, payload.toString()))
-                        .header("Accept", "application/json")
-                        .connectionTimeout(timeoutInSeconds * 1000)
-                        .build(),
+                builder.build(),
                 ResponseBodyConverter.JSON,
                 listener);
     }
@@ -122,14 +138,17 @@ public class NetworkManager {
             String url,
             final File dest,
             RequestListener<File> listener) {
+
+        Request.Builder<File> builder = new Request.Builder<File>()
+                .get()
+                .url(url)
+                .connectionTimeout(settings.getHttpRequestEngageTimeout() * 1000);
+
+        addPIPLHeadersToRequest(builder);
         
         // TODO tweak timeouts as this should come back quickly as well
         return dispatcher.enqueue(
-                new Request.Builder<File>()
-                        .get()
-                        .url(url)
-                        .connectionTimeout(settings.getHttpRequestEngageTimeout() * 1000)
-                        .build(),
+                builder.build(),
                 new ResponseBodyConverter<File>() {
                     @Override
                     public File convert(byte[] input) throws Exception {
@@ -163,5 +182,14 @@ public class NetworkManager {
         }
         
         return builder.toString();
+    }
+
+    private void addPIPLHeadersToRequest(Request.Builder requestBuilder) {
+        if (DDNA.instance().consentTracker.useConsentStatus == ConsentStatus.consentGiven) {
+            requestBuilder.header("PIPL_CONSENT", "");
+        }
+        if (DDNA.instance().consentTracker.exportConsentStatus == ConsentStatus.consentGiven) {
+            requestBuilder.header("PIPL_EXPORT", "");
+        }
     }
 }

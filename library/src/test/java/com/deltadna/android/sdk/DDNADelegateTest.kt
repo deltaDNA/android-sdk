@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk
 
 import android.os.Bundle
+import com.deltadna.android.sdk.consent.ConsentStatus
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
@@ -42,13 +43,20 @@ class DDNADelegateTest {
     fun before() {
         tracking = mock()
         nonTracking = mock()
+
+        val config = DDNA.Configuration(
+            application,
+            "environmentKey",
+            "collectUrl",
+            "engageUrl")
+
+        DDNA.initialise(config)
+
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.unknown
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.unknown
         
         uut = DDNADelegate(
-                DDNA.Configuration(
-                        application,
-                        "environmentKey",
-                        "collectUrl",
-                        "engageUrl"),
+                config,
                 mutableSetOf(),
                 mutableSetOf(),
                 tracking,
@@ -350,6 +358,30 @@ class DDNADelegateTest {
         verify(nonTracking).iso4217
 
         verifyZeroInteractions(tracking)
+    }
+
+    @Test
+    fun forwardsToNonTrackingAfterPIPLOptOut() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentDenied
+
+        uut.startSdk()
+        verify(nonTracking).startSdk()
+    }
+
+    @Test
+    fun forwardsToTrackingIfPIPLOptIn() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentGiven
+
+        uut.startSdk()
+        verify(tracking).startSdk()
+    }
+
+    @Test
+    fun forwardsToTrackingIfPIPLNotRequired() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.notRequired
+
+        uut.startSdk()
+        verify(tracking).startSdk()
     }
     
     private class KEvent(name: String) : Event<KEvent>(name)

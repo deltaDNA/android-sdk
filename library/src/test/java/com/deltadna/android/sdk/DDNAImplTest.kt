@@ -16,6 +16,8 @@
 
 package com.deltadna.android.sdk
 
+import com.deltadna.android.sdk.consent.ConsentStatus
+import com.deltadna.android.sdk.consent.ConsentTracker
 import com.deltadna.android.sdk.exceptions.NotStartedException
 import com.deltadna.android.sdk.exceptions.SessionConfigurationException
 import com.deltadna.android.sdk.helpers.Settings
@@ -56,6 +58,11 @@ class DDNAImplTest {
         server = MockWebServer()
         server.start()
 
+        DDNA.initialise(DDNA.Configuration(RuntimeEnvironment.application,
+            "environmentKey",
+            server.url("/collect").toString(),
+            server.url("/engage").toString()))
+
         uut = DDNAImpl(
                 RuntimeEnvironment.application,
                 "environmentKey",
@@ -68,6 +75,9 @@ class DDNAImplTest {
                 null,
                 mutableSetOf(),
                 mutableSetOf())
+
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.consentGiven
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentGiven
     }
 
     @After

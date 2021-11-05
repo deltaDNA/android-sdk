@@ -23,6 +23,8 @@ import android.os.Looper;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.deltadna.android.sdk.consent.ConsentTracker;
 import com.deltadna.android.sdk.helpers.Settings;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
@@ -205,7 +207,7 @@ final class DDNANonTracking extends DDNA {
 
         return this;
     }
-    
+
     @Override
     ImageMessageStore getImageMessageStore() {
         // ok as we should never get far enough to use the store

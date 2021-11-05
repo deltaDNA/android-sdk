@@ -19,6 +19,8 @@ package com.deltadna.android.sdk;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
+
+import com.deltadna.android.sdk.consent.ConsentTracker;
 import com.deltadna.android.sdk.listeners.EngageListener;
 import com.deltadna.android.sdk.listeners.EventListener;
 import com.deltadna.android.sdk.listeners.internal.IEventListener;
@@ -183,7 +185,7 @@ class DDNADelegate extends DDNA {
 
         return nonTracking;
     }
-    
+
     @Override
     ImageMessageStore getImageMessageStore() {
         return getDelegate().getImageMessageStore();
@@ -195,7 +197,7 @@ class DDNADelegate extends DDNA {
     }
     
     private DDNA getDelegate() {
-        if (preferences.isForgetMe() || preferences.isForgotten() || preferences.isStopTrackingMe()) {
+        if (preferences.isForgetMe() || preferences.isForgotten() || preferences.isStopTrackingMe() || DDNA.instance().consentTracker.isConsentDenied()) {
             return nonTracking;
         } else {
             return tracking;

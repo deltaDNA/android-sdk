@@ -1,5 +1,12 @@
 # Change Log
 
+## [5.0.0](https://github.com/deltaDNA/android-sdk/releases/tag/5.0.0)
+
+## New
+- **Breaking Change**: Provided APIs for checking if PIPL consent is required, and for registering a user's PIPL consent if so.
+Note it is now a requirement to call the API to check for consent, and register any consents if necessary, before collect and engage
+responses will be successfully sent to the deltaDNA service.
+
 ## [4.13.6](https://github.com/deltaDNA/android-sdk/releases/tag/4.13.6)
 
 ### Fixed
