@@ -22,6 +22,7 @@ import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+
 import com.deltadna.android.sdk.exceptions.NotStartedException;
 import com.deltadna.android.sdk.exceptions.SessionConfigurationException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
@@ -90,6 +91,11 @@ final class DDNAImpl extends DDNA {
     @Override
     public DDNA startSdk(@Nullable String userId) {
         Log.d(TAG, "Starting SDK");
+
+        if (!consentTracker.hasCheckedForConsent()) {
+            Log.w(TAG, "In version 5.0.0 and above, it is a requirement to check if user consent is required before events will be sent. " +
+                    "Events will not be sent until this check is performed and any required consents are provided.");
+        }
         
         if (started) {
             Log.w(TAG, "SDK already started");
@@ -243,6 +249,13 @@ final class DDNAImpl extends DDNA {
     public <E extends Engagement> DDNA requestEngagement(E engagement, EngageListener<E> listener) {
         Preconditions.checkArg(engagement != null, "engagement cannot be null");
         Preconditions.checkArg(listener != null, "listener cannot be null");
+
+        if (!DDNA.instance().consentTracker.hasCheckedForConsent()) {
+            Log.w(TAG, "You need to check for user consent before making engagement requests.");
+            listener.onCompleted((E) engagement.setResponse(new Response<>(
+                    200, false, new byte[] {}, new JSONObject(), null)));
+            return this;
+        }
         
         if (!started) {
             Log.w(TAG, "SDK has not been started, aborting engagement " + engagement);
@@ -389,7 +402,7 @@ final class DDNAImpl extends DDNA {
     public DDNA stopTrackingMe() {
         return stopSdk();
     }
-    
+
     @Override
     ImageMessageStore getImageMessageStore() {
         return imageMessageStore;

@@ -281,6 +281,12 @@ final class EventHandler {
         @Override
         public void run() {
             Log.v(TAG, "Starting event upload");
+
+            if (!DDNA.instance().consentTracker.allConsentsAreMet()) {
+                Log.w(TAG, "PIPL consents have not been checked or have been denied, cannot send Collect request.");
+                return;
+            }
+
             final CloseableIterator<EventStoreItem> items = events.items();
             final AtomicReference<CloseableIterator.Mode> clearEvents =
                     new AtomicReference<>(CloseableIterator.Mode.ALL);

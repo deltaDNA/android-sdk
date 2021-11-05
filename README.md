@@ -49,7 +49,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:4.13.6'
+    implementation 'com.deltadna.android:deltadna-sdk:5.0.0'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:
@@ -68,6 +68,10 @@ The SDK needs to be initialised with the following parameters in an `Application
 * `environmentKey`, a unique 32 character string assigned to your application. You will be assigned separate application keys for development and production builds of your game. You will need to change the environment key that you initialise the SDK with as you move from development and testing to production.
 * `collectUrl`, this is the address of the server that will be collecting your events.
 * `engageUrl`, this is the address of the server that will provide real-time A/B Testing and Targeting.
+
+It is a requirement in versions 5.0.0 and above to check if a user is in a location where PIPL consent is required, and to provide that consent if so. This must 
+be done before the SDK will send any events or make any engage requests.
+
 ```java
 public class MyApplication extends Application {
 
@@ -80,6 +84,22 @@ public class MyApplication extends Application {
                 "environmentKey",
                 "collectUrl",
                 "engageUrl"));
+
+        DDNA.instance().isPiplConsentRequired(new ConsentTracker.Callback() {
+            @Override
+            public void onSuccess(boolean requiresConsent) {
+                if (requiresConsent) {
+                    // Put in a consent flow here to check that the user has given their consent, then update the booleans below to match.
+                    DDNA.instance().setPiplConsent(true, true);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                Log.e("EXAMPLE", "Failed to check for PIPL consent", exception);
+                // Try again later.
+            }
+        });
     }
 }
 ```

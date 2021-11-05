@@ -17,10 +17,14 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
+import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.deltadna.android.sdk.consent.ConsentTracker;
+import com.deltadna.android.sdk.consent.GeoIpNetworkClient;
 import com.deltadna.android.sdk.exceptions.NotInitialisedException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.Preconditions;
@@ -131,6 +135,12 @@ public abstract class DDNA {
     final Preferences preferences;
     final NetworkManager network;
     private final EngageFactory engageFactory;
+
+    /**
+     * INTERNAL USE ONLY. Do not access this property directly.
+     * Please use isPiplConsentRequired and setPiplConsent on the main DDNA instance to check for and provide consent.
+     */
+    public final ConsentTracker consentTracker;
     
     String sessionId = UUID.randomUUID().toString();
     
@@ -156,6 +166,10 @@ public abstract class DDNA {
                 engageUrl,
                 settings,
                 hashSecret);
+        consentTracker = new ConsentTracker(
+                application.getSharedPreferences("com.deltadna.android.sdk.prefs", Context.MODE_PRIVATE),
+                new GeoIpNetworkClient(network)
+        );
         engageFactory = new EngageFactory(this);
     }
     
@@ -409,7 +423,48 @@ public abstract class DDNA {
     abstract ImageMessageStore getImageMessageStore();
     
     abstract Map<String, Integer> getIso4217();
-    
+
+    /**
+     * Checks if any PIPL user consents are required before sending data from the device.
+     * This method must be called before starting the SDK.
+     *
+     * The callback parameter will be true if consent needs to be checked, and false if either
+     * consent has previously been gathered, or if consent is not required in the user's current
+     * location.
+     */
+    public void isPiplConsentRequired(ConsentTracker.Callback callback) {
+        consentTracker.isPiplConsentRequired(new ConsentTracker.Callback() {
+            @Override
+            public void onSuccess(boolean requiresConsent) {
+                if (!requiresConsent && instance != null && isStarted()) {
+                    requestSessionConfiguration();
+                }
+                callback.onSuccess(requiresConsent);
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                callback.onFailure(exception);
+            }
+        });
+    }
+
+    /**
+     * Registers a user's consent (or lack of consent) to have their data used and / or exported
+     * under PIPL legislation. Call isPiplConsentRequired first to check if this method is needed
+     * or not.
+     */
+    public void setPiplConsent(boolean consentForUse, boolean consentForExport) {
+        if (!consentForUse) {
+            forgetMe();
+        }
+        if (consentForUse && consentForExport && instance != null && isStarted()) {
+            // If we've already set up the SDK, refresh the SDK to allow relevant configurations to be fetched
+            requestSessionConfiguration();
+        }
+        consentTracker.setConsents(consentForUse, consentForExport);
+    }
+
     /**
      * Changes the session id.
      *

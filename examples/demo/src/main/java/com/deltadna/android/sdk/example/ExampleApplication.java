@@ -17,9 +17,11 @@
 package com.deltadna.android.sdk.example;
 
 import android.app.Application;
+import android.util.Log;
 
 import com.deltadna.android.sdk.BuildConfig;
 import com.deltadna.android.sdk.DDNA;
+import com.deltadna.android.sdk.consent.ConsentTracker;
 
 public class ExampleApplication extends Application {
     
@@ -39,5 +41,21 @@ public class ExampleApplication extends Application {
                 "http://collect3347ndrds.deltadna.net/collect/api",
                 "http://engage3347ndrds.deltadna.net")
                 .clientVersion(BuildConfig.VERSION_NAME));
+
+        DDNA.instance().isPiplConsentRequired(new ConsentTracker.Callback() {
+            @Override
+            public void onSuccess(boolean requiresConsent) {
+                if (requiresConsent) {
+                    // In our example, we assume we have consent, but you should check to make sure this is the case!
+                    DDNA.instance().setPiplConsent(true, true);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable exception) {
+                Log.e("EXAMPLE", "Failed to check for PIPL consent", exception);
+                // Try again later.
+            }
+        });
     }
 }

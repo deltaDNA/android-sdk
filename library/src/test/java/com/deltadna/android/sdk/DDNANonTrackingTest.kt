@@ -17,6 +17,7 @@
 package com.deltadna.android.sdk
 
 import android.os.Bundle
+import com.deltadna.android.sdk.consent.ConsentStatus
 import com.deltadna.android.sdk.helpers.Settings
 import com.deltadna.android.sdk.listeners.EngageListener
 import com.deltadna.android.sdk.listeners.EventListener
@@ -49,6 +50,11 @@ class DDNANonTrackingTest {
     fun before() {
         server = MockWebServer()
         server.start()
+
+        DDNA.initialise(DDNA.Configuration(RuntimeEnvironment.application,
+            "environmentKey",
+            server.url("/collect").toString(),
+            server.url("/engage").toString()))
         
         uut = DDNANonTracking(
                 application,
@@ -60,6 +66,9 @@ class DDNANonTrackingTest {
                 null,
                 mutableSetOf(),
                 mutableSetOf())
+
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.consentGiven
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentGiven
     }
     
     @After

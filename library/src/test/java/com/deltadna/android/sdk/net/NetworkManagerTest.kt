@@ -16,6 +16,9 @@
 
 package com.deltadna.android.sdk.net
 
+import android.app.Application
+import com.deltadna.android.sdk.DDNA
+import com.deltadna.android.sdk.consent.ConsentStatus
 import com.deltadna.android.sdk.helpers.Settings
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.mock
@@ -32,10 +35,12 @@ import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.junit.runners.model.Statement
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import java.io.File
 import java.nio.charset.Charset
 
-@RunWith(JUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class NetworkManagerTest {
     
     @Suppress("unused") // accessed by test framework
@@ -67,8 +72,8 @@ class NetworkManagerTest {
         }
     }
     
-    private var uut: NetworkManager? = null
-    private var server: MockWebServer? = null
+    private lateinit var uut: NetworkManager
+    private lateinit var server: MockWebServer
     
     @Before
     fun before() {
@@ -77,7 +82,13 @@ class NetworkManagerTest {
         
         server = MockWebServer()
         server!!.start()
-        
+
+        DDNA.initialise(DDNA.Configuration(
+            RuntimeEnvironment.application,
+            "envKey",
+            "collectUrl",
+            "engageUrl"))
+
         uut = NetworkManager(
                 ENV_KEY,
                 server!!.url(COLLECT).toString(),
@@ -88,8 +99,7 @@ class NetworkManagerTest {
     
     @After
     fun after() {
-        server!!.shutdown()
-        uut = null
+        server.shutdown()
     }
     
     @Test
@@ -102,6 +112,36 @@ class NetworkManagerTest {
             assertThat(path).isEqualTo(COLLECT + "/" + ENV_KEY)
             assertThat(method).isEqualTo("POST")
             assertThat(body.readUtf8()).isEqualTo("{\"field\":1}")
+        }
+    }
+
+    @Test
+    fun collectPiplHeadersConsentProvided() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentGiven
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.consentGiven
+
+        server.enqueue(MockResponse().setResponseCode(200))
+
+        uut.collect(JSONObject().put("eventList", "[]"), null)
+
+        with(server.takeRequest()) {
+            assertThat(headers["PIPL_CONSENT"]).isNotNull()
+            assertThat(headers["PIPL_EXPORT"]).isNotNull()
+        }
+    }
+
+    @Test
+    fun collectPiplHeadersConsentNotProvided() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentDenied
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.consentDenied
+
+        server.enqueue(MockResponse().setResponseCode(200))
+
+        uut.collect(JSONObject().put("eventList", "[]"), null)
+
+        with(server.takeRequest()) {
+            assertThat(headers["PIPL_CONSENT"]).isNull()
+            assertThat(headers["PIPL_EXPORT"]).isNull()
         }
     }
     
@@ -178,6 +218,40 @@ class NetworkManagerTest {
         
         assertThat(server!!.takeRequest().path)
                 .startsWith("$ENGAGE/$ENV_KEY/hash")
+    }
+
+    @Test
+    fun engagePiplHeadersConsentProvided() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentGiven
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.consentGiven
+
+        server.enqueue(MockResponse()
+            .setResponseCode(200)
+            .setBody("{\"result\":1}"))
+
+        uut.engage(JSONObject().put("field", 1), mock())
+
+        with(server.takeRequest()) {
+            assertThat(headers["PIPL_CONSENT"]).isNotNull()
+            assertThat(headers["PIPL_EXPORT"]).isNotNull()
+        }
+    }
+
+    @Test
+    fun engagePiplHeadersConsentNotProvided() {
+        DDNA.instance().consentTracker.useConsentStatus = ConsentStatus.consentDenied
+        DDNA.instance().consentTracker.exportConsentStatus = ConsentStatus.consentDenied
+
+        server.enqueue(MockResponse()
+            .setResponseCode(200)
+            .setBody("{\"result\":1}"))
+
+        uut.engage(JSONObject().put("field", 1), mock())
+
+        with(server!!.takeRequest()) {
+            assertThat(headers["PIPL_CONSENT"]).isNull()
+            assertThat(headers["PIPL_EXPORT"]).isNull()
+        }
     }
     
     @Test
