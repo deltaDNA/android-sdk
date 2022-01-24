@@ -95,8 +95,8 @@ class EngageStoreTest {
         uut.put(mock<Engagement<*>>().apply {
             whenever(isSuccessful()).then { false }
         })
-        
-        verifyZeroInteractions(database)
+
+        verifyNoMoreInteractions(database)
     }
     
     @Test
@@ -150,7 +150,7 @@ class EngageStoreTest {
         uut = EngageStore(database, path, Settings().apply { engageCacheExpiry = 0 })
         
         assertThat(uut.get(KEngagement("dp", "flavour"))).isNull()
-        verifyZeroInteractions(database)
+        verifyNoMoreInteractions(database)
     }
     
     @Test

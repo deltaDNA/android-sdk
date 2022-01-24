@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+apply from: '../gradle/publish.gradle'
+
 android {
     // java 7 is needed for compatibility with unity
     compileOptions {
@@ -27,10 +29,4 @@ dependencies {
     api "com.google.firebase:firebase-messaging:$firebaseVersion"
     
     compileOnly project(':library')
-}
-
-tasks.whenTaskAdded { task ->
-    if(task.name.contains("Test") || task.name.contains("test")) {
-        task.enabled = false
-    }
 }

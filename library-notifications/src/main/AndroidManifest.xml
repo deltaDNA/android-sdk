@@ -31,18 +31,27 @@ limitations under the License.
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT"/>
             </intent-filter>
         </service>
-
-        <receiver
-            android:name=".NotificationInteractionReceiver"
-            android:exported="false">
-            
-            <intent-filter>
-                <!-- actions must match definitions in Actions class -->
-                <action android:name="com.deltadna.android.sdk.notifications.internal.NOTIFICATION_OPENED"/>
-                <action android:name="com.deltadna.android.sdk.notifications.internal.NOTIFICATION_DISMISSED"/>
-            </intent-filter>
-        </receiver>
         
+        <activity android:name=".NotificationOpenedHandlerAndroid23AndHigher"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.deltadna.android.sdk.notifications.internal.NOTIFICATION_OPENED" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".NotificationOpenedHandlerPreAndroid23"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.deltadna.android.sdk.notifications.internal.NOTIFICATION_OPENED" />
+            </intent-filter>
+        </activity>
+
         <!-- to be added by the application
         <service
             android:name="com.deltadna.android.sdk.notifications.NotificationListenerService"

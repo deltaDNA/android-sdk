@@ -17,8 +17,8 @@
 buildscript {
     ext {
         firebaseVersion = '20.2.0'
-        kotlinVersion = '1.3.10'
-        kotlinxCoroutinesVersion = '0.22.5'
+        kotlinVersion = '1.6.10'
+        kotlinxCoroutinesVersion = '1.3.9'
         kotsonVersion = '2.5.0'
         mockWebServerVersion = '2.7.5'
         supportVersion = '1.0.0-beta01'
@@ -27,46 +27,43 @@ buildscript {
     }
     
     repositories {
-        jcenter()
         google()
         maven { url 'https://plugins.gradle.org/m2/' }
+        mavenCentral()
     }
     
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.4.2'
-        classpath('com.dicedmelon.gradle:jacoco-android:0.1.4') {
-            // https://github.com/arturdm/jacoco-android-gradle-plugin/issues/42
-            exclude group: 'org.codehaus.groovy', module: 'groovy-all'
-        }
-        classpath 'org.jacoco:org.jacoco.core:0.8.1'
+        classpath 'com.android.tools.build:gradle:7.0.4'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath 'com.google.android.gms:strict-version-matcher-plugin:1.2.1'
+        classpath 'com.google.android.gms:strict-version-matcher-plugin:1.2.2'
+        classpath "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
+        classpath "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
     }
 }
 
 allprojects {
     repositories {
         google()
-        maven { url 'https://maven.google.com' }
-        jcenter()
+        mavenCentral()
     }
-    apply plugin: 'maven-publish'
+    def isLibrary = it.name.startsWith('library')
+
+    if (isLibrary) {
+        apply plugin: 'maven-publish'
+    }
 }
 
 subprojects {
     def isLibrary = it.name.startsWith('library')
 
-    
     if (isLibrary) {
         apply plugin: 'com.android.library'
-        apply plugin: 'jacoco-android'
     } else {
         apply plugin: 'com.android.application'
     }
     apply plugin: 'com.google.android.gms.strict-version-matcher-plugin'
     apply plugin: 'kotlin-android'
     apply plugin: 'kotlin-android-extensions'
-
     
     if (isLibrary) {
         // workaround for group/version not picked up through project() dependency
@@ -75,18 +72,22 @@ subprojects {
     }
     
     android {
-        compileSdkVersion 28
+        compileSdkVersion 31
         buildToolsVersion '28.0.3'
 
+        lintOptions {
+            abortOnError false
+        }
         
         defaultConfig {
             minSdkVersion 16
-            targetSdkVersion 28
+            targetSdkVersion 31
             
             versionCode 1
             versionName VERSION_NAME
             
             buildConfigField('String', logTagName, "\"$logTagValue\"")
+            buildConfigField('String', "VERSION_NAME", "\"$VERSION_NAME\"")
             
             if (isLibrary) {
                 archivesBaseName = "${POM_ARTIFACT_ID}-${versionName}.${System.getenv("BUILD_NUMBER") ?: getSha()}"
@@ -106,12 +107,6 @@ subprojects {
                     includeAndroidResources = true
                 }
             }
-            
-            buildTypes {
-                debug {
-                    testCoverageEnabled true
-                }
-            }
         }
     }
     
@@ -121,41 +116,25 @@ subprojects {
             testImplementation 'com.google.truth:truth:0.42'
             testImplementation 'com.nhaarman:mockito-kotlin:1.5.0'
             testImplementation "com.squareup.okhttp:mockwebserver:$mockWebServerVersion"
-            testImplementation 'junit:junit:4.12'
+            testImplementation 'junit:junit:4.13.2'
             testImplementation 'nl.jqno.equalsverifier:equalsverifier:2.3.3'
             testImplementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
             testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-            testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
-            testImplementation 'org.json:json:20171018'
-            testImplementation 'org.mockito:mockito-core:2.16.0'
-            testImplementation 'org.robolectric:robolectric:4.0'
+            testImplementation 'org.json:json:20180813'
+            testImplementation 'org.mockito:mockito-core:4.2.0'
+            testImplementation 'org.robolectric:robolectric:4.7.3'
+            testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$kotlinxCoroutinesVersion"
         }
     } else {
-        dependencies
-                {
-                    api  "androidx.appcompat:appcompat:$supportVersion"
-                }
-
+        dependencies {
+            api  "androidx.appcompat:appcompat:$supportVersion"
+        }
     }
-    
-    if (isLibrary) {
-        apply from: "$rootProject.projectDir/gradle/mvn-push.gradle"
-    }
-}
-
-wrapper {
-    gradleVersion = '4.4'
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-
-tasks.whenTaskAdded { task ->
-    if(task.name.contains("Test") || task.name.contains("test")) {
-        task.enabled = false
-    }
 }
 
 static def getSha() {

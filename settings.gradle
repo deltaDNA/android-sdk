@@ -4,9 +4,7 @@ include ':example-demo'
 include ':example-demo-forget-me'
 include ':example-notifications'
 include ':example-notifications-style'
-include ':support-triggers-performance'
 project(':example-demo').projectDir = file('examples/demo')
 project(':example-demo-forget-me').projectDir = file('examples/demo-forget-me')
 project(':example-notifications').projectDir = file('examples/notifications')
 project(':example-notifications-style').projectDir = file('examples/notifications-style')
-project(':support-triggers-performance').projectDir = file('support/triggers-performance')

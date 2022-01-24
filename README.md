@@ -49,7 +49,7 @@ allprojects {
 In your app's build script:
 ```groovy
 dependencies {
-    implementation 'com.deltadna.android:deltadna-sdk:5.0.0'
+    implementation 'com.deltadna.android:deltadna-sdk:5.0.1'
 }
 ```
 The Java source and target compatibility needs to be set to 1.8 in you app's build script:
@@ -68,6 +68,9 @@ The SDK needs to be initialised with the following parameters in an `Application
 * `environmentKey`, a unique 32 character string assigned to your application. You will be assigned separate application keys for development and production builds of your game. You will need to change the environment key that you initialise the SDK with as you move from development and testing to production.
 * `collectUrl`, this is the address of the server that will be collecting your events.
 * `engageUrl`, this is the address of the server that will provide real-time A/B Testing and Targeting.
+
+> Note: If the SDK detects that the environment has changed between runs (for example during testing) then the event store will be cleared, to avoid sending events
+> to the wrong environment.
 
 It is a requirement in versions 5.0.0 and above to check if a user is in a location where PIPL consent is required, and to provide that consent if so. This must 
 be done before the SDK will send any events or make any engage requests.

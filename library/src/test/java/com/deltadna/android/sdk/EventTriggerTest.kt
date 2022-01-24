@@ -237,7 +237,7 @@ class EventTriggerTest {
         EventTrigger(ddna, 0, jsonObject("eventName" to "a").convert(), etcMetricStore)
                 .evaluate(KEvent("b"))
 
-        verifyZeroInteractions(ddna)
+        verifyNoMoreInteractions(ddna)
     }
 
     @Test

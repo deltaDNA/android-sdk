@@ -28,7 +28,9 @@ import com.deltadna.android.sdk.net.NetworkManager
 import com.deltadna.android.sdk.net.Response
 import com.google.common.truth.Truth.assertThat
 import com.nhaarman.mockito_kotlin.*
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.test.*
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -41,51 +43,65 @@ import java.io.File
 import java.util.*
 import java.lang.System.currentTimeMillis as now
 
-@Ignore
+@ExperimentalCoroutinesApi
+@Ignore("Problems with Android coroutines. Needs to be addressed in LOSDK-867")
 @RunWith(RobolectricTestRunner::class)
 class ImageMessageStoreTest {
-    
+
     private val application by lazy { RuntimeEnvironment.application }
-    
+
     private lateinit var database: DatabaseHelper
     private lateinit var network: NetworkManager
     private lateinit var settings: Settings
-    
+
     private lateinit var uut: ImageMessageStore
-    
+
+    private lateinit var testCoroutineScope: TestCoroutineScope
+    private lateinit var testCoroutineDispatcher: TestCoroutineDispatcher
+
     @Before
     fun before() {
         database = mock()
         network = mock()
         settings = mock()
-        
+
+        testCoroutineDispatcher = TestCoroutineDispatcher()
+        testCoroutineScope = TestCoroutineScope(testCoroutineDispatcher)
+
+        Dispatchers.setMain(testCoroutineDispatcher)
+
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_MOUNTED)
-        
+
         uut = ImageMessageStore(application, database, network, settings)
     }
-    
+
+    @After
+    fun after() {
+        Dispatchers.resetMain()
+    }
+
     @Test
     fun contains() {
         val c1 = mock<Cursor>().apply { whenever(count).then { 1 } }
         val c2 = mock<Cursor>().apply { whenever(count).then { 0 } }
         whenever(database.getImageMessage(eq("http://host.net/path/1.png")))
                 .thenReturn(c1, c2)
-        
+
         assertThat(uut.contains("http://host.net/path/1.png")).isTrue()
         assertThat(uut.contains("http://host.net/path/1.png")).isFalse()
     }
-    
+
     @Test
     fun doesNotFetchFromNetworkWhenAskedNotTo() {
         whenever(database.getImageMessage("http://host.net/path/1.png")).then {
             mock<Cursor>().apply { whenever(moveToFirst()).then { false } }
         }
-        
+
         uut.getOnlyIfCached("http://host.net/path/1.png")
-        
+
         verifyZeroInteractions(network)
     }
-    
+
     @Test
     fun fetchesToInternalFromNetworkWhenNotCachedAndUnmounted() {
         ShadowEnvironment.setExternalStorageState(Environment.MEDIA_UNMOUNTED)
@@ -94,18 +110,21 @@ class ImageMessageStoreTest {
                 whenever(moveToFirst()).then { false }
             }
         }
-        
-        launch { uut.get("http://host.net/path/1.png") }
-        
-        Robolectric.getForegroundThreadScheduler().runOneTask()
-        verify(network, timeout(500)).fetch(
+
+        testCoroutineScope.runBlockingTest {
+            launch { uut.get("http://host.net/path/1.png") }
+
+            Robolectric.getForegroundThreadScheduler().runOneTask()
+            verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
                 argThat { this == File(
-                        INTERNAL.cache(application, "image_messages"),
-                        "1.png") },
+                    INTERNAL.cache(application, "image_messages"),
+                    "1.png") },
                 any())
+
+        }
     }
-    
+
     @Test
     fun fetchesToInternalFromNetworkWhenNotCachedAndSet() {
         whenever(settings.isUseInternalStorageForImageMessages).then { true }
@@ -114,9 +133,11 @@ class ImageMessageStoreTest {
                 whenever(moveToFirst()).then { false }
             }
         }
-        
-        launch { uut.get("http://host.net/path/1.png") }
-        
+
+        testCoroutineScope.runBlockingTest {
+            launch { uut.get("http://host.net/path/1.png") }
+        }
+
         Robolectric.getForegroundThreadScheduler().runOneTask()
         verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
@@ -125,7 +146,7 @@ class ImageMessageStoreTest {
                         "1.png") },
                 any())
     }
-    
+
     @Test
     fun fetchesToExternalFromNetworkWhenNotCachedAndMounted() {
         whenever(database.getImageMessage(eq("http://host.net/path/1.png"))).then {
@@ -133,9 +154,11 @@ class ImageMessageStoreTest {
                 whenever(moveToFirst()).then { false }
             }
         }
-        
-        launch { uut.get("http://host.net/path/1.png") }
-        
+
+        testCoroutineScope.runBlockingTest {
+            launch { uut.get("http://host.net/path/1.png") }
+        }
+
         Robolectric.getForegroundThreadScheduler().runOneTask()
         verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
@@ -144,7 +167,7 @@ class ImageMessageStoreTest {
                         "1.png") },
                 any())
     }
-    
+
     @Test
     fun insertsEntryOnFetchSuccess() {
         whenever(database.getImageMessage(eq("http://host.net/path/1.png"))).then {
@@ -164,9 +187,11 @@ class ImageMessageStoreTest {
                         EXTERNAL.cache(application, "image_messages"),
                         "1.png") },
                 any())
-        
-        launch { uut.get("http://host.net/path/1.png") }
-        
+
+        testCoroutineScope.runBlockingTest {
+            launch { uut.get("http://host.net/path/1.png") }
+        }
+
         verify(database, timeout(500)).insertImageMessage(
                 eq("http://host.net/path/1.png"),
                 eq(EXTERNAL),
@@ -174,11 +199,11 @@ class ImageMessageStoreTest {
                 any(),
                 argThat { before(Date()) && after(Date(now() - 500)) })
     }
-    
+
     @Test
     fun loadsFromStorage() {
         File(EXTERNAL.cache(application, "image_messages"), "1.png").createNewFile()
-        
+
         whenever(database.getImageMessage(eq("http://host.net/path/1.png"))).then {
             mock<Cursor>().apply {
                 whenever(moveToFirst()).then { true }
@@ -188,13 +213,16 @@ class ImageMessageStoreTest {
                 whenever(getString(eq(1))).then { "1.png" }
             }
         }
-        
-        launch { uut.get("http://host.net/path/1.png") }
+
+        testCoroutineScope.runBlockingTest {
+            launch { uut.get("http://host.net/path/1.png") }
+        }
+
         Thread.sleep(500)
-        
+
         verifyZeroInteractions(network)
     }
-    
+
     @Test
     fun loadingMissingFromStorageFetchesFromNetwork() {
         whenever(database.getImageMessage(eq("http://host.net/path/1.png"))).then {
@@ -206,9 +234,11 @@ class ImageMessageStoreTest {
                 whenever(getString(eq(1))).then { "1.png" }
             }
         }
-        
-        launch { uut.get("http://host.net/path/1.png") }
-        
+
+        testCoroutineScope.runBlockingTest {
+            launch { uut.get("http://host.net/path/1.png") }
+        }
+
         verify(network, timeout(500)).fetch(
                 eq("http://host.net/path/1.png"),
                 argThat { this == File(
@@ -216,7 +246,7 @@ class ImageMessageStoreTest {
                         "1.png") },
                 any())
     }
-    
+
     @Test
     fun prefetchNothing() {
         with(mock<ImageMessageStore.Callback<Void>>()) {
@@ -226,7 +256,7 @@ class ImageMessageStoreTest {
             verify(this).onCompleted(isNull())
         }
     }
-    
+
     @Test
     fun prefetch() {
         val callback = mock<ImageMessageStore.Callback<Void>>()
@@ -235,7 +265,7 @@ class ImageMessageStoreTest {
         items.forEach { name ->
             val file = File(EXTERNAL.cache(application, "image_messages"), name)
             file.createNewFile()
-            
+
             if (name == "2.png") {
                 whenever(database.getImageMessage(eq("http://host.net/path/$name")))
                         .then { mock<Cursor>().apply {
@@ -250,7 +280,7 @@ class ImageMessageStoreTest {
                         .then { mock<Cursor>().apply {
                             whenever(moveToFirst()).then { false }
                         }}
-                
+
                 doAnswer {
                     (it.arguments[2] as RequestListener<File>).onCompleted(
                             Response<File>(200, false, null, file, null))
@@ -258,7 +288,7 @@ class ImageMessageStoreTest {
                 }.whenever(network).fetch(eq("http://host.net/path/$name"), any(), any())
             }
         }
-        
+
         uut.prefetch(
                 callback,
                 *items.map { "http://host.net/path/$it" }.toTypedArray())
@@ -270,7 +300,7 @@ class ImageMessageStoreTest {
                 any(),
                 any())
     }
-    
+
     @Test @Ignore
     fun prefetchFailsOnAnySingleFailure() {
         val callback = mock<ImageMessageStore.Callback<Void>>()
@@ -279,12 +309,12 @@ class ImageMessageStoreTest {
         items.forEach { name ->
             val file = File(EXTERNAL.cache(application, "image_messages"), name)
             file.createNewFile()
-            
+
             whenever(database.getImageMessage(eq("http://host.net/path/$name")))
                     .then { mock<Cursor>().apply {
                         whenever(moveToFirst()).then { false }
                     }}
-            
+
             doAnswer {
                 if (name == "2.png") {
                     (it.arguments[2] as RequestListener<File>).onCompleted(
@@ -296,15 +326,15 @@ class ImageMessageStoreTest {
                 mock<CancelableRequest>()
             }.whenever(network).fetch(eq("http://host.net/path/$name"), any(), any())
         }
-        
+
         uut.prefetch(
                 callback,
                 *items.map { "http://host.net/path/$it" }.toTypedArray())
-        
+
         waitAndRunTasks()
         verify(callback, timeout(500)).onFailed(any())
     }
-    
+
     @Test
     fun cleanUp() {
         val items = arrayOf("1.png", "2.png", "3.png")
@@ -320,13 +350,13 @@ class ImageMessageStoreTest {
             whenever(getString(eq(1))).then { EXTERNAL.name }
             whenever(getString(eq(2))).thenReturn(items[0], *items.drop(1).toTypedArray())
         }}
-        
+
         uut.cleanUp()
-        
+
         verify(database, timeout(500)).removeImageMessage(eq(0L))
         verify(database, timeout(500)).removeImageMessage(eq(2L))
     }
-    
+
     @Test
     fun clear() {
         val items = arrayOf("1.png", "2.png", "3.png", "4.png")
@@ -336,9 +366,9 @@ class ImageMessageStoreTest {
         items.takeLast(2).forEach {
             File(EXTERNAL.cache(application, "image_messages"), it).createNewFile()
         }
-        
+
         uut.clear()
-        
+
         verify(database, timeout(500)).removeImageMessageRows()
         assertThat(INTERNAL.cache(application, "image_messages").listFiles()).isEmpty()
         assertThat(EXTERNAL.cache(application, "image_messages").listFiles()).isEmpty()
