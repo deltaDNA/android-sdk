@@ -1,5 +1,11 @@
 # Change Log
 
+## [5.0.1](https://github.com/deltaDNA/android-sdk/releases/tag/5.0.1)
+
+## Fixed
+- When switching environments between Dev and Live, data will be cleaned so that events are not sent to the wrong environment during testing
+- Notifications will launch and open correctly on the latest version of Android
+
 ## [5.0.0](https://github.com/deltaDNA/android-sdk/releases/tag/5.0.0)
 
 ## New

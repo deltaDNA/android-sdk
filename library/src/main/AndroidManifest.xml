@@ -30,7 +30,8 @@ limitations under the License.
             android:name=".ImageMessageActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:windowIsTranslucent="true"
-            android:windowBackground="@android:color/transparent">
+            android:windowBackground="@android:color/transparent"
+            android:exported="false">
             
             <intent-filter>
                 <action android:name="android.intent.action.ACTION_DEFAULT"/>

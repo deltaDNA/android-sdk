@@ -20,10 +20,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.same
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.verifyZeroInteractions
+import com.nhaarman.mockito_kotlin.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -60,7 +57,7 @@ class UtilsTest {
             val result = Utils.wrapWithReceiver(mock(), this)
             
             assertThat(result).isSameAs(this)
-            verifyZeroInteractions(this)
+            verifyNoMoreInteractions(this)
         }
     }
     

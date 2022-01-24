@@ -17,6 +17,8 @@
 package com.deltadna.android.sdk;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
@@ -54,6 +56,8 @@ import java.util.concurrent.TimeUnit;
 final class DDNAImpl extends DDNA {
     
     private static final int ENGAGE_API_VERSION = 4;
+
+    private static final String PREVIOUS_ENVIRONMENT_PREFERENCES_KEY = "DDNA_PREVIOUS_ENV";
     
     private static final String TAG = BuildConfig.LOG_TAG
             + ' '
@@ -464,6 +468,20 @@ final class DDNAImpl extends DDNA {
         }
         this.sentDefaultEvents = true;
     }
+
+    private void handleEnvironmentChanges(Application application, String environment) {
+        SharedPreferences preferences = application.getSharedPreferences(DDNA_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE);
+        if (preferences.contains(PREVIOUS_ENVIRONMENT_PREFERENCES_KEY)) {
+            String previousEnv = preferences.getString(PREVIOUS_ENVIRONMENT_PREFERENCES_KEY, "");
+            if (previousEnv != null && !previousEnv.equals(environment)) {
+                Log.d(TAG, "Detected an environment configuration change from " + previousEnv + " to " + environment + ", clearing out cached events from previous environment.");
+                eventStore.clear();
+            }
+        }
+        preferences.edit()
+                .putString(PREVIOUS_ENVIRONMENT_PREFERENCES_KEY, environment)
+                .commit();
+    }
     
     DDNAImpl(
             Application application,
@@ -531,6 +549,8 @@ final class DDNAImpl extends DDNA {
                     newSession(true);
                 });
         eventHandler = new EventHandler(eventStore, engageStore, network);
+
+        handleEnvironmentChanges(application, environmentKey);
         
         final Map<String, Integer> temp = new HashMap<>();
         try {

@@ -135,8 +135,8 @@ class DDNADelegateTest {
         
         uut.iso4217
         verify(tracking).iso4217
-        
-        verifyZeroInteractions(nonTracking)
+
+        verifyNoMoreInteractions(nonTracking)
     }
     
     @Test
@@ -208,8 +208,8 @@ class DDNADelegateTest {
         
         uut.iso4217
         verify(nonTracking).iso4217
-        
-        verifyZeroInteractions(tracking)
+
+        verifyNoMoreInteractions(tracking)
     }
     
     @Test
@@ -249,7 +249,7 @@ class DDNADelegateTest {
         
         assertThat(uut.clearPersistentData()).isSameAs(tracking)
         verify(tracking).clearPersistentData()
-        verifyZeroInteractions(nonTracking)
+        verifyNoMoreInteractions(nonTracking)
         
         preferences.isForgetMe = true
         preferences.isForgotten = true
@@ -357,7 +357,7 @@ class DDNADelegateTest {
         uut.iso4217
         verify(nonTracking).iso4217
 
-        verifyZeroInteractions(tracking)
+        verifyNoMoreInteractions(tracking)
     }
 
     @Test

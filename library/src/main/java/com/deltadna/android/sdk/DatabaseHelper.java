@@ -16,6 +16,7 @@
 
 package com.deltadna.android.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -320,6 +321,7 @@ final class DatabaseHelper extends SQLiteOpenHelper {
                 != -1);
     }
 
+    @SuppressLint("Range")
     @Nullable
     JSONObject getAction(long campaignId) throws SQLiteException {
         try (final Cursor cursor = getReadableDatabase().query(

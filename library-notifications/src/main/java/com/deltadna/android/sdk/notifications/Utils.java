@@ -59,7 +59,6 @@ class Utils {
     static Intent wrapWithReceiver(Context context, Intent intent) {
         synchronized (DDNANotifications.class) {
             if (DDNANotifications.receiver != null) {
-                //noinspection ConstantConditions
                 intent.setClass(context, DDNANotifications.receiver);
             }
         }

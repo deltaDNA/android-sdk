@@ -20,6 +20,7 @@ import com.github.salomonbrys.kotson.jsonObject
 import com.google.common.truth.Truth.*
 import org.json.JSONObject
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,6 +28,7 @@ import org.robolectric.RuntimeEnvironment
 import java.util.*
 
 @RunWith(RobolectricTestRunner::class)
+@Ignore("Test relies on async behaviour running synchronously - needs to be refactored")
 class DatabaseHelperTest {
     
     private lateinit var uut: DatabaseHelper

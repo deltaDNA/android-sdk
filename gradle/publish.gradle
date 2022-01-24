@@ -1,0 +1,52 @@
+apply plugin: 'maven-publish'
+
+task androidJavadocs(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    android.libraryVariants.all { variant ->
+        if (variant.name == 'release') {
+            owner.classpath += variant.javaCompileProvider.get().classpath
+        }
+    }
+    exclude '**/R.html', '**/R.*.html', '**/index.html', '**/*.kt'
+}
+
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    archiveClassifier.set('javadoc')
+    from androidJavadocs.destinationDir
+}
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                group = GROUP
+                version = VERSION_NAME
+                artifactId = POM_ARTIFACT_ID
+
+                from components.release
+
+                artifact androidJavadocsJar
+                artifact androidSourcesJar
+            }
+        }
+
+        repositories {
+            maven {
+                name = "github"
+                url = "https://maven.pkg.github.com/deltaDNA/android-sdk"
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
+    }
+}
+

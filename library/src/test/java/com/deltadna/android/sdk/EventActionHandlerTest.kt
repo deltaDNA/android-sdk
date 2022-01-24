@@ -50,7 +50,7 @@ class EventActionHandlerTest {
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "imageMessage" }
             }, store)).isFalse()
-            verifyZeroInteractions(cbk)
+            verifyNoMoreInteractions(cbk)
             
             val json = jsonObject("parameters" to jsonObject("a" to 1)).convert()
             assertThat(handle(mock<EventTrigger>().apply {
@@ -99,7 +99,7 @@ class EventActionHandlerTest {
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "gameParameters" }
             }, store)).isFalse()
-            verifyZeroInteractions(cbk)
+            verifyNoMoreInteractions(cbk)
             
             assertThat(handle(mock<EventTrigger>().apply {
                 whenever(action).then { "imageMessage" }

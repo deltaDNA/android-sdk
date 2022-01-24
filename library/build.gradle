@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+apply from: '../gradle/publish.gradle'
+
 android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -23,10 +25,4 @@ android {
 
 dependencies {
     api "androidx.annotation:annotation:$supportVersion"
-}
-
-tasks.whenTaskAdded { task ->
-    if(task.name.contains("Test") || task.name.contains("test")) {
-        task.enabled = false
-    }
 }

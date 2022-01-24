@@ -25,6 +25,8 @@ import android.util.Log;
 
 import com.deltadna.android.sdk.consent.ConsentTracker;
 import com.deltadna.android.sdk.consent.GeoIpNetworkClient;
+import android.util.Pair;
+
 import com.deltadna.android.sdk.exceptions.NotInitialisedException;
 import com.deltadna.android.sdk.helpers.ClientInfo;
 import com.deltadna.android.sdk.helpers.Preconditions;
@@ -53,6 +55,7 @@ import java.util.*;
  * {@link #getSettings()} to get access to the {@link Settings}.
  */
 public abstract class DDNA {
+    protected static final String DDNA_SHARED_PREFERENCES_KEY = "com.deltadna.android.sdk.prefs";
     
     static final String SDK_VERSION =
             "Android SDK v" + BuildConfig.VERSION_NAME;
@@ -72,6 +75,8 @@ public abstract class DDNA {
         
         TIMESTAMP_FORMAT_ISO = format;
     }
+
+    static Pair<Boolean, Bundle> cachedNotificationOpenedData;
     
     private static DDNA instance;
     
@@ -114,6 +119,11 @@ public abstract class DDNA {
                             iEventListeners));
         } else {
             Log.w(BuildConfig.LOG_TAG, "SDK has already been initialised");
+        }
+
+        if (cachedNotificationOpenedData != null) {
+            instance.recordNotificationOpened(cachedNotificationOpenedData.first, cachedNotificationOpenedData.second);
+            cachedNotificationOpenedData = null;
         }
         
         return instance;
@@ -167,7 +177,7 @@ public abstract class DDNA {
                 settings,
                 hashSecret);
         consentTracker = new ConsentTracker(
-                application.getSharedPreferences("com.deltadna.android.sdk.prefs", Context.MODE_PRIVATE),
+                application.getSharedPreferences(DDNA_SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE),
                 new GeoIpNetworkClient(network)
         );
         engageFactory = new EngageFactory(this);
@@ -614,6 +624,14 @@ public abstract class DDNA {
     
     static <T> void performOn(Iterable<T> items, Action<T> action) {
         for (final T item : items) action.act(item);
+    }
+
+    public static void queueRecordNotificationOpened(boolean launch, Bundle payload) {
+        if (instance == null) {
+            cachedNotificationOpenedData = new Pair<>(launch, payload);
+        } else {
+            instance().recordNotificationOpened(launch, payload).run();
+        }
     }
     
     /**

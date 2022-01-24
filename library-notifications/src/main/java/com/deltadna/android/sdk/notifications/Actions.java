@@ -32,7 +32,6 @@ final class Actions {
     static final String NOTIFICATION_DISMISSED = PREFIX + "NOTIFICATION_DISMISSED";
     
     static final String NOTIFICATION_OPENED_INTERNAL = PREFIX_INTERNAL + "NOTIFICATION_OPENED";
-    static final String NOTIFICATION_DISMISSED_INTERNAL = PREFIX_INTERNAL + "NOTIFICATION_DISMISSED";
     
     static final String REGISTRATION_FAILURE_REASON = "registration_failure_reason";
     static final String REGISTRATION_TOKEN = "registration_token";
