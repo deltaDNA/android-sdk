@@ -53,7 +53,7 @@ public class ExampleApplication extends Application {
 
             @Override
             public void onFailure(Throwable exception) {
-                Log.e("EXAMPLE", "Failed to check for PIPL consent", exception);
+                Log.e("EXAMPLE", "Failed to check for PIPL consent " + exception.getMessage(), exception);
                 // Try again later.
             }
         });

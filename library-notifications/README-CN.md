@@ -41,8 +41,8 @@ allprojects {
 ```
 在你APP的构建脚本
 ```groovy
-compile 'com.deltadna.android:deltadna-sdk:5.0.1'
-compile 'com.deltadna.android:deltadna-sdk-notifications:5.0.1'
+compile 'com.deltadna.android:deltadna-sdk:5.0.2'
+compile 'com.deltadna.android:deltadna-sdk-notifications:5.0.2'
 ```
 
 ## 整合

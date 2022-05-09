@@ -30,6 +30,22 @@ public class GeoIpNetworkClient {
             @Override
             public void onCompleted(Response<JSONObject> response) {
                 try {
+                    if (response == null) {
+                        callback.OnFailure(new Exception("GeoIP returned a null response, please try again."));
+                        return;
+                    }
+                    if (!response.isSuccessful()) {
+                        String errorMessage = "GeoIP request failed with error code " + response.code;
+                        if (response.error != null) {
+                            errorMessage += " " + response.error;
+                        }
+                        callback.OnFailure(new Exception(errorMessage));
+                        return;
+                    }
+                    if (response.body == null) {
+                        callback.OnFailure(new Exception("GeoIP returned a null body but a success code, this may indicate an unexpected response. Please try again."));
+                        return;
+                    }
                     String identifier = response.body.getString("identifier");
                     callback.OnSuccess(identifier);
                 } catch (JSONException e) {

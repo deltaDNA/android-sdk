@@ -1,5 +1,10 @@
 # Change Log
 
+## [5.0.2](https://github.com/deltaDNA/android-sdk/releases/tag/5.0.2)
+
+## Fixed
+- Fixed a Null Pointer Exception that could occur when getting an error response from the GeoAPI endpoint
+
 ## [5.0.1](https://github.com/deltaDNA/android-sdk/releases/tag/5.0.1)
 
 ## Fixed
